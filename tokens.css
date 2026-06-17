@@ -1,0 +1,58 @@
+/* ── Asana design tokens (light mode) ─────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg:               #ffffff;
+  --bg-medium:        #f2f3f4;
+  --bg-strong:        #e8e9ea;
+  --bg-hover:         rgba(37, 39, 40, 0.04);
+  --bg-active:        rgba(37, 39, 40, 0.07);
+
+  /* Text */
+  --text:             #1d1f21;
+  --text-weak:        #626364;
+
+  /* Icons */
+  --icon:             #757677;
+  --icon-hover:       #1d1f21;
+
+  /* Borders */
+  --border:           #e0e1e3;
+  --border-strong:    #c4c6c8;
+
+  /* Shadows */
+  --shadow-sm:        0px 1px 4px 0px rgba(117, 118, 119, 0.08);
+  --shadow-md:        0px 3px 8px 0px rgba(117, 118, 119, 0.14);
+  --shadow-lg:        0px 6px 12px 0px rgba(117, 118, 119, 0.16);
+
+  /* Interactive */
+  --link:             #335fb5;
+  --success-bg:       #e9faf1;
+  --success-text:     #14865e;
+
+  /* Badge palette */
+  --badge-red-bg:      #fce8e8;
+  --badge-red-text:    #c73838;
+  --badge-green-bg:    #d1fae5;
+  --badge-green-text:  #14865e;
+  --badge-blue-bg:     #e8f0fe;
+  --badge-blue-text:   #335fb5;
+  --badge-yellow-bg:   #fff1c2;
+  --badge-yellow-text: #c47c00;
+  --badge-purple-bg:   #f3e8ff;
+  --badge-purple-text: #7c3aed;
+
+  /* Motion */
+  --duration:  200ms;
+  --ease:      cubic-bezier(0.05, 0.4, 0.2, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+               'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.4;
+}

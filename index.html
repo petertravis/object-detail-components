@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Component Library</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="components.css">
+  <style>
+    /* ── Showcase chrome ─────────────────────────────────────────── */
+    html { scroll-behavior: smooth; }
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .sc-topbar {
+      height: 52px; flex-shrink: 0; border-bottom: 1px solid var(--border);
+      background: var(--bg); display: flex; align-items: center;
+      padding: 0 24px; gap: 14px; position: sticky; top: 0; z-index: 100;
+    }
+    .sc-topbar-logo { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+    .sc-topbar-sep { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
+    .sc-topbar-subtitle { font-size: 13px; color: var(--text-weak); }
+    .sc-topbar-chip {
+      margin-left: auto; font-size: 11px; font-weight: 600; padding: 3px 9px;
+      border-radius: 10px; background: var(--bg-medium); color: var(--text-weak);
+      border: 1px solid var(--border);
+    }
+
+    .sc-layout { display: flex; flex: 1; }
+
+    .sc-nav {
+      width: 210px; flex-shrink: 0; border-right: 1px solid var(--border);
+      background: var(--bg-medium); padding: 20px 0 32px;
+      position: sticky; top: 52px; height: calc(100vh - 52px); overflow-y: auto;
+    }
+    .sc-nav-group { margin-bottom: 20px; }
+    .sc-nav-group-label {
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--text-weak); padding: 0 16px 6px;
+    }
+    .sc-nav-link {
+      display: block; padding: 5px 16px; font-size: 13px; color: var(--text-weak);
+      text-decoration: none;
+      transition: color var(--duration) var(--ease), background var(--duration) var(--ease);
+    }
+    .sc-nav-link:hover { color: var(--text); background: var(--bg-hover); }
+    .sc-nav-link--active { color: var(--text); font-weight: 500; background: var(--bg-active); }
+
+    .sc-main { flex: 1; min-width: 0; padding: 40px 48px 80px; background: var(--bg-medium); }
+
+    .sc-section { margin-bottom: 60px; }
+    .sc-section-header { margin-bottom: 24px; }
+    .sc-section-title { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .sc-section-desc { font-size: 13.5px; color: var(--text-weak); line-height: 1.5; }
+
+    .sc-component { margin-bottom: 20px; }
+    .sc-component-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-weak); margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sc-component-class {
+      font-size: 11px; font-weight: 500; font-family: 'Menlo','Monaco',monospace;
+      letter-spacing: 0; text-transform: none; color: var(--badge-blue-text);
+      background: var(--badge-blue-bg); padding: 1px 6px; border-radius: 4px;
+    }
+
+    .sc-canvas {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 20px 24px; box-shadow: var(--shadow-sm);
+    }
+    .sc-canvas--tight { padding: 0; overflow: hidden; }
+    .sc-canvas--flush { padding: 0; }
+    .sc-canvas--pad   { padding: 16px; }
+
+    .sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .sc-grid--3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .sc-grid--2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+    /* Full detail pane demo */
+    .sc-pane-demo {
+      position: relative; height: 680px;
+      background: #eceef0; border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; display: flex; align-items: stretch;
+    }
+    .sc-pane-demo__placeholder {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    }
+    .sc-pane-demo__placeholder-text { font-size: 13px; color: var(--text-weak); }
+    .sc-trigger-btn {
+      height: 34px; padding: 0 16px; border-radius: 8px;
+      border: 1px solid var(--border-strong); background: var(--bg);
+      font-size: 13px; font-weight: 500; font-family: inherit; color: var(--text);
+      cursor: pointer; transition: background var(--duration) var(--ease);
+    }
+    .sc-trigger-btn:hover { background: var(--bg-medium); }
+    .sc-page-demo { height: 600px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-sm); }
+    .sc-layout-demo { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-sm); }
+  </style>
+</head>
+<body>
+
+  <header class="sc-topbar">
+    <span class="sc-topbar-logo">Component Library</span>
+    <div class="sc-topbar-sep"></div>
+    <span class="sc-topbar-subtitle">Composable object detail views</span>
+    <span class="sc-topbar-chip">v1.1</span>
+  </header>
+
+  <div class="sc-layout">
+
+    <!-- ── Sidebar nav ───────────────────────────────────────────── -->
+    <nav class="sc-nav" aria-label="Component sections">
+      <div class="sc-nav-group">
+        <div class="sc-nav-group-label">Field Renderers</div>
+        <a href="#field-text"         class="sc-nav-link">FieldText</a>
+        <a href="#field-badge"        class="sc-nav-link">FieldBadge / Status</a>
+        <a href="#field-date"         class="sc-nav-link">FieldDate</a>
+        <a href="#field-user"         class="sc-nav-link">FieldUser</a>
+        <a href="#field-currency"     class="sc-nav-link">FieldCurrency</a>
+        <a href="#field-link"         class="sc-nav-link">FieldLink / URL</a>
+        <a href="#field-file"         class="sc-nav-link">FieldFile</a>
+        <a href="#field-progress"     class="sc-nav-link">FieldProgress</a>
+        <a href="#field-tags"         class="sc-nav-link">FieldTags</a>
+        <a href="#field-dropdown"     class="sc-nav-link">FieldDropdown</a>
+        <a href="#field-number"       class="sc-nav-link">FieldNumber</a>
+        <a href="#field-datetime"     class="sc-nav-link">FieldDatetime</a>
+        <a href="#field-duration"     class="sc-nav-link">FieldDuration</a>
+        <a href="#field-location"     class="sc-nav-link">FieldLocation</a>
+        <a href="#field-address"      class="sc-nav-link">FieldAddress</a>
+        <a href="#field-reference"    class="sc-nav-link">FieldReference</a>
+        <a href="#field-rich-text"    class="sc-nav-link">FieldRichText</a>
+        <a href="#field-boolean"      class="sc-nav-link">FieldBoolean</a>
+        <a href="#field-email"        class="sc-nav-link">FieldEmail</a>
+        <a href="#field-phone"        class="sc-nav-link">FieldPhone</a>
+        <a href="#field-rating"       class="sc-nav-link">FieldRating</a>
+        <a href="#field-autonumber"   class="sc-nav-link">FieldAutoNumber</a>
+      </div>
+      <div class="sc-nav-group">
+        <div class="sc-nav-group-label">Semantic Groupings</div>
+        <a href="#badge"               class="sc-nav-link">Badge</a>
+        <a href="#field-section"       class="sc-nav-link">FieldSection</a>
+        <a href="#stat-row"            class="sc-nav-link">StatRow</a>
+        <a href="#people-list"         class="sc-nav-link">PeopleList</a>
+        <a href="#activity-feed"       class="sc-nav-link">ActivityFeed</a>
+        <a href="#asset-list"          class="sc-nav-link">AssetList</a>
+        <a href="#related-records"     class="sc-nav-link">RelatedRecords</a>
+        <a href="#header-grouping"     class="sc-nav-link">HeaderGrouping</a>
+        <a href="#entity-card"         class="sc-nav-link">EntityCardGrouping</a>
+        <a href="#text-block"          class="sc-nav-link">TextBlockGrouping</a>
+        <a href="#checklist"           class="sc-nav-link">ChecklistGrouping</a>
+        <a href="#media-grouping"      class="sc-nav-link">MediaGrouping</a>
+        <a href="#map-grouping"        class="sc-nav-link">MapGrouping</a>
+        <a href="#table-grouping"      class="sc-nav-link">TableGrouping</a>
+        <a href="#stage-stepper"       class="sc-nav-link">StageStepperGrouping</a>
+        <a href="#stage-progress"      class="sc-nav-link">StageProgressGrouping</a>
+      </div>
+      <div class="sc-nav-group">
+        <div class="sc-nav-group-label">Layout Primitives</div>
+        <a href="#record-header"    class="sc-nav-link">RecordHeader</a>
+        <a href="#comment-bar"      class="sc-nav-link">CommentBar</a>
+        <a href="#section-divider"  class="sc-nav-link">SectionDivider</a>
+        <a href="#detail-pane"      class="sc-nav-link">DetailPane</a>
+        <a href="#detail-page"      class="sc-nav-link">DetailPage</a>
+        <a href="#list-layout"      class="sc-nav-link">ListLayout</a>
+        <a href="#board-layout"     class="sc-nav-link">BoardLayout</a>
+        <a href="#dashboard-layout" class="sc-nav-link">DashboardLayout</a>
+        <a href="#pipeline-layout"  class="sc-nav-link">PipelineLayout</a>
+        <a href="#calendar-layout"  class="sc-nav-link">CalendarLayout</a>
+        <a href="#timeline-layout"  class="sc-nav-link">TimelineLayout</a>
+      </div>
+    </nav>
+
+    <main class="sc-main">
+
+
+      <!-- ════════════════════════════════════════════
+           FIELD RENDERERS
+           ════════════════════════════════════════════ -->
+
+      <section class="sc-section" id="field-text">
+        <div class="sc-section-header">
+          <h2 class="sc-section-title">Field Renderers</h2>
+          <p class="sc-section-desc">Atomic label + value pairs. All share the same base structure: <code>.field-table</code> → <code>.field-row</code> → <code>.field-label</code> + <code>.field-value</code>. Extended value types live in their own display classes nested inside <code>.field-value</code>.</p>
+        </div>
+        <div class="sc-grid">
+
+          <!-- FieldText -->
+          <div class="sc-component" id="field-text">
+            <div class="sc-component-label">FieldText <span class="sc-component-class">.field-row</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Campaign</span><span class="field-value">Q3 Brand Awareness</span></div>
+                <div class="field-row"><span class="field-label">Channel</span><span class="field-value">Paid Social</span></div>
+                <div class="field-row"><span class="field-label">Region</span><span class="field-value">North America</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldBadge / Status -->
+          <div class="sc-component" id="field-badge">
+            <div class="sc-component-label">FieldBadge / StatusRenderer <span class="sc-component-class">.badge inside .field-value</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Status</span><span class="field-value"><span class="badge badge--blue">In Progress</span></span></div>
+                <div class="field-row"><span class="field-label">Priority</span><span class="field-value"><span class="badge badge--red">High</span></span></div>
+                <div class="field-row"><span class="field-label">Stage</span><span class="field-value"><span class="badge badge--yellow">Negotiation</span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldDate -->
+          <div class="sc-component" id="field-date">
+            <div class="sc-component-label">FieldDate <span class="sc-component-class">.field-date</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Launch</span><span class="field-value"><span class="field-date"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Jun 15, 2025</span></span></div>
+                <div class="field-row"><span class="field-label">Due</span><span class="field-value"><span class="field-date"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Aug 30, 2025</span></span></div>
+                <div class="field-row"><span class="field-label">Created</span><span class="field-value"><span class="field-date"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Mar 1, 2025</span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldUser -->
+          <div class="sc-component" id="field-user">
+            <div class="sc-component-label">FieldUser <span class="sc-component-class">.field-user</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Owner</span><span class="field-value"><span class="field-user"><span class="field-user__avatar" style="background:#dc2626">SK</span><span class="field-user__name">Sarah K.</span></span></span></div>
+                <div class="field-row"><span class="field-label">Reviewer</span><span class="field-value"><span class="field-user"><span class="field-user__avatar" style="background:#7c3aed">CY</span><span class="field-user__name">Chris Y.</span></span></span></div>
+                <div class="field-row"><span class="field-label">Designer</span><span class="field-value"><span class="field-user"><span class="field-user__avatar" style="background:#d97706">LP</span><span class="field-user__name">Lee P.</span></span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldCurrency -->
+          <div class="sc-component" id="field-currency">
+            <div class="sc-component-label">FieldCurrency <span class="sc-component-class">.field-row</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Budget</span><span class="field-value">$240,000</span></div>
+                <div class="field-row"><span class="field-label">Spent</span><span class="field-value">$87,400</span></div>
+                <div class="field-row"><span class="field-label">Remaining</span><span class="field-value">$152,600</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldLink -->
+          <div class="sc-component" id="field-link">
+            <div class="sc-component-label">FieldLink / UrlRenderer <span class="sc-component-class">.field-link</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Brief</span><span class="field-value"><a href="#" class="field-link">Creative_Brief_Q3.pdf</a></span></div>
+                <div class="field-row"><span class="field-label">Figma</span><span class="field-value"><a href="#" class="field-link">Brand Concepts v4</a></span></div>
+                <div class="field-row"><span class="field-label">Tracker</span><span class="field-value"><a href="#" class="field-link">Campaign Dashboard</a></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldFile -->
+          <div class="sc-component" id="field-file">
+            <div class="sc-component-label">FieldFile / AttachmentRenderer <span class="sc-component-class">.field-file</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Deck</span><span class="field-value"><span class="field-file"><span class="field-file__icon" style="background:#fce8e8"><svg viewBox="0 0 16 16" fill="none" stroke="#c73838" stroke-width="1.5" stroke-linecap="round"><path d="M9 1H3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V5z"/><polyline points="9 1 9 5 13 5"/></svg></span><span class="field-file__name">Campaign_Deck.pdf</span></span></span></div>
+                <div class="field-row"><span class="field-label">Assets</span><span class="field-value"><span class="field-file"><span class="field-file__icon" style="background:#f3e8ff"><svg viewBox="0 0 16 16" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><circle cx="12" cy="12" r="3"/></svg></span><span class="field-file__name">Hero_Assets.fig</span></span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldProgress -->
+          <div class="sc-component" id="field-progress">
+            <div class="sc-component-label">FieldProgress <span class="sc-component-class">.field-progress</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Completion</span><span class="field-value"><span class="field-progress"><span class="field-progress__track"><span class="field-progress__fill" style="width:68%"></span></span><span class="field-progress__pct">68%</span></span></span></div>
+                <div class="field-row"><span class="field-label">Budget used</span><span class="field-value"><span class="field-progress"><span class="field-progress__track"><span class="field-progress__fill" style="width:36%;background:var(--badge-green-text)"></span></span><span class="field-progress__pct">36%</span></span></span></div>
+                <div class="field-row"><span class="field-label">Reach</span><span class="field-value"><span class="field-progress"><span class="field-progress__track"><span class="field-progress__fill" style="width:91%;background:var(--badge-yellow-text)"></span></span><span class="field-progress__pct">91%</span></span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldTags -->
+          <div class="sc-component" id="field-tags">
+            <div class="sc-component-label">FieldTags / MultiSelectRenderer <span class="sc-component-class">.field-tags + .tag</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Keywords</span><span class="field-value"><span class="field-tags"><span class="tag">brand</span><span class="tag">Q3</span><span class="tag">awareness</span></span></span></div>
+                <div class="field-row"><span class="field-label">Channels</span><span class="field-value"><span class="field-tags"><span class="tag">Instagram</span><span class="tag">LinkedIn</span><span class="tag">Display</span></span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldDropdown -->
+          <div class="sc-component" id="field-dropdown">
+            <div class="sc-component-label">FieldDropdown / DropdownRenderer <span class="sc-component-class">.field-dropdown</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Channel</span><span class="field-value"><button class="field-dropdown"><span class="field-dropdown__label">Paid Social</span><svg class="field-dropdown__caret" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 6 8 10 12 6"/></svg></button></span></div>
+                <div class="field-row"><span class="field-label">Region</span><span class="field-value"><button class="field-dropdown"><span class="field-dropdown__label">North America</span><svg class="field-dropdown__caret" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 6 8 10 12 6"/></svg></button></span></div>
+                <div class="field-row"><span class="field-label">Currency</span><span class="field-value"><button class="field-dropdown"><span class="field-dropdown__label">USD</span><svg class="field-dropdown__caret" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 6 8 10 12 6"/></svg></button></span></div>
+                <div class="field-row"><span class="field-label">Format</span><span class="field-value"><button class="field-dropdown field-dropdown--placeholder"><span class="field-dropdown__label">Select format…</span><svg class="field-dropdown__caret" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 6 8 10 12 6"/></svg></button></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldNumber -->
+          <div class="sc-component" id="field-number">
+            <div class="sc-component-label">FieldNumber / NumberRenderer <span class="sc-component-class">.field-number</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Impressions</span><span class="field-value"><span class="field-number">1,247,830<span class="field-number__unit">views</span></span></span></div>
+                <div class="field-row"><span class="field-label">Click rate</span><span class="field-value"><span class="field-number">3.8<span class="field-number__unit">%</span></span></span></div>
+                <div class="field-row"><span class="field-label">Team size</span><span class="field-value"><span class="field-number">12<span class="field-number__unit">people</span></span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldDatetime -->
+          <div class="sc-component" id="field-datetime">
+            <div class="sc-component-label">FieldDatetime <span class="sc-component-class">.field-datetime</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Created</span><span class="field-value"><span class="field-datetime"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Jun 15, 2025<span class="field-datetime__sep">·</span>2:30 PM</span></span></div>
+                <div class="field-row"><span class="field-label">Updated</span><span class="field-value"><span class="field-datetime"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Today<span class="field-datetime__sep">·</span>9:14 AM</span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldDuration -->
+          <div class="sc-component" id="field-duration">
+            <div class="sc-component-label">FieldDuration <span class="sc-component-class">.field-duration</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Estimated</span><span class="field-value"><span class="field-duration"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>3h 20m</span></span></div>
+                <div class="field-row"><span class="field-label">Actual</span><span class="field-value"><span class="field-duration"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>4h 05m</span></span></div>
+                <div class="field-row"><span class="field-label">Remaining</span><span class="field-value"><span class="field-duration"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>12h 00m</span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldLocation -->
+          <div class="sc-component" id="field-location">
+            <div class="sc-component-label">FieldLocation <span class="sc-component-class">.field-location</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Office</span><span class="field-value"><span class="field-location"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1a5 5 0 0 1 5 5c0 4-5 9-5 9S3 10 3 6a5 5 0 0 1 5-5z"/><circle cx="8" cy="6" r="1.5"/></svg>San Francisco, CA</span></span></div>
+                <div class="field-row"><span class="field-label">Region</span><span class="field-value"><span class="field-location"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1a5 5 0 0 1 5 5c0 4-5 9-5 9S3 10 3 6a5 5 0 0 1 5-5z"/><circle cx="8" cy="6" r="1.5"/></svg>North America</span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldAddress -->
+          <div class="sc-component" id="field-address">
+            <div class="sc-component-label">FieldAddress <span class="sc-component-class">.field-address</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row">
+                  <span class="field-label">HQ</span>
+                  <span class="field-value">
+                    <div class="field-address">
+                      <span class="field-address__line">525 Market Street, Floor 14</span>
+                      <span class="field-address__line">San Francisco, CA 94105</span>
+                      <span class="field-address__line">United States</span>
+                    </div>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldReference -->
+          <div class="sc-component" id="field-reference">
+            <div class="sc-component-label">FieldReference / ReferenceRenderer <span class="sc-component-class">.field-reference</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Project</span><span class="field-value"><a href="#" class="field-reference"><span class="field-reference__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="5" y1="5" x2="5" y2="15"/></svg></span><span class="field-reference__name">Q3 Brand Campaign</span></a></span></div>
+                <div class="field-row"><span class="field-label">Parent</span><span class="field-value"><a href="#" class="field-reference"><span class="field-reference__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="5" y1="5" x2="5" y2="15"/></svg></span><span class="field-reference__name">2025 Marketing Plan</span></a></span></div>
+                <div class="field-row"><span class="field-label">Account</span><span class="field-value"><a href="#" class="field-reference"><span class="field-reference__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M13 14v-1a4 4 0 0 0-10 0v1"/><circle cx="8" cy="6" r="3"/></svg></span><span class="field-reference__name">Acme Corp</span></a></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldRichText -->
+          <div class="sc-component" id="field-rich-text">
+            <div class="sc-component-label">FieldRichText / RichTextRenderer <span class="sc-component-class">.field-rich-text</span></div>
+            <div class="sc-canvas">
+              <div class="field-rich-text">
+                <p>This campaign targets <strong>brand awareness</strong> in North America through paid social and display channels.</p>
+                <p>Key objectives for Q3:</p>
+                <ul>
+                  <li>Reach 1.2M unique impressions</li>
+                  <li>Achieve <strong>3.5%</strong> CTR across all placements</li>
+                  <li>Drive 8,000 qualified leads to the product page</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldBoolean -->
+          <div class="sc-component" id="field-boolean">
+            <div class="sc-component-label">FieldBoolean / BooleanRenderer <span class="sc-component-class">.field-boolean</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Active</span><span class="field-value"><span class="field-boolean"><span class="field-boolean__check field-boolean__check--checked"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></span><span class="field-boolean__label">Yes</span></span></span></div>
+                <div class="field-row"><span class="field-label">Approved</span><span class="field-value"><span class="field-boolean"><span class="field-boolean__check field-boolean__check--checked"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></span><span class="field-boolean__label">Yes</span></span></span></div>
+                <div class="field-row"><span class="field-label">Archived</span><span class="field-value"><span class="field-boolean"><span class="field-boolean__check"></span><span class="field-boolean__label">No</span></span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldEmail -->
+          <div class="sc-component" id="field-email">
+            <div class="sc-component-label">FieldEmail / EmailRenderer <span class="sc-component-class">.field-email</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Owner</span><span class="field-value"><span class="field-email"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><polyline points="1 4 8 9.5 15 4"/></svg><a href="mailto:sarah@company.com" class="field-link">sarah@company.com</a></span></span></div>
+                <div class="field-row"><span class="field-label">CC</span><span class="field-value"><span class="field-email"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><polyline points="1 4 8 9.5 15 4"/></svg><a href="mailto:chris@company.com" class="field-link">chris@company.com</a></span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldPhone -->
+          <div class="sc-component" id="field-phone">
+            <div class="sc-component-label">FieldPhone / PhoneRenderer <span class="sc-component-class">.field-phone</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Mobile</span><span class="field-value"><span class="field-phone"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 1H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/><line x1="8" y1="12" x2="8.01" y2="12"/></svg><a href="tel:+14155550123" class="field-link">+1 (415) 555-0123</a></span></span></div>
+                <div class="field-row"><span class="field-label">Office</span><span class="field-value"><span class="field-phone"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 1H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/><line x1="8" y1="12" x2="8.01" y2="12"/></svg><a href="tel:+14155550100" class="field-link">+1 (415) 555-0100</a></span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldRating -->
+          <div class="sc-component" id="field-rating">
+            <div class="sc-component-label">FieldRating / RatingRenderer <span class="sc-component-class">.field-rating</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Quality</span><span class="field-value"><span class="field-rating">
+                  <svg class="field-rating__star field-rating__star--filled" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 10.2,6.3 16,6.9 11.5,11.1 12.9,16 8,13.1 3.1,16 4.5,11.1 0,6.9 5.8,6.3"/></svg>
+                  <svg class="field-rating__star field-rating__star--filled" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 10.2,6.3 16,6.9 11.5,11.1 12.9,16 8,13.1 3.1,16 4.5,11.1 0,6.9 5.8,6.3"/></svg>
+                  <svg class="field-rating__star field-rating__star--filled" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 10.2,6.3 16,6.9 11.5,11.1 12.9,16 8,13.1 3.1,16 4.5,11.1 0,6.9 5.8,6.3"/></svg>
+                  <svg class="field-rating__star field-rating__star--filled" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 10.2,6.3 16,6.9 11.5,11.1 12.9,16 8,13.1 3.1,16 4.5,11.1 0,6.9 5.8,6.3"/></svg>
+                  <svg class="field-rating__star field-rating__star--empty" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 10.2,6.3 16,6.9 11.5,11.1 12.9,16 8,13.1 3.1,16 4.5,11.1 0,6.9 5.8,6.3"/></svg>
+                </span></span></div>
+                <div class="field-row"><span class="field-label">Confidence</span><span class="field-value"><span class="field-rating">
+                  <svg class="field-rating__star field-rating__star--filled" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 10.2,6.3 16,6.9 11.5,11.1 12.9,16 8,13.1 3.1,16 4.5,11.1 0,6.9 5.8,6.3"/></svg>
+                  <svg class="field-rating__star field-rating__star--filled" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 10.2,6.3 16,6.9 11.5,11.1 12.9,16 8,13.1 3.1,16 4.5,11.1 0,6.9 5.8,6.3"/></svg>
+                  <svg class="field-rating__star field-rating__star--filled" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 10.2,6.3 16,6.9 11.5,11.1 12.9,16 8,13.1 3.1,16 4.5,11.1 0,6.9 5.8,6.3"/></svg>
+                  <svg class="field-rating__star field-rating__star--empty" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 10.2,6.3 16,6.9 11.5,11.1 12.9,16 8,13.1 3.1,16 4.5,11.1 0,6.9 5.8,6.3"/></svg>
+                  <svg class="field-rating__star field-rating__star--empty" viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 10.2,6.3 16,6.9 11.5,11.1 12.9,16 8,13.1 3.1,16 4.5,11.1 0,6.9 5.8,6.3"/></svg>
+                </span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FieldAutoNumber -->
+          <div class="sc-component" id="field-autonumber">
+            <div class="sc-component-label">FieldAutoNumber <span class="sc-component-class">.field-autonumber</span></div>
+            <div class="sc-canvas">
+              <div class="field-table">
+                <div class="field-row"><span class="field-label">Record ID</span><span class="field-value"><span class="field-autonumber">#0042</span></span></div>
+                <div class="field-row"><span class="field-label">Invoice #</span><span class="field-value"><span class="field-autonumber">INV-2025-0118</span></span></div>
+                <div class="field-row"><span class="field-label">Ticket</span><span class="field-value"><span class="field-autonumber">TKT-8820</span></span></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /sc-grid -->
+      </section>
+
+
+      <!-- ════════════════════════════════════════════
+           SEMANTIC GROUPINGS
+           ════════════════════════════════════════════ -->
+
+      <section class="sc-section" id="badge">
+        <div class="sc-section-header">
+          <h2 class="sc-section-title">Semantic Groupings</h2>
+          <p class="sc-section-desc">Components that cluster fields and content with a visual treatment. Composed from field renderers + layout primitives.</p>
+        </div>
+
+        <!-- Badge -->
+        <div class="sc-component" id="badge">
+          <div class="sc-component-label">Badge <span class="sc-component-class">.badge + modifier</span></div>
+          <div class="sc-canvas">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+              <span class="badge badge--blue">In Progress</span>
+              <span class="badge badge--green">Done</span>
+              <span class="badge badge--red">High Risk</span>
+              <span class="badge badge--yellow">Negotiation</span>
+              <span class="badge badge--purple">Review</span>
+              <span class="badge badge--neutral">Draft</span>
+              <span class="badge">Default</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- FieldSection -->
+        <div class="sc-component" id="field-section">
+          <div class="sc-component-label">FieldSection / FieldGroupGrouping <span class="sc-component-class">.field-section</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="field-section" style="border-top:none">
+              <button class="field-section__title" aria-expanded="true">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="8" x2="10" y2="10"/></svg>
+                Details
+                <span class="field-section__count">4</span>
+                <svg class="field-section__chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 6 8 10 12 6"/></svg>
+              </button>
+              <div class="field-section__body">
+                <div class="field-table">
+                  <div class="field-row"><span class="field-label">Channel</span><span class="field-value">Paid Social</span></div>
+                  <div class="field-row"><span class="field-label">Status</span><span class="field-value"><span class="badge badge--blue">In Progress</span></span></div>
+                  <div class="field-row"><span class="field-label">Budget</span><span class="field-value">$240,000</span></div>
+                  <div class="field-row"><span class="field-label">Launch</span><span class="field-value"><span class="field-date"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Jun 15, 2025</span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="field-section field-section--collapsed">
+              <button class="field-section__title" aria-expanded="false">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M13 6a5 5 0 1 1-4-4.9M13 2v4h-4"/></svg>
+                Team &amp; Roles <span class="field-section__count">3</span>
+                <svg class="field-section__chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 6 8 10 12 6"/></svg>
+              </button>
+              <div class="field-section__body"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- StatRow -->
+        <div class="sc-component" id="stat-row">
+          <div class="sc-component-label">StatRow / SummaryStripGrouping <span class="sc-component-class">.stat-row + .stat-card</span></div>
+          <div class="sc-canvas sc-canvas--flush">
+            <div class="stat-row">
+              <div class="stat-card"><div class="stat-card__label">Total Budget</div><div class="stat-card__value">$2.4M</div><div class="stat-card__sub">+12% vs last quarter</div></div>
+              <div class="stat-card"><div class="stat-card__label">Campaigns</div><div class="stat-card__value">18</div><div class="stat-card__sub">6 active now</div></div>
+              <div class="stat-card"><div class="stat-card__label">Avg Completion</div><div class="stat-card__value">64%</div><div class="stat-card__sub" style="color:var(--badge-yellow-text)">Slightly behind</div></div>
+              <div class="stat-card"><div class="stat-card__label">Impressions</div><div class="stat-card__value">1.2M</div><div class="stat-card__sub">This quarter</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PeopleList -->
+        <div class="sc-component" id="people-list">
+          <div class="sc-component-label">PeopleList <span class="sc-component-class">.people-list + .person-row</span></div>
+          <div class="sc-canvas">
+            <ul class="people-list">
+              <li class="person-row"><div class="person-avatar" style="background:#dc2626">SK</div><div class="person-info"><div class="person-name">Sarah K.</div><div class="person-role">Campaign Lead</div></div><a href="#" class="person-action">View</a></li>
+              <li class="person-row"><div class="person-avatar" style="background:#7c3aed">CY</div><div class="person-info"><div class="person-name">Chris Y.</div><div class="person-role">Creative Director</div></div><a href="#" class="person-action">View</a></li>
+              <li class="person-row"><div class="person-avatar" style="background:#d97706">LP</div><div class="person-info"><div class="person-name">Lee P.</div><div class="person-role">Designer</div></div><a href="#" class="person-action">View</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- ActivityFeed -->
+        <div class="sc-component" id="activity-feed">
+          <div class="sc-component-label">ActivityFeed <span class="sc-component-class">.activity-feed + .activity-item</span></div>
+          <div class="sc-canvas">
+            <div class="activity-feed">
+              <div class="activity-item"><div class="activity-avatar" style="background:#dc2626">SK</div><div class="activity-content"><span class="activity-author">Sarah K.</span><p class="activity-text">Updated status to <strong>In Progress</strong></p><span class="activity-time">2 hours ago</span></div></div>
+              <div class="activity-item"><div class="activity-avatar" style="background:#7c3aed">CY</div><div class="activity-content"><span class="activity-author">Chris Y.</span><p class="activity-text">Creative brief reviewed and approved</p><span class="activity-time">Yesterday</span></div></div>
+              <div class="activity-item"><div class="activity-avatar" style="background:#d97706">LP</div><div class="activity-content"><span class="activity-author">Lee P.</span><p class="activity-text">Design assets uploaded</p><span class="activity-time">2 days ago</span></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AssetList -->
+        <div class="sc-component" id="asset-list">
+          <div class="sc-component-label">AssetList <span class="sc-component-class">.asset-list + .asset-item</span></div>
+          <div class="sc-canvas">
+            <div class="asset-list">
+              <a href="#" class="asset-item"><div class="asset-icon" style="background:#7c3aed14"><svg viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="8" rx="2" fill="#7c3aed" opacity=".7"/><rect x="2" y="2" width="8" height="8" rx="2" fill="#dc2626" opacity=".7"/><rect x="2" y="10" width="8" height="8" rx="2" fill="#059669" opacity=".7"/><circle cx="18" cy="14" r="4" fill="#d97706" opacity=".7"/></svg></div><div class="asset-info"><div class="asset-name">Campaign_Concepts.fig</div><div class="asset-meta">Figma · 2.4 MB</div></div><span class="asset-open">Open</span></a>
+              <a href="#" class="asset-item"><div class="asset-icon" style="background:#fce8e8"><svg viewBox="0 0 24 24" fill="none" stroke="#c73838" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="asset-info"><div class="asset-name">Creative_Brief.pdf</div><div class="asset-meta">PDF · 840 KB</div></div><span class="asset-open">Open</span></a>
+              <a href="#" class="asset-item"><div class="asset-icon" style="background:#d1fae5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><div class="asset-info"><div class="asset-name">Campaign_Hero.png</div><div class="asset-meta">Image · 1.2 MB</div></div><span class="asset-open">Open</span></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- RelatedRecords -->
+        <div class="sc-component" id="related-records">
+          <div class="sc-component-label">RelatedRecords <span class="sc-component-class">.related-records + .related-item</span></div>
+          <div class="sc-canvas">
+            <div class="related-records">
+              <a href="#" class="related-item"><div class="related-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="5" y1="5" x2="5" y2="15"/></svg></div><span class="related-name">Q3 Brand Awareness Campaign</span><span class="related-meta"><span class="badge badge--blue">In Progress</span></span></a>
+              <a href="#" class="related-item"><div class="related-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="5" y1="5" x2="5" y2="15"/></svg></div><span class="related-name">Summer Product Launch</span><span class="related-meta"><span class="badge badge--green">Done</span></span></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- HeaderGrouping -->
+        <div class="sc-component" id="header-grouping">
+          <div class="sc-component-label">HeaderGrouping <span class="sc-component-class">.header-grouping</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="header-grouping">
+              <div class="header-grouping__icon">🎯</div>
+              <div class="header-grouping__body">
+                <div class="header-grouping__eyebrow">Campaign</div>
+                <h2 class="header-grouping__title">Q3 Brand Awareness</h2>
+                <div class="header-grouping__meta">
+                  <span class="badge badge--blue">In Progress</span>
+                  <div class="record-meta-sep"></div>
+                  <span class="record-meta-chip"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:10px;height:10px"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Jun 15, 2025</span>
+                  <div class="record-meta-sep"></div>
+                  <span class="record-meta-chip">Paid Social</span>
+                </div>
+              </div>
+              <div class="header-grouping__actions">
+                <button class="header-grouping__btn header-grouping__btn--primary">Edit</button>
+                <button class="header-grouping__btn">Share</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EntityCardGrouping -->
+        <div class="sc-component" id="entity-card">
+          <div class="sc-component-label">EntityCardGrouping <span class="sc-component-class">.entity-card</span></div>
+          <div class="sc-grid--3">
+            <div class="entity-card">
+              <div class="entity-card__top">
+                <div class="entity-card__avatar" style="background:#dc2626">SK</div>
+                <div class="entity-card__header">
+                  <div class="entity-card__type">Team Member</div>
+                  <div class="entity-card__name">Sarah K.</div>
+                </div>
+              </div>
+              <div class="entity-card__fields">
+                <span class="entity-card__field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1a5 5 0 0 1 5 5c0 4-5 9-5 9S3 10 3 6a5 5 0 0 1 5-5z"/><circle cx="8" cy="6" r="1.5"/></svg>San Francisco</span>
+                <span class="badge badge--blue">Active</span>
+              </div>
+            </div>
+            <div class="entity-card">
+              <div class="entity-card__top">
+                <div class="entity-card__avatar" style="background:#059669;border-radius:8px">📋</div>
+                <div class="entity-card__header">
+                  <div class="entity-card__type">Campaign</div>
+                  <div class="entity-card__name">Summer Launch</div>
+                </div>
+              </div>
+              <div class="entity-card__fields">
+                <span class="entity-card__field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Jul 1</span>
+                <span class="badge badge--green">Done</span>
+              </div>
+            </div>
+            <div class="entity-card">
+              <div class="entity-card__top">
+                <div class="entity-card__avatar" style="background:#7c3aed">AB</div>
+                <div class="entity-card__header">
+                  <div class="entity-card__type">Account</div>
+                  <div class="entity-card__name">Acme Corp</div>
+                </div>
+              </div>
+              <div class="entity-card__fields">
+                <span class="entity-card__field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><polyline points="1 4 8 9.5 15 4"/></svg>acme.com</span>
+                <span class="badge badge--yellow">Negotiation</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TextBlockGrouping -->
+        <div class="sc-component" id="text-block">
+          <div class="sc-component-label">TextBlockGrouping <span class="sc-component-class">.text-block</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="text-block">
+              <div class="text-block__label">Campaign Brief</div>
+              <div class="text-block__body">
+                <p>This Q3 brand awareness campaign targets high-intent audiences in North America across paid social and display channels. The primary goal is to <strong>drive 1.2M impressions</strong> and establish product recall ahead of the fall launch window.</p>
+                <p>Creative assets should emphasize the new visual identity system introduced in the spring rebrand.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ChecklistGrouping -->
+        <div class="sc-component" id="checklist">
+          <div class="sc-component-label">ChecklistGrouping <span class="sc-component-class">.checklist</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="checklist">
+              <div class="checklist__header">
+                <span class="checklist__title">Pre-launch Checklist</span>
+                <span class="checklist__progress-label">3 / 5 complete</span>
+              </div>
+              <div class="checklist__track"><div class="checklist__fill" style="width:60%"></div></div>
+              <ul class="checklist__items">
+                <li class="checklist__item checklist__item--done"><span class="checklist__item-check"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></span><span class="checklist__item-text">Brief approved by stakeholders</span></li>
+                <li class="checklist__item checklist__item--done"><span class="checklist__item-check"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></span><span class="checklist__item-text">Creative assets delivered</span></li>
+                <li class="checklist__item checklist__item--done"><span class="checklist__item-check"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></span><span class="checklist__item-text">Audience targeting configured</span></li>
+                <li class="checklist__item"><span class="checklist__item-check"></span><span class="checklist__item-text">Budget approved in finance system</span></li>
+                <li class="checklist__item"><span class="checklist__item-check"></span><span class="checklist__item-text">Legal review completed</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- MediaGrouping -->
+        <div class="sc-component" id="media-grouping">
+          <div class="sc-component-label">MediaGrouping <span class="sc-component-class">.media-grouping + .media-thumb</span></div>
+          <div class="sc-canvas sc-canvas--pad">
+            <div class="media-grouping">
+              <div class="media-grouping__grid">
+                <div class="media-thumb"><span class="media-thumb__emoji">🖼️</span><span class="media-thumb__label">Hero_v3.png</span></div>
+                <div class="media-thumb"><span class="media-thumb__emoji">🎨</span><span class="media-thumb__label">Brand_Kit.fig</span></div>
+                <div class="media-thumb"><span class="media-thumb__emoji">📹</span><span class="media-thumb__label">Launch_Video.mp4</span></div>
+                <div class="media-thumb"><span class="media-thumb__emoji">📸</span><span class="media-thumb__label">Social_Grid.png</span></div>
+              </div>
+              <div class="media-grouping__footer">
+                <span class="media-grouping__count">4 files · 18.6 MB total</span>
+                <a href="#" class="media-grouping__add">+ Add files</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MapGrouping -->
+        <div class="sc-component" id="map-grouping">
+          <div class="sc-component-label">MapGrouping <span class="sc-component-class">.map-grouping</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="map-grouping">
+              <div class="map-grouping__canvas">
+                <div class="map-grouping__pin">📍</div>
+              </div>
+              <div class="map-grouping__footer">
+                <span class="map-grouping__address">525 Market Street, San Francisco, CA 94105</span>
+                <a href="#" class="map-grouping__link">Open in Maps →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TableGrouping -->
+        <div class="sc-component" id="table-grouping">
+          <div class="sc-component-label">TableGrouping <span class="sc-component-class">.table-grouping</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="table-grouping">
+              <table class="table-grouping__table">
+                <thead><tr><th>Channel</th><th>Budget</th><th>Spend</th><th>CTR</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>Paid Social</td><td>$80,000</td><td>$42,300</td><td>3.8%</td><td><span class="badge badge--blue">In Progress</span></td></tr>
+                  <tr><td>Display</td><td>$60,000</td><td>$18,900</td><td>1.2%</td><td><span class="badge badge--blue">In Progress</span></td></tr>
+                  <tr><td>Search</td><td>$100,000</td><td>$26,200</td><td>4.6%</td><td><span class="badge badge--yellow">Paused</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- StageStepperGrouping -->
+        <div class="sc-component" id="stage-stepper">
+          <div class="sc-component-label">StageStepperGrouping <span class="sc-component-class">.stage-stepper</span></div>
+          <div class="sc-canvas">
+            <div class="stage-stepper">
+              <div class="stage-stepper__step stage-stepper__step--done">
+                <div class="stage-stepper__dot"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></div>
+                <span class="stage-stepper__label">Qualify</span>
+              </div>
+              <div class="stage-stepper__step stage-stepper__step--done">
+                <div class="stage-stepper__dot"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></div>
+                <span class="stage-stepper__label">Brief</span>
+              </div>
+              <div class="stage-stepper__step stage-stepper__step--active">
+                <div class="stage-stepper__dot"></div>
+                <span class="stage-stepper__label">Production</span>
+              </div>
+              <div class="stage-stepper__step">
+                <div class="stage-stepper__dot"></div>
+                <span class="stage-stepper__label">Review</span>
+              </div>
+              <div class="stage-stepper__step">
+                <div class="stage-stepper__dot"></div>
+                <span class="stage-stepper__label">Launch</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- StageProgressGrouping -->
+        <div class="sc-component" id="stage-progress">
+          <div class="sc-component-label">StageProgressGrouping <span class="sc-component-class">.stage-progress</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="stage-progress">
+              <div class="stage-progress__header">
+                <span class="stage-progress__current">Current stage: Production</span>
+                <span class="stage-progress__pct">40%</span>
+              </div>
+              <div class="stage-progress__track"><div class="stage-progress__fill" style="width:40%"></div></div>
+              <div class="stage-progress__stages">
+                <span class="stage-progress__stage-label stage-progress__stage-label--done">Qualify</span>
+                <span class="stage-progress__stage-label stage-progress__stage-label--done">Brief</span>
+                <span class="stage-progress__stage-label stage-progress__stage-label--active">Production</span>
+                <span class="stage-progress__stage-label">Review</span>
+                <span class="stage-progress__stage-label">Launch</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ════════════════════════════════════════════
+           LAYOUT PRIMITIVES
+           ════════════════════════════════════════════ -->
+
+      <section class="sc-section" id="record-header">
+        <div class="sc-section-header">
+          <h2 class="sc-section-title">Layout Primitives</h2>
+          <p class="sc-section-desc">Spatial containers and shells. Compose field renderers and semantic groupings inside them.</p>
+        </div>
+
+        <!-- RecordHeader -->
+        <div class="sc-component" id="record-header">
+          <div class="sc-component-label">RecordHeader <span class="sc-component-class">.record-header</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="record-header">
+              <div class="record-accent" style="background:#335fb5"></div>
+              <div class="record-toolbar">
+                <button class="icon-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg></button>
+                <div class="record-toolbar-spacer"></div>
+                <span class="record-id">CMP-042</span>
+                <button class="icon-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="3" r="1.5"/><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="13" r="1.5"/><line x1="5.4" y1="8.9" x2="10.6" y2="12.1"/><line x1="10.6" y1="3.9" x2="5.4" y2="7.1"/></svg></button>
+              </div>
+              <div class="record-title-row">
+                <h2 class="record-title">Q3 Brand Awareness Campaign</h2>
+                <div class="record-meta"><span class="badge badge--blue">In Progress</span><div class="record-meta-sep"></div><span class="record-meta-chip"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:10px;height:10px"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Jun 15, 2025</span><div class="record-meta-sep"></div><span class="record-meta-chip">Paid Social</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CommentBar -->
+        <div class="sc-component" id="comment-bar">
+          <div class="sc-component-label">CommentBar <span class="sc-component-class">.comment-bar</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="comment-bar">
+              <div class="comment-bar__row"><div class="comment-avatar" style="background:#4f46e5">PT</div><input class="comment-input" type="text" placeholder="Add a comment…"></div>
+              <div class="collaborators"><span class="collaborators__label">Collaborators</span><div class="collab-avatar" style="background:#dc2626">SK</div><div class="collab-avatar" style="background:#7c3aed">CY</div><div class="collab-avatar" style="background:#d97706">LP</div><div class="collab-add">+</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SectionDivider -->
+        <div class="sc-component" id="section-divider">
+          <div class="sc-component-label">SectionDivider <span class="sc-component-class">.section-divider</span></div>
+          <div class="sc-canvas">
+            <p style="font-size:13px;color:var(--text-weak);margin-bottom:12px">Content above</p>
+            <div class="section-divider"></div>
+            <p style="font-size:13px;color:var(--text-weak);margin-top:12px">Content below</p>
+          </div>
+        </div>
+
+        <!-- DetailPane -->
+        <div class="sc-component" id="detail-pane">
+          <div class="sc-component-label">DetailPane / DetailLayout <span class="sc-component-class">.detail-pane + .detail-pane--open</span></div>
+          <div class="sc-pane-demo">
+            <div class="sc-pane-demo__placeholder">
+              <p class="sc-pane-demo__placeholder-text">Content area — click to open the detail panel</p>
+              <button class="sc-trigger-btn" data-open-pane="demo-pane">Open campaign detail →</button>
+            </div>
+            <div class="detail-pane" id="demo-pane">
+              <div class="record-header">
+                <div class="record-accent" style="background:#335fb5"></div>
+                <div class="record-toolbar">
+                  <button class="icon-btn" data-close-pane="demo-pane"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg></button>
+                  <div class="record-toolbar-spacer"></div>
+                  <span class="record-id">CMP-042</span>
+                  <button class="icon-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="3" r="1.5"/><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="13" r="1.5"/><line x1="5.4" y1="8.9" x2="10.6" y2="12.1"/><line x1="10.6" y1="3.9" x2="5.4" y2="7.1"/></svg></button>
+                </div>
+                <div class="record-title-row">
+                  <h2 class="record-title">Q3 Brand Awareness Campaign</h2>
+                  <div class="record-meta"><span class="badge badge--blue">In Progress</span><div class="record-meta-sep"></div><span class="record-meta-chip"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:10px;height:10px"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Jun 15, 2025</span></div>
+                </div>
+              </div>
+              <div class="record-body">
+                <div style="padding:0 16px"><div class="stat-row" style="padding:12px 0"><div class="stat-card"><div class="stat-card__label">Budget</div><div class="stat-card__value">$240K</div><div class="stat-card__sub">Approved</div></div><div class="stat-card"><div class="stat-card__label">Completion</div><div class="stat-card__value">68%</div><div class="stat-card__sub">On track</div></div><div class="stat-card"><div class="stat-card__label">Reach</div><div class="stat-card__value">1.2M</div><div class="stat-card__sub">+18% goal</div></div></div></div>
+                <div class="field-section" style="border-top:1px solid var(--border)">
+                  <button class="field-section__title" aria-expanded="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="8" x2="10" y2="10"/></svg>Details<span class="field-section__count">4</span><svg class="field-section__chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 6 8 10 12 6"/></svg></button>
+                  <div class="field-section__body">
+                    <div class="field-table">
+                      <div class="field-row"><span class="field-label">Owner</span><span class="field-value"><span class="field-user"><span class="field-user__avatar" style="background:#dc2626">SK</span><span class="field-user__name">Sarah K.</span></span></span></div>
+                      <div class="field-row"><span class="field-label">Budget</span><span class="field-value">$240,000</span></div>
+                      <div class="field-row"><span class="field-label">Launch</span><span class="field-value"><span class="field-date"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M11 1v4M5 1v4M1 7h14"/></svg>Jun 15, 2025</span></span></div>
+                      <div class="field-row"><span class="field-label">Progress</span><span class="field-value"><span class="field-progress"><span class="field-progress__track"><span class="field-progress__fill" style="width:68%"></span></span><span class="field-progress__pct">68%</span></span></span></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="field-section">
+                  <button class="field-section__title" aria-expanded="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11 14v-1a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v1"/><circle cx="7" cy="5" r="3"/></svg>Team<span class="field-section__count">3</span><svg class="field-section__chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 6 8 10 12 6"/></svg></button>
+                  <div class="field-section__body"><ul class="people-list"><li class="person-row"><div class="person-avatar" style="background:#dc2626">SK</div><div class="person-info"><div class="person-name">Sarah K.</div><div class="person-role">Campaign Lead</div></div><a href="#" class="person-action">View</a></li><li class="person-row"><div class="person-avatar" style="background:#7c3aed">CY</div><div class="person-info"><div class="person-name">Chris Y.</div><div class="person-role">Creative Director</div></div><a href="#" class="person-action">View</a></li></ul></div>
+                </div>
+                <div class="field-section">
+                  <button class="field-section__title" aria-expanded="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>Activity<span class="field-section__count">3</span><svg class="field-section__chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 6 8 10 12 6"/></svg></button>
+                  <div class="field-section__body"><div class="activity-feed"><div class="activity-item" style="padding-top:0"><div class="activity-avatar" style="background:#dc2626">SK</div><div class="activity-content"><span class="activity-author">Sarah K.</span><p class="activity-text">Updated status to <strong>In Progress</strong></p><span class="activity-time">2 hours ago</span></div></div><div class="activity-item"><div class="activity-avatar" style="background:#7c3aed">CY</div><div class="activity-content"><span class="activity-author">Chris Y.</span><p class="activity-text">Brief approved</p><span class="activity-time">Yesterday</span></div></div></div></div>
+                </div>
+              </div>
+              <div class="comment-bar">
+                <div class="comment-bar__row"><div class="comment-avatar" style="background:#4f46e5">PT</div><input class="comment-input" type="text" placeholder="Add a comment…"></div>
+                <div class="collaborators"><span class="collaborators__label">Collaborators</span><div class="collab-avatar" style="background:#dc2626">SK</div><div class="collab-avatar" style="background:#7c3aed">CY</div><div class="collab-add">+</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DetailPage -->
+        <div class="sc-component" id="detail-page">
+          <div class="sc-component-label">DetailPage / ListDetailLayout <span class="sc-component-class">.detail-page</span></div>
+          <div class="sc-page-demo">
+            <div class="detail-page">
+              <div class="detail-page__header">
+                <div class="record-header record-header--page">
+                  <div class="record-accent" style="background:#059669"></div>
+                  <div class="record-toolbar"><button class="icon-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10 4 6 8 10 12"/></svg></button><div class="record-toolbar-spacer"></div><span class="record-id">PRD-017</span><button class="icon-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="3" r="1.5"/><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="13" r="1.5"/><line x1="5.4" y1="8.9" x2="10.6" y2="12.1"/><line x1="10.6" y1="3.9" x2="5.4" y2="7.1"/></svg></button></div>
+                  <div class="record-title-row"><h2 class="record-title">Influencer Partnership Program</h2><div class="record-meta"><span class="badge badge--green">Done</span><div class="record-meta-sep"></div><span class="record-meta-chip">Apr 30, 2025</span></div></div>
+                </div>
+              </div>
+              <div class="detail-page__body">
+                <div class="detail-page__main">
+                  <div class="stat-row" style="padding:0 0 20px"><div class="stat-card"><div class="stat-card__label">Partners</div><div class="stat-card__value">24</div><div class="stat-card__sub">Activated</div></div><div class="stat-card"><div class="stat-card__label">Total Reach</div><div class="stat-card__value">4.8M</div><div class="stat-card__sub">+32% target</div></div><div class="stat-card"><div class="stat-card__label">Budget Used</div><div class="stat-card__value">$98K</div><div class="stat-card__sub">of $120K</div></div></div>
+                  <div class="section-divider" style="margin-bottom:20px"></div>
+                  <div class="activity-feed"><div class="activity-item" style="padding-top:0"><div class="activity-avatar" style="background:#059669">SM</div><div class="activity-content"><span class="activity-author">Sam M.</span><p class="activity-text">Final report submitted to stakeholders</p><span class="activity-time">1 week ago</span></div></div><div class="activity-item"><div class="activity-avatar" style="background:#dc2626">SK</div><div class="activity-content"><span class="activity-author">Sarah K.</span><p class="activity-text">All 24 partners complete — marking <strong>Done</strong></p><span class="activity-time">2 weeks ago</span></div></div></div>
+                </div>
+                <aside class="detail-page__aside">
+                  <div class="field-table"><div class="field-row"><span class="field-label">Owner</span><span class="field-value"><span class="field-user"><span class="field-user__avatar" style="background:#dc2626">SK</span><span class="field-user__name">Sarah K.</span></span></span></div><div class="field-row"><span class="field-label">Status</span><span class="field-value"><span class="badge badge--green">Done</span></span></div><div class="field-row"><span class="field-label">Budget</span><span class="field-value">$120,000</span></div><div class="field-row"><span class="field-label">Completion</span><span class="field-value"><span class="field-progress"><span class="field-progress__track"><span class="field-progress__fill" style="width:100%;background:var(--badge-green-text)"></span></span><span class="field-progress__pct">100%</span></span></span></div></div>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ListLayout -->
+        <div class="sc-component" id="list-layout">
+          <div class="sc-component-label">ListLayout <span class="sc-component-class">.list-layout</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="list-layout">
+              <div class="list-layout__header">
+                <span class="list-layout__cell list-layout__col list-layout__col--xs">#</span>
+                <span class="list-layout__cell list-layout__col">Campaign</span>
+                <span class="list-layout__cell list-layout__col--md">Owner</span>
+                <span class="list-layout__cell list-layout__col--md">Status</span>
+                <span class="list-layout__cell list-layout__col--sm">Budget</span>
+              </div>
+              <div class="list-layout__body">
+                <div class="list-layout__row"><span class="list-layout__cell list-layout__cell--xs" style="color:var(--text-weak);font-size:12px">1</span><span class="list-layout__cell list-layout__cell--name">Q3 Brand Awareness</span><span class="list-layout__cell list-layout__cell--md"><span class="field-user" style="display:inline-flex"><span class="field-user__avatar" style="background:#dc2626">SK</span><span class="field-user__name">Sarah K.</span></span></span><span class="list-layout__cell list-layout__cell--md"><span class="badge badge--blue">In Progress</span></span><span class="list-layout__cell list-layout__cell--sm list-layout__cell--num">$240K</span></div>
+                <div class="list-layout__row"><span class="list-layout__cell list-layout__cell--xs" style="color:var(--text-weak);font-size:12px">2</span><span class="list-layout__cell list-layout__cell--name">Summer Product Launch</span><span class="list-layout__cell list-layout__cell--md"><span class="field-user" style="display:inline-flex"><span class="field-user__avatar" style="background:#7c3aed">CY</span><span class="field-user__name">Chris Y.</span></span></span><span class="list-layout__cell list-layout__cell--md"><span class="badge badge--green">Done</span></span><span class="list-layout__cell list-layout__cell--sm list-layout__cell--num">$180K</span></div>
+                <div class="list-layout__row"><span class="list-layout__cell list-layout__cell--xs" style="color:var(--text-weak);font-size:12px">3</span><span class="list-layout__cell list-layout__cell--name">Influencer Partnership</span><span class="list-layout__cell list-layout__cell--md"><span class="field-user" style="display:inline-flex"><span class="field-user__avatar" style="background:#059669">SM</span><span class="field-user__name">Sam M.</span></span></span><span class="list-layout__cell list-layout__cell--md"><span class="badge badge--green">Done</span></span><span class="list-layout__cell list-layout__cell--sm list-layout__cell--num">$120K</span></div>
+                <div class="list-layout__row"><span class="list-layout__cell list-layout__cell--xs" style="color:var(--text-weak);font-size:12px">4</span><span class="list-layout__cell list-layout__cell--name">Fall Retargeting Campaign</span><span class="list-layout__cell list-layout__cell--md"><span class="field-user" style="display:inline-flex"><span class="field-user__avatar" style="background:#d97706">LP</span><span class="field-user__name">Lee P.</span></span></span><span class="list-layout__cell list-layout__cell--md"><span class="badge badge--neutral">Draft</span></span><span class="list-layout__cell list-layout__cell--sm list-layout__cell--num">$95K</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BoardLayout -->
+        <div class="sc-component" id="board-layout">
+          <div class="sc-component-label">BoardLayout <span class="sc-component-class">.board-layout + .board-col + .board-card</span></div>
+          <div class="sc-canvas sc-canvas--flush" style="padding:16px">
+            <div class="board-layout">
+              <div class="board-col">
+                <div class="board-col__header"><span class="board-col__dot" style="color:#9ca3af"></span><span class="board-col__title">To Do</span><span class="board-col__count">2</span></div>
+                <div class="board-col__cards">
+                  <div class="board-card"><div class="board-card__title">Fall Retargeting Campaign</div><div class="board-card__meta"><span class="board-card__sub">Sep 1</span><div class="board-card__avatar" style="background:#d97706">LP</div></div></div>
+                  <div class="board-card"><div class="board-card__title">Holiday Email Series</div><div class="board-card__meta"><span class="board-card__sub">Oct 15</span><div class="board-card__avatar" style="background:#7c3aed">CY</div></div></div>
+                </div>
+              </div>
+              <div class="board-col">
+                <div class="board-col__header"><span class="board-col__dot" style="color:#335fb5"></span><span class="board-col__title">In Progress</span><span class="board-col__count">2</span></div>
+                <div class="board-col__cards">
+                  <div class="board-card"><div class="board-card__title">Q3 Brand Awareness</div><div class="board-card__meta"><span class="board-card__sub">Jun 15</span><div class="board-card__avatar" style="background:#dc2626">SK</div></div></div>
+                  <div class="board-card"><div class="board-card__title">Product Launch Video</div><div class="board-card__meta"><span class="board-card__sub">Jul 30</span><div class="board-card__avatar" style="background:#059669">SM</div></div></div>
+                </div>
+              </div>
+              <div class="board-col">
+                <div class="board-col__header"><span class="board-col__dot" style="color:#14865e"></span><span class="board-col__title">Done</span><span class="board-col__count">2</span></div>
+                <div class="board-col__cards">
+                  <div class="board-card"><div class="board-card__title">Influencer Partnership</div><div class="board-card__meta"><span class="board-card__sub">Apr 30</span><div class="board-card__avatar" style="background:#dc2626">SK</div></div></div>
+                  <div class="board-card"><div class="board-card__title">Summer Product Launch</div><div class="board-card__meta"><span class="board-card__sub">May 15</span><div class="board-card__avatar" style="background:#7c3aed">CY</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DashboardLayout -->
+        <div class="sc-component" id="dashboard-layout">
+          <div class="sc-component-label">DashboardLayout <span class="sc-component-class">.dashboard-layout + .dashboard-widget</span></div>
+          <div class="sc-canvas sc-canvas--flush" style="padding:16px">
+            <div class="dashboard-layout">
+              <div class="dashboard-widget">
+                <div class="dashboard-widget__header"><span class="dashboard-widget__title">Campaign Performance</span><a href="#" class="dashboard-widget__action">View all</a></div>
+                <div class="dashboard-widget__body">
+                  <div class="stat-row" style="padding:0"><div class="stat-card"><div class="stat-card__label">Active</div><div class="stat-card__value">6</div><div class="stat-card__sub">2 behind schedule</div></div><div class="stat-card"><div class="stat-card__label">Avg CTR</div><div class="stat-card__value">3.8%</div><div class="stat-card__sub">+0.4% vs last month</div></div></div>
+                </div>
+              </div>
+              <div class="dashboard-widget">
+                <div class="dashboard-widget__header"><span class="dashboard-widget__title">Budget Overview</span><a href="#" class="dashboard-widget__action">Details</a></div>
+                <div class="dashboard-widget__body">
+                  <div class="field-table">
+                    <div class="field-row"><span class="field-label">Allocated</span><span class="field-value">$2,400,000</span></div>
+                    <div class="field-row"><span class="field-label">Spent</span><span class="field-value">$874,200</span></div>
+                    <div class="field-row"><span class="field-label">Remaining</span><span class="field-value" style="color:var(--badge-green-text)">$1,525,800</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="dashboard-widget dashboard-widget--wide">
+                <div class="dashboard-widget__header"><span class="dashboard-widget__title">Recent Activity</span></div>
+                <div class="dashboard-widget__body">
+                  <div class="activity-feed">
+                    <div class="activity-item" style="padding-top:0"><div class="activity-avatar" style="background:#dc2626">SK</div><div class="activity-content"><span class="activity-author">Sarah K.</span><p class="activity-text">Updated Q3 Brand Awareness status to <strong>In Progress</strong></p><span class="activity-time">2 hours ago</span></div></div>
+                    <div class="activity-item"><div class="activity-avatar" style="background:#7c3aed">CY</div><div class="activity-content"><span class="activity-author">Chris Y.</span><p class="activity-text">Creative brief approved for Fall Retargeting</p><span class="activity-time">Yesterday</span></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PipelineLayout -->
+        <div class="sc-component" id="pipeline-layout">
+          <div class="sc-component-label">PipelineLayout <span class="sc-component-class">.pipeline-layout + .pipeline-stage + .pipeline-card</span></div>
+          <div class="sc-layout-demo" style="height:280px;overflow:hidden">
+            <div class="pipeline-layout" style="height:100%">
+              <div class="pipeline-stage">
+                <div class="pipeline-stage__header"><span class="pipeline-stage__dot" style="background:#9ca3af"></span><span class="pipeline-stage__title">Qualify</span><span class="pipeline-stage__value">$420K</span></div>
+                <div class="pipeline-stage__body">
+                  <div class="pipeline-card"><div class="pipeline-card__name">Acme Corp</div><div class="pipeline-card__value">$180K</div><div class="pipeline-card__sub">Sarah K. · Day 4</div></div>
+                  <div class="pipeline-card"><div class="pipeline-card__name">TechStart Inc</div><div class="pipeline-card__value">$240K</div><div class="pipeline-card__sub">Lee P. · Day 2</div></div>
+                </div>
+              </div>
+              <div class="pipeline-stage">
+                <div class="pipeline-stage__header"><span class="pipeline-stage__dot" style="background:#335fb5"></span><span class="pipeline-stage__title">Proposal</span><span class="pipeline-stage__value">$680K</span></div>
+                <div class="pipeline-stage__body">
+                  <div class="pipeline-card"><div class="pipeline-card__name">GlobalCo</div><div class="pipeline-card__value">$320K</div><div class="pipeline-card__sub">Chris Y. · Day 12</div></div>
+                  <div class="pipeline-card"><div class="pipeline-card__name">Horizon LLC</div><div class="pipeline-card__value">$360K</div><div class="pipeline-card__sub">Sarah K. · Day 8</div></div>
+                </div>
+              </div>
+              <div class="pipeline-stage">
+                <div class="pipeline-stage__header"><span class="pipeline-stage__dot" style="background:#c47c00"></span><span class="pipeline-stage__title">Negotiation</span><span class="pipeline-stage__value">$290K</span></div>
+                <div class="pipeline-stage__body">
+                  <div class="pipeline-card"><div class="pipeline-card__name">BrandX</div><div class="pipeline-card__value">$290K</div><div class="pipeline-card__sub">Sam M. · Day 21</div></div>
+                </div>
+              </div>
+              <div class="pipeline-stage">
+                <div class="pipeline-stage__header"><span class="pipeline-stage__dot" style="background:#14865e"></span><span class="pipeline-stage__title">Closed Won</span><span class="pipeline-stage__value">$540K</span></div>
+                <div class="pipeline-stage__body">
+                  <div class="pipeline-card"><div class="pipeline-card__name">Nexus Media</div><div class="pipeline-card__value">$540K</div><div class="pipeline-card__sub">Chris Y. · Closed</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CalendarLayout -->
+        <div class="sc-component" id="calendar-layout">
+          <div class="sc-component-label">CalendarLayout <span class="sc-component-class">.calendar-layout</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="calendar-layout">
+              <div class="calendar-layout__header">
+                <div class="calendar-layout__day-label">Sun</div>
+                <div class="calendar-layout__day-label">Mon</div>
+                <div class="calendar-layout__day-label">Tue</div>
+                <div class="calendar-layout__day-label">Wed</div>
+                <div class="calendar-layout__day-label">Thu</div>
+                <div class="calendar-layout__day-label">Fri</div>
+                <div class="calendar-layout__day-label">Sat</div>
+              </div>
+              <div class="calendar-layout__grid">
+                <div class="calendar-cell calendar-cell--other"><div class="calendar-cell__num">26</div></div>
+                <div class="calendar-cell calendar-cell--other"><div class="calendar-cell__num">27</div></div>
+                <div class="calendar-cell calendar-cell--other"><div class="calendar-cell__num">28</div></div>
+                <div class="calendar-cell calendar-cell--other"><div class="calendar-cell__num">29</div></div>
+                <div class="calendar-cell calendar-cell--other"><div class="calendar-cell__num">30</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">1</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">2</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">3</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">4</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">5</div><span class="calendar-event calendar-event--blue">Brand Campaign</span></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">6</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">7</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">8</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">9</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">10</div><span class="calendar-event calendar-event--green">Budget Review</span></div>
+                <div class="calendar-cell calendar-cell--today"><div class="calendar-cell__num">11</div><span class="calendar-event calendar-event--yellow">Team Sync</span></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">12</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">13</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">14</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">15</div><span class="calendar-event calendar-event--red">Launch Day</span></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">16</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">17</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">18</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">19</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">20</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">21</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">22</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">23</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">24</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">25</div><span class="calendar-event calendar-event--blue">Q3 Review</span></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">26</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">27</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">28</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">29</div></div>
+                <div class="calendar-cell"><div class="calendar-cell__num">30</div></div>
+                <div class="calendar-cell calendar-cell--other"><div class="calendar-cell__num">1</div></div>
+                <div class="calendar-cell calendar-cell--other"><div class="calendar-cell__num">2</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TimelineLayout -->
+        <div class="sc-component" id="timeline-layout">
+          <div class="sc-component-label">TimelineLayout <span class="sc-component-class">.timeline-layout + .timeline-row + .timeline-bar</span></div>
+          <div class="sc-layout-demo">
+            <div class="timeline-layout">
+              <div class="timeline-layout__header">
+                <div class="timeline-layout__label-col">Campaign</div>
+                <div class="timeline-layout__months" style="grid-template-columns:repeat(6,1fr)">
+                  <div class="timeline-layout__month">Mar</div>
+                  <div class="timeline-layout__month">Apr</div>
+                  <div class="timeline-layout__month">May</div>
+                  <div class="timeline-layout__month">Jun</div>
+                  <div class="timeline-layout__month">Jul</div>
+                  <div class="timeline-layout__month">Aug</div>
+                </div>
+              </div>
+              <div class="timeline-layout__body">
+                <div class="timeline-row"><div class="timeline-row__label">Q3 Brand Awareness</div><div class="timeline-row__track"><div class="timeline-bar" style="left:50%;width:44%;background:var(--badge-blue-text)">Q3 Brand Awareness</div></div></div>
+                <div class="timeline-row"><div class="timeline-row__label">Summer Launch</div><div class="timeline-row__track"><div class="timeline-bar" style="left:16%;width:36%;background:var(--badge-green-text)">Summer Launch</div></div></div>
+                <div class="timeline-row"><div class="timeline-row__label">Influencer Program</div><div class="timeline-row__track"><div class="timeline-bar" style="left:0%;width:48%;background:#7c3aed">Influencer Program</div></div></div>
+                <div class="timeline-row"><div class="timeline-row__label">Fall Retargeting</div><div class="timeline-row__track"><div class="timeline-bar" style="left:66%;width:30%;background:var(--badge-yellow-text)">Fall Retargeting</div></div></div>
+                <div class="timeline-row"><div class="timeline-row__label">Holiday Email Series</div><div class="timeline-row__track"><div class="timeline-bar" style="left:75%;width:20%;background:var(--badge-red-text)">Holiday Email</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <script src="showcase.js"></script>
+</body>
+</html>
