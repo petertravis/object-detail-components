@@ -1406,3 +1406,144 @@
   font-size: 11px; font-weight: 500; color: #fff;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   TABS  (navigate between panels within a workspace)
+   .tabs > .tab (+ .tab--active, .tab-count)
+   ════════════════════════════════════════════════════════════════════════ */
+
+.tabs {
+  display: flex; gap: 2px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 12px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--text-weak);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  background: none; border-top: none; border-left: none; border-right: none;
+  font-family: inherit;
+  transition: color var(--duration) var(--ease),
+              border-color var(--duration) var(--ease);
+}
+.tab:hover { color: var(--text); }
+.tab--active { color: var(--text); border-bottom-color: var(--text); font-weight: 600; }
+.tab-count {
+  font-size: 10.5px; font-weight: 500; color: var(--text-weak);
+  background: var(--bg-medium); padding: 1px 6px; border-radius: 8px;
+  letter-spacing: 0;
+}
+.tab--active .tab-count { background: var(--bg-strong); color: var(--text); }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   STAT STRIP  (flat borderless KPI row — variant of StatRow)
+   .stat-strip > .stat-strip__item ( .stat-strip__label + __value + __sub )
+   Use when StatRow's card treatment feels too heavy — e.g. inside a
+   narrow detail pane or as an inline summary.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  padding: 14px 0;
+}
+.stat-strip__item {
+  padding: 0 14px;
+  border-left: 1px solid var(--border);
+  min-width: 0;
+}
+.stat-strip__item:first-child { border-left: none; padding-left: 0; }
+.stat-strip__item:last-child  { padding-right: 0; }
+.stat-strip__label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text-weak);
+  margin-bottom: 6px;
+}
+.stat-strip__value {
+  font-size: 22px; font-weight: 700; color: var(--text);
+  letter-spacing: -0.015em; line-height: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.stat-strip__sub {
+  font-size: 11px; color: var(--text-weak); margin-top: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   TASK LIST  (sectioned Asana-style task groups)
+   .task-section > .task-section__header + .task-row×n
+   .task-row: .task-check + .task-name + .task-due + .task-assignee
+   .task-toolbar: .task-toolbar__btn + .task-toolbar__spacer
+   ════════════════════════════════════════════════════════════════════════ */
+
+.task-section { margin: 0 0 18px; }
+.task-section__header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 4px 8px;
+  font-size: 13px; font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.task-section__count {
+  font-size: 11px; font-weight: 500; color: var(--text-weak);
+  background: var(--bg-medium); padding: 1px 7px; border-radius: 10px;
+}
+
+.task-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--bg-strong);
+  cursor: pointer;
+  transition: background var(--duration) var(--ease);
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: var(--bg-hover); }
+.task-row--done .task-name {
+  color: var(--text-weak);
+  text-decoration: line-through;
+}
+
+.task-check {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1.8px solid var(--border-strong);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: transparent;
+  transition: background var(--duration) var(--ease),
+              border-color var(--duration) var(--ease);
+}
+.task-check svg { width: 10px; height: 10px; }
+.task-check--done {
+  background: var(--badge-green-text); border-color: var(--badge-green-text);
+  color: #fff;
+}
+
+.task-name {
+  flex: 1; font-size: 13px; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.task-due {
+  font-size: 11.5px; color: var(--text-weak);
+  flex-shrink: 0; min-width: 68px; text-align: right;
+}
+.task-assignee {
+  width: 22px; height: 22px; border-radius: 50%;
+  color: #fff; font-size: 9px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.task-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0 12px;
+}
+.task-toolbar__spacer { flex: 1; }
+.task-toolbar__btn {
+  height: 26px; padding: 0 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg);
+  font-size: 12px; font-weight: 500; font-family: inherit; color: var(--text);
+  cursor: pointer;
+  transition: background var(--duration) var(--ease);
+}
+.task-toolbar__btn:hover { background: var(--bg-medium); }

@@ -153,6 +153,9 @@
         <a href="#table-grouping"      class="sc-nav-link">TableGrouping</a>
         <a href="#stage-stepper"       class="sc-nav-link">StageStepperGrouping</a>
         <a href="#stage-progress"      class="sc-nav-link">StageProgressGrouping</a>
+        <a href="#stat-strip"          class="sc-nav-link">StatStrip</a>
+        <a href="#tabs"                class="sc-nav-link">Tabs</a>
+        <a href="#task-list"           class="sc-nav-link">TaskList</a>
       </div>
       <div class="sc-nav-group">
         <div class="sc-nav-group-label">Layout Primitives</div>
@@ -789,6 +792,110 @@
                 <span class="stage-progress__stage-label stage-progress__stage-label--active">Production</span>
                 <span class="stage-progress__stage-label">Review</span>
                 <span class="stage-progress__stage-label">Launch</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- StatStrip -->
+        <div class="sc-component" id="stat-strip">
+          <div class="sc-component-label">StatStrip <span class="sc-component-class">.stat-strip</span></div>
+          <div class="sc-canvas">
+            <div class="stat-strip">
+              <div class="stat-strip__item">
+                <div class="stat-strip__label">Occupancy</div>
+                <div class="stat-strip__value" style="color:var(--badge-blue-text)">68%</div>
+                <div class="stat-strip__sub">Current</div>
+              </div>
+              <div class="stat-strip__item">
+                <div class="stat-strip__label">Units</div>
+                <div class="stat-strip__value">84</div>
+                <div class="stat-strip__sub">Managed</div>
+              </div>
+              <div class="stat-strip__item">
+                <div class="stat-strip__label">Project</div>
+                <div class="stat-strip__value">68%</div>
+                <div class="stat-strip__sub">505 / 742 tasks</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="sc-component" id="tabs">
+          <div class="sc-component-label">Tabs <span class="sc-component-class">.tabs + .tab + .tab-count</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div style="padding:16px 24px 0">
+              <div class="tabs">
+                <button class="tab tab--active">Overview</button>
+                <button class="tab">Tasks <span class="tab-count">21</span></button>
+                <button class="tab">Team <span class="tab-count">5</span></button>
+                <button class="tab">Files <span class="tab-count">12</span></button>
+              </div>
+            </div>
+            <div style="padding:16px 24px 20px;font-size:13px;color:var(--text-weak)">Content panel for the active tab renders here.</div>
+          </div>
+        </div>
+
+        <!-- TaskList -->
+        <div class="sc-component" id="task-list">
+          <div class="sc-component-label">TaskList <span class="sc-component-class">.task-section + .task-row + .task-toolbar</span></div>
+          <div class="sc-canvas">
+            <div class="task-toolbar">
+              <button class="task-toolbar__btn">+ Add task</button>
+              <button class="task-toolbar__btn">Filter</button>
+              <button class="task-toolbar__btn">Sort</button>
+              <div class="task-toolbar__spacer"></div>
+              <button class="task-toolbar__btn">Group</button>
+            </div>
+
+            <div class="task-section">
+              <div class="task-section__header">
+                <span>Pre-Takeover Assessment</span>
+                <span class="task-section__count">3 / 3</span>
+              </div>
+              <div class="task-row task-row--done">
+                <span class="task-check task-check--done"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></span>
+                <span class="task-name">Complete property walk-through</span>
+                <span class="task-due">Jul 12</span>
+                <span class="task-assignee" style="background:#059669">JW</span>
+              </div>
+              <div class="task-row task-row--done">
+                <span class="task-check task-check--done"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></span>
+                <span class="task-name">Review outgoing operator contracts</span>
+                <span class="task-due">Jul 15</span>
+                <span class="task-assignee" style="background:#dc2626">SC</span>
+              </div>
+              <div class="task-row task-row--done">
+                <span class="task-check task-check--done"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></span>
+                <span class="task-name">Audit resident roster and lease terms</span>
+                <span class="task-due">Jul 18</span>
+                <span class="task-assignee" style="background:#be185d">DK</span>
+              </div>
+            </div>
+
+            <div class="task-section">
+              <div class="task-section__header">
+                <span>Systems Migration</span>
+                <span class="task-section__count">1 / 3</span>
+              </div>
+              <div class="task-row task-row--done">
+                <span class="task-check task-check--done"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1.5 5 4 7.5 8.5 2"/></svg></span>
+                <span class="task-name">Migrate resident data to Yardi Voyager</span>
+                <span class="task-due">Aug 8</span>
+                <span class="task-assignee" style="background:#0891b2">ER</span>
+              </div>
+              <div class="task-row">
+                <span class="task-check"></span>
+                <span class="task-name">Set up bank account and ACH routing</span>
+                <span class="task-due">Aug 20</span>
+                <span class="task-assignee" style="background:#dc2626">SC</span>
+              </div>
+              <div class="task-row">
+                <span class="task-check"></span>
+                <span class="task-name">Test resident portal integration</span>
+                <span class="task-due">Sep 1</span>
+                <span class="task-assignee" style="background:#0891b2">ER</span>
               </div>
             </div>
           </div>
