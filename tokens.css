@@ -1,4 +1,5 @@
-/* ── Asana design tokens (light mode) ─────────────────────────────────── */
+/* v3 · object-detail-components — bump ./publish.sh whenever this file changes.
+   ── Asana design tokens (light mode) ─────────────────────────────────── */
 :root {
   /* Surfaces */
   --bg:               #ffffff;
