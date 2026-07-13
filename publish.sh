@@ -17,10 +17,11 @@ NEXT=$((CURRENT + 1))
 # Bump VERSION
 echo "$NEXT" > VERSION
 
-# Update showcase's ?v=N links
+# Update showcase's ?v=N links and topbar version chip
 sed -i.bak \
   -e "s|tokens.css?v=[0-9]*|tokens.css?v=$NEXT|g" \
   -e "s|components.css?v=[0-9]*|components.css?v=$NEXT|g" \
+  -e "s|<span class=\"sc-topbar-chip\">v[0-9.]*</span>|<span class=\"sc-topbar-chip\">v$NEXT</span>|" \
   index.html
 rm -f index.html.bak
 
