@@ -1,4 +1,4 @@
-/* v3 · object-detail-components — bump ./publish.sh whenever this file changes.
+/* v4 · object-detail-components — bump ./publish.sh whenever this file changes.
 
    ═══════════════════════════════════════════════════════════════════════
    COMPONENT LIBRARY — composable object detail views
@@ -1238,7 +1238,9 @@
 .list-layout__col {
   flex: 1; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--text-weak);
+  padding-right: 12px;
 }
+.list-layout__col:last-child { padding-right: 0; }
 .list-layout__col--sm  { flex: 0 0 80px; }
 .list-layout__col--md  { flex: 0 0 120px; }
 .list-layout__col--xs  { flex: 0 0 32px; }
@@ -1253,7 +1255,9 @@
 .list-layout__cell {
   flex: 1; font-size: 13px; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding-right: 12px;
 }
+.list-layout__cell:last-child { padding-right: 0; }
 .list-layout__cell--sm   { flex: 0 0 80px; }
 .list-layout__cell--md   { flex: 0 0 120px; }
 .list-layout__cell--xs   { flex: 0 0 32px; }
