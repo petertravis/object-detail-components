@@ -1,4 +1,4 @@
-/* v4 · object-detail-components — bump ./publish.sh whenever this file changes.
+/* v5 · object-detail-components — bump ./publish.sh whenever this file changes.
 
    ═══════════════════════════════════════════════════════════════════════
    COMPONENT LIBRARY — composable object detail views
@@ -804,7 +804,7 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 480px;
+  width: var(--detail-pane-width, 480px);
   height: 100%;
   background: var(--bg);
   border-left: 1px solid var(--border);
@@ -1553,3 +1553,160 @@
   transition: background var(--duration) var(--ease);
 }
 .task-toolbar__btn:hover { background: var(--bg-medium); }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   RECORD HERO  (image banner at the top of a detail view)
+   .record-hero > <img> + .record-hero__gradient + .record-hero__caption
+   ════════════════════════════════════════════════════════════════════════ */
+
+.record-hero {
+  width: 100%; height: 160px; overflow: hidden;
+  position: relative; background: var(--bg-strong);
+  flex-shrink: 0;
+}
+.record-hero img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.record-hero__gradient {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 60%;
+  background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 100%);
+  pointer-events: none;
+}
+.record-hero__caption {
+  position: absolute; left: 16px; bottom: 12px;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5); letter-spacing: 0.02em;
+}
+.record-hero__caption svg { width: 12px; height: 12px; }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   SYNC INDICATORS  (visual language for data-source sync state)
+   .sync-chip     — inline "synced" pill for individual fields
+   .sync-strip    — full-width banner for record-level sync state
+   ════════════════════════════════════════════════════════════════════════ */
+
+.sync-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 500; color: var(--text-weak);
+  background: var(--bg-medium); padding: 2px 6px 2px 5px;
+  border-radius: 10px; letter-spacing: 0.01em; white-space: nowrap;
+  margin-left: 6px; vertical-align: middle;
+}
+.sync-chip svg { width: 9px; height: 9px; color: var(--success-text); }
+.sync-chip__dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--success-text); flex-shrink: 0;
+}
+
+.sync-strip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 24px 14px;
+  color: var(--text-weak); font-size: 11.5px;
+}
+.sync-strip svg { width: 11px; height: 11px; color: var(--success-text); }
+.sync-strip strong { color: var(--text); font-weight: 600; }
+.sync-strip__link {
+  color: var(--link); text-decoration: none; margin-left: auto; font-weight: 500;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   CONFIDENTIAL / RESTRICTED-ACCESS PRIMITIVES
+   .confidential-badge — inline lock badge for restricted records
+   .row-lock           — tiny lock icon for list rows
+   ════════════════════════════════════════════════════════════════════════ */
+
+.confidential-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10.5px; font-weight: 600;
+  color: var(--badge-yellow-text); background: var(--badge-yellow-bg);
+  padding: 2px 7px 2px 5px; border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+.confidential-badge svg { width: 10px; height: 10px; }
+
+.row-lock {
+  width: 11px; height: 11px; color: var(--badge-yellow-text);
+  margin-right: 6px; vertical-align: -1px;
+  display: inline-block; flex-shrink: 0;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   REFERENCED-BY LIST  (lookup relationship display)
+   .ref-list > .ref-item ( .ref-item__icon + __name + __count )
+   Distinct from RelatedRecords: use when showing "X projects/tasks reference
+   this record" rather than "X items are related to this record".
+   ════════════════════════════════════════════════════════════════════════ */
+
+.ref-list { display: flex; flex-direction: column; gap: 2px; }
+.ref-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border-radius: 6px;
+  text-decoration: none; color: var(--text);
+  transition: background var(--duration) var(--ease);
+  cursor: pointer;
+}
+.ref-item:hover { background: var(--bg-hover); }
+.ref-item__icon {
+  width: 20px; height: 20px; border-radius: 4px;
+  background: var(--bg-medium);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ref-item__icon svg { width: 11px; height: 11px; color: var(--icon); }
+.ref-item__name {
+  flex: 1; font-size: 12.5px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ref-item__count {
+  font-size: 11px; color: var(--text-weak);
+  background: var(--bg-medium); padding: 1px 7px; border-radius: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   LINKED PROJECT CARD  (connected-project card with progress)
+   .linked-project > __icon + __body ( __name + __meta + __bar ) + __arrow
+   ════════════════════════════════════════════════════════════════════════ */
+
+.linked-project {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-medium); border-radius: 10px;
+  text-decoration: none;
+  transition: background var(--duration) var(--ease);
+  cursor: pointer;
+}
+.linked-project:hover { background: var(--bg-strong); }
+.linked-project__icon {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: var(--text-weak);
+}
+.linked-project__icon svg { width: 16px; height: 16px; }
+.linked-project__body { flex: 1; min-width: 0; }
+.linked-project__name {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.linked-project__meta {
+  font-size: 11.5px; color: var(--text-weak); margin-top: 3px;
+  display: flex; align-items: center; gap: 8px;
+}
+.linked-project__bar {
+  flex: 1; height: 4px; border-radius: 2px;
+  background: var(--bg-strong); overflow: hidden;
+  margin-top: 6px; max-width: 240px;
+}
+.linked-project__bar-fill {
+  height: 100%; background: var(--badge-blue-text); border-radius: 2px;
+}
+.linked-project__arrow {
+  color: var(--text-weak); flex-shrink: 0; font-size: 14px;
+}

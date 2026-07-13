@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Component Library</title>
-  <link rel="stylesheet" href="tokens.css?v=4">
-  <link rel="stylesheet" href="components.css?v=4">
+  <link rel="stylesheet" href="tokens.css?v=5">
+  <link rel="stylesheet" href="components.css?v=5">
   <style>
     /* ── Showcase chrome ─────────────────────────────────────────── */
     html { scroll-behavior: smooth; }
@@ -103,7 +103,7 @@
     <span class="sc-topbar-logo">Component Library</span>
     <div class="sc-topbar-sep"></div>
     <span class="sc-topbar-subtitle">Composable object detail views</span>
-    <span class="sc-topbar-chip">v4</span>
+    <span class="sc-topbar-chip">v5</span>
   </header>
 
   <div class="sc-layout">
@@ -156,6 +156,11 @@
         <a href="#stat-strip"          class="sc-nav-link">StatStrip</a>
         <a href="#tabs"                class="sc-nav-link">Tabs</a>
         <a href="#task-list"           class="sc-nav-link">TaskList</a>
+        <a href="#record-hero"         class="sc-nav-link">RecordHero</a>
+        <a href="#sync-indicators"     class="sc-nav-link">Sync Indicators</a>
+        <a href="#confidential"        class="sc-nav-link">Confidential Badge</a>
+        <a href="#ref-list"            class="sc-nav-link">RefList</a>
+        <a href="#linked-project"      class="sc-nav-link">LinkedProject</a>
       </div>
       <div class="sc-nav-group">
         <div class="sc-nav-group-label">Layout Primitives</div>
@@ -898,6 +903,104 @@
                 <span class="task-assignee" style="background:#0891b2">ER</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- RecordHero -->
+        <div class="sc-component" id="record-hero">
+          <div class="sc-component-label">RecordHero <span class="sc-component-class">.record-hero</span></div>
+          <div class="sc-canvas sc-canvas--tight">
+            <div class="record-hero">
+              <img src="https://picsum.photos/seed/showcase-hero/1200/300" alt="Record hero example">
+              <div class="record-hero__gradient"></div>
+              <div class="record-hero__caption">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1a5 5 0 0 1 5 5c0 4-5 9-5 9S3 10 3 6a5 5 0 0 1 5-5z"/><circle cx="8" cy="6" r="1.5"/></svg>
+                Oakland, CA · East Bay
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sync Indicators -->
+        <div class="sc-component" id="sync-indicators">
+          <div class="sc-component-label">Sync Indicators <span class="sc-component-class">.sync-chip · .sync-strip</span></div>
+          <div class="sc-canvas">
+            <div style="margin-bottom:16px">
+              <div style="font-size:11px;font-weight:700;color:var(--text-weak);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px">Inline chip</div>
+              <span style="font-size:13px">Owner group: <strong>Greystar Capital</strong></span>
+              <span class="sync-chip"><span class="sync-chip__dot"></span>Synced</span>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-weak);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px">Full-width strip</div>
+              <div class="sync-strip" style="padding-left:0;padding-right:0">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6a5 5 0 0 0-9-1M2 10a5 5 0 0 0 9 1M14 2v4h-4M2 14v-4h4"/></svg>
+                <span>Synced from <strong>Bozzuto Link</strong> · 2 hours ago</span>
+                <a href="#" class="sync-strip__link">View source →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confidential Badge -->
+        <div class="sc-component" id="confidential">
+          <div class="sc-component-label">Confidential Badge + Row Lock <span class="sc-component-class">.confidential-badge · .row-lock</span></div>
+          <div class="sc-canvas">
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              <span class="confidential-badge">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+                Confidential
+              </span>
+              <span style="font-size:13px;display:inline-flex;align-items:center">
+                <svg class="row-lock" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+                Beacon Hill Apartments
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RefList -->
+        <div class="sc-component" id="ref-list">
+          <div class="sc-component-label">RefList <span class="sc-component-class">.ref-list + .ref-item</span></div>
+          <div class="sc-canvas">
+            <div class="ref-list">
+              <a href="#" class="ref-item">
+                <div class="ref-item__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="5" y1="5" x2="5" y2="15"/></svg></div>
+                <span class="ref-item__name">Q3 Marketing Sprint</span>
+                <span class="ref-item__count">18 tasks</span>
+              </a>
+              <a href="#" class="ref-item">
+                <div class="ref-item__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="5" y1="5" x2="5" y2="15"/></svg></div>
+                <span class="ref-item__name">Property Onboarding</span>
+                <span class="ref-item__count">24 tasks</span>
+              </a>
+              <a href="#" class="ref-item">
+                <div class="ref-item__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="5" y1="5" x2="5" y2="15"/></svg></div>
+                <span class="ref-item__name">Portfolio Reporting</span>
+                <span class="ref-item__count">8 tasks</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- LinkedProject -->
+        <div class="sc-component" id="linked-project">
+          <div class="sc-component-label">LinkedProject <span class="sc-component-class">.linked-project</span></div>
+          <div class="sc-canvas">
+            <a href="#" class="linked-project">
+              <div class="linked-project__icon">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="5" y1="5" x2="5" y2="15"/></svg>
+              </div>
+              <div class="linked-project__body">
+                <div class="linked-project__name">Takeover: The Marlow</div>
+                <div class="linked-project__meta">
+                  <span>505 of 742 tasks · 68%</span>
+                  <span>·</span>
+                  <span>Due Sep 15, 2026</span>
+                </div>
+                <div class="linked-project__bar"><div class="linked-project__bar-fill" style="width:68%"></div></div>
+              </div>
+              <span class="linked-project__arrow">→</span>
+            </a>
           </div>
         </div>
 

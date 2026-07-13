@@ -1,4 +1,4 @@
-/* v4 · object-detail-components — bump ./publish.sh whenever this file changes.
+/* v5 · object-detail-components — bump ./publish.sh whenever this file changes.
    ── Asana design tokens (light mode) ─────────────────────────────────── */
 :root {
   /* Surfaces */
@@ -45,6 +45,9 @@
   /* Motion */
   --duration:  200ms;
   --ease:      cubic-bezier(0.05, 0.4, 0.2, 1);
+
+  /* Layout — override in a consuming app to change the DetailPane width */
+  --detail-pane-width: 480px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
