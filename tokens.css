@@ -1,53 +1,161 @@
-/* v5 · object-detail-components — bump ./publish.sh whenever this file changes.
-   ── Asana design tokens (light mode) ─────────────────────────────────── */
+/* v6 · object-detail-components — bump ./publish.sh whenever this file changes.
+
+   ═══════════════════════════════════════════════════════════════════════
+   ASANA DESIGN TOKENS  (light mode · default palette)
+
+   Values sourced directly from Asana's internal style-dictionary output
+   at asana/web/ui/scss/tokens/color/**. See APB (Asana Prototype Builder)
+   src/design-system/generated/{colorTokens,spacingSizingTokens}.json for
+   the full 1,422-color + 36-spacing/sizing token set.
+
+   This file exposes the subset our components consume, plus backward-
+   compatible aliases (--bg, --badge-red-bg, etc.) so v5 consumers keep
+   working. Prefer the Asana-authoritative names in new code.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 :root {
-  /* Surfaces */
-  --bg:               #ffffff;
-  --bg-medium:        #f2f3f4;
-  --bg-strong:        #e8e9ea;
-  --bg-hover:         rgba(37, 39, 40, 0.04);
-  --bg-active:        rgba(37, 39, 40, 0.07);
+  /* ── Surfaces ────────────────────────────────────────────────────────── */
+  --background-weak:            #ffffff;
+  --background-medium:          #f2f3f4;
+  --background-strong:          #e8e9ea;
+  --background-hover:           rgba(37, 39, 40, 0.03);
+  --background-active:          rgba(37, 39, 40, 0.06);
 
-  /* Text */
-  --text:             #1d1f21;
-  --text-weak:        #626364;
+  /* ── Text ────────────────────────────────────────────────────────────── */
+  --text:                       #1d1f21;
+  --text-weak:                  #626364;
+  --text-disabled:              #a9abad;
+  --text-foreground:            #ffffff;   /* on colored/inverted backgrounds */
 
-  /* Icons */
-  --icon:             #757677;
-  --icon-hover:       #1d1f21;
+  /* ── Icons ───────────────────────────────────────────────────────────── */
+  --icon:                       #757677;
+  --icon-hover:                 #1d1f21;
+  --icon-active:                #1d1f21;
+  --icon-disabled:              #a9abad;
 
-  /* Borders */
-  --border:           #e0e1e3;
-  --border-strong:    #c4c6c8;
+  /* ── Borders ─────────────────────────────────────────────────────────── */
+  --border:                     #e0e1e3;
+  --border-hover:               #a9abad;
+  --border-strong:              #c4c6c8;
+  --border-active:              #757677;
 
-  /* Shadows */
-  --shadow-sm:        0px 1px 4px 0px rgba(117, 118, 119, 0.08);
-  --shadow-md:        0px 3px 8px 0px rgba(117, 118, 119, 0.14);
-  --shadow-lg:        0px 6px 12px 0px rgba(117, 118, 119, 0.16);
+  /* ── Primary (blue) ──────────────────────────────────────────────────── */
+  --primary-text:               #335fb5;
+  --primary-text-hover:         #294e96;
+  --primary-background-strong:  #4273d1;
+  --primary-border:             #335fb5;
+  --primary-icon:               #335fb5;
 
-  /* Interactive */
-  --link:             #335fb5;
-  --success-bg:       #e9faf1;
-  --success-text:     #14865e;
+  /* ── Selected (blue variant used on interactive/active surfaces) ─────── */
+  --selected-background:        #e9f1fe;
+  --selected-background-hover:  #e1ebfc;
+  --selected-background-active: #d3e2fc;
+  --selected-border:            #335fb5;
+  --selected-text:              #335fb5;
 
-  /* Badge palette */
-  --badge-red-bg:      #fce8e8;
-  --badge-red-text:    #c73838;
-  --badge-green-bg:    #d1fae5;
-  --badge-green-text:  #14865e;
-  --badge-blue-bg:     #e8f0fe;
-  --badge-blue-text:   #335fb5;
-  --badge-yellow-bg:   #fff1c2;
-  --badge-yellow-text: #c47c00;
-  --badge-purple-bg:   #f3e8ff;
-  --badge-purple-text: #7c3aed;
+  /* ── Success (green) ─────────────────────────────────────────────────── */
+  --success-background:         #e9faf1;
+  --success-background-hover:   #d7f1e3;
+  --success-background-strong:  #5da182;
+  --success-border:             #8bc3a7;
+  --success-text:               #14865e;
+  --success-text-hover:         #0d714f;
+  --success-icon:               #5da182;
 
-  /* Motion */
-  --duration:  200ms;
-  --ease:      cubic-bezier(0.05, 0.4, 0.2, 1);
+  /* ── Warning (yellow / orange) ───────────────────────────────────────── */
+  --warning-background:         #fef6ee;
+  --warning-background-hover:   #feedd9;
+  --warning-background-strong:  #ecbd85;
+  --warning-border:             #ecbd85;
+  --warning-text:               #865a1c;
+  --warning-text-hover:         #6b4a1d;
+  --warning-icon:               #b37d35;
 
-  /* Layout — override in a consuming app to change the DetailPane width */
-  --detail-pane-width: 480px;
+  /* ── Danger (red) ────────────────────────────────────────────────────── */
+  --danger-background:          #ffeff0;
+  --danger-background-hover:    #ffe4e6;
+  --danger-background-strong:   #d43d5d;
+  --danger-border:              #f1a2aa;
+  --danger-text:                #b4304c;
+  --danger-text-hover:          #981f3c;
+  --danger-icon:                #e35a71;
+
+  /* ── Beta (purple) ───────────────────────────────────────────────────── */
+  --beta-background:            #f4f4fe;
+  --beta-background-hover:      #e8e8fb;
+  --beta-background-strong:     #756bc4;
+  --beta-border:                #9187eb;
+  --beta-text:                  #756bc4;
+  --beta-text-hover:            #6159a2;
+  --beta-icon:                  #9187eb;
+
+  /* ── Shadows (Asana small / medium / large) ──────────────────────────── */
+  --shadow-sm:  0px 1px 4px  0px rgba(117, 118, 119, 0.08);
+  --shadow-md:  0px 3px 8px  0px rgba(117, 118, 119, 0.10);
+  --shadow-lg:  0px 6px 12px 0px rgba(117, 118, 119, 0.12);
+
+  /* ── Motion ──────────────────────────────────────────────────────────── */
+  --duration:                   200ms;
+  --ease:                       cubic-bezier(0.05, 0.4, 0.2, 1);
+
+  /* ── Spacing scale (Asana: spacing-0 through spacing-80) ─────────────── */
+  --spacing-0:    0px;
+  --spacing-4:    4px;
+  --spacing-8:    8px;
+  --spacing-12:  12px;
+  --spacing-16:  16px;
+  --spacing-24:  24px;
+  --spacing-32:  32px;
+  --spacing-48:  48px;
+  --spacing-64:  64px;
+  --spacing-80:  80px;
+
+  /* ── Sizing scale (Asana: sizing-12 through sizing-120) ──────────────── */
+  --sizing-12:   12px;
+  --sizing-16:   16px;
+  --sizing-20:   20px;
+  --sizing-24:   24px;
+  --sizing-28:   28px;
+  --sizing-32:   32px;
+  --sizing-36:   36px;
+  --sizing-40:   40px;
+  --sizing-48:   48px;
+  --sizing-56:   56px;
+  --sizing-64:   64px;
+  --sizing-72:   72px;
+  --sizing-80:   80px;
+  --sizing-96:   96px;
+  --sizing-120: 120px;
+
+  /* ── Layout ──────────────────────────────────────────────────────────── */
+  --detail-pane-width:          480px;
+
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BACKWARD-COMPATIBLE ALIASES  (v5 and earlier consumer names)
+
+     These forward to the Asana-authoritative tokens above. Prefer the
+     Asana names when writing new code; keep these until every consumer
+     migrates.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  --bg:                var(--background-weak);
+  --bg-medium:         var(--background-medium);
+  --bg-strong:         var(--background-strong);
+  --bg-hover:          var(--background-hover);
+  --bg-active:         var(--background-active);
+  --link:              var(--primary-text);
+
+  --badge-red-bg:      var(--danger-background);
+  --badge-red-text:    var(--danger-text);
+  --badge-green-bg:    var(--success-background);
+  --badge-green-text:  var(--success-text);
+  --badge-blue-bg:     var(--selected-background);
+  --badge-blue-text:   var(--selected-text);
+  --badge-yellow-bg:   var(--warning-background);
+  --badge-yellow-text: var(--warning-text);
+  --badge-purple-bg:   var(--beta-background);
+  --badge-purple-text: var(--beta-text);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,6 +165,6 @@ body {
                'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
   color: var(--text);
-  background: var(--bg);
+  background: var(--background-weak);
   line-height: 1.4;
 }
