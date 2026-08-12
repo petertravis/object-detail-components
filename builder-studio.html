@@ -1,0 +1,3007 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Builder Studio — Stakeholder Review</title>
+  <link rel="stylesheet" href="https://petertravis.github.io/object-detail-components/tokens.css?v=6">
+  <link rel="stylesheet" href="https://petertravis.github.io/object-detail-components/components.css?v=6">
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════
+       BUILDER STUDIO — 3-PATH STAKEHOLDER PROTOTYPE
+       Landing page + 3 click-through paths. Same underlying scenario data
+       (Northline / Bozzuto property portfolio) rendered as 3 different
+       product directions.
+       ═══════════════════════════════════════════════════════════════════ */
+
+    :root {
+      /* The internal code paths keep their p1/p2 names — we swap the VALUES
+         so what the user calls "Path 1 · Standalone Hubs" is green (internal
+         Path 2 code) and "Path 2 · Portfolios+Hubs" is blue (internal Path 1). */
+      --accent-p1: var(--primary-text);
+      --accent-p1-bg: var(--selected-background);
+      --accent-p1-border: var(--selected-border);
+      --accent-p2: var(--success-text);
+      --accent-p2-bg: var(--success-background);
+      --accent-p2-border: var(--success-border);
+      --accent-p3: var(--beta-text);
+      --accent-p3-bg: var(--beta-background);
+      --accent-p3-border: var(--beta-border);
+    }
+
+    html, body { height: 100%; }
+    body { overflow: hidden; }
+
+    /* ── Landing page ─────────────────────────────────────────── */
+    .studio-landing {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      height: 100vh; overflow-y: auto;
+      background: var(--background-medium);
+      padding: 72px 40px 60px;
+    }
+    .studio-landing__eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-weak);
+      margin-bottom: 14px;
+    }
+    .studio-landing__title {
+      font-size: 42px; font-weight: 700; letter-spacing: -0.02em;
+      line-height: 1.1; color: var(--text);
+      max-width: 760px; text-align: center; margin-bottom: 14px;
+    }
+    .studio-landing__sub {
+      font-size: 15px; line-height: 1.55; color: var(--text-weak);
+      max-width: 620px; text-align: center; margin-bottom: 48px;
+    }
+    .studio-cards {
+      display: grid; grid-template-columns: repeat(3, 340px);
+      gap: 20px; max-width: 1120px;
+    }
+    @media (max-width: 1080px) {
+      .studio-cards { grid-template-columns: 1fr; max-width: 480px; }
+    }
+    .studio-card {
+      background: var(--background-weak); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px 22px 22px;
+      display: flex; flex-direction: column;
+      cursor: pointer; text-decoration: none; color: inherit;
+      transition: box-shadow var(--duration) var(--ease),
+                  border-color var(--duration) var(--ease),
+                  transform var(--duration) var(--ease);
+    }
+    .studio-card:hover {
+      box-shadow: var(--shadow-md); border-color: var(--border-strong);
+      transform: translateY(-2px);
+    }
+    .studio-card__badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      align-self: flex-start;
+      padding: 3px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+      margin-bottom: 16px;
+    }
+    .studio-card--p1 .studio-card__badge { background: var(--accent-p1-bg); color: var(--accent-p1); }
+    .studio-card--p2 .studio-card__badge { background: var(--accent-p2-bg); color: var(--accent-p2); }
+    .studio-card--p3 .studio-card__badge { background: var(--accent-p3-bg); color: var(--accent-p3); }
+    .studio-card__badge-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+    }
+    .studio-card__title {
+      font-size: 18px; font-weight: 700; letter-spacing: -0.01em;
+      color: var(--text); margin-bottom: 8px;
+    }
+    .studio-card__one-liner {
+      font-size: 13px; line-height: 1.5; color: var(--text-weak);
+      margin-bottom: 20px;
+    }
+    .studio-card__facts {
+      display: flex; flex-direction: column; gap: 8px; padding: 14px 0 16px;
+      border-top: 1px solid var(--border);
+    }
+    .studio-card__fact {
+      display: flex; gap: 8px; font-size: 12px; color: var(--text-weak);
+      line-height: 1.4;
+    }
+    .studio-card__fact-label {
+      color: var(--text-weak); font-weight: 500; min-width: 74px; flex-shrink: 0;
+    }
+    .studio-card__fact-value { color: var(--text); }
+    .studio-card__enter {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12.5px; font-weight: 600; color: var(--text);
+      margin-top: auto;
+    }
+    .studio-card__enter svg {
+      width: 14px; height: 14px;
+      transition: transform var(--duration) var(--ease);
+    }
+    .studio-card:hover .studio-card__enter svg { transform: translateX(3px); }
+
+    .studio-landing__footer {
+      margin-top: 48px; font-size: 12px; color: var(--text-weak);
+      text-align: center; max-width: 620px; line-height: 1.55;
+    }
+
+    /* ── Common path-frame chrome (top bar with back + step nav) ──── */
+    .path-frame {
+      display: none; flex-direction: column;
+      height: 100vh; overflow: hidden;
+      background: var(--background-weak);
+    }
+    .path-frame--active { display: flex; }
+    .path-frame__topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px;
+      background: var(--background-weak);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .path-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px 6px 8px; border-radius: 6px;
+      background: none; border: 1px solid var(--border);
+      color: var(--text-weak); font-size: 12.5px; font-weight: 500;
+      cursor: pointer; font-family: inherit;
+      transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+    }
+    .path-back:hover { background: var(--background-hover); color: var(--text); }
+    .path-back svg { width: 12px; height: 12px; }
+    .path-crumb {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12.5px; color: var(--text-weak);
+    }
+    .path-crumb__badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 2px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+    }
+    .path-crumb__badge--p1 { background: var(--accent-p1-bg); color: var(--accent-p1); }
+    .path-crumb__badge--p2 { background: var(--accent-p2-bg); color: var(--accent-p2); }
+    .path-crumb__badge--p3 { background: var(--accent-p3-bg); color: var(--accent-p3); }
+    .path-steps {
+      display: inline-flex; gap: 4px; align-items: center;
+    }
+    .path-step {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 6px;
+      background: none; border: none; cursor: pointer;
+      font-size: 12px; color: var(--text-weak); font-family: inherit;
+      transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+    }
+    .path-step:hover { background: var(--background-hover); color: var(--text); }
+    .path-step--active { background: var(--background-active); color: var(--text); font-weight: 500; }
+    .path-step__num {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--background-strong); color: var(--text-weak);
+      font-size: 10.5px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .path-step--active .path-step__num { background: var(--text); color: var(--background-weak); }
+
+    .path-frame__body { flex: 1; min-height: 0; overflow: hidden; position: relative; }
+    /* Hide the step nav for paths where sidebar navigation drives the flow */
+    .path-frame[data-hide-steps="true"] .path-steps { display: none; }
+
+    /* Path-1 specific styles go in the "Path 1" section below */
+    /* Path-2 specific styles go in the "Path 2" section below */
+    /* Path-3 specific styles go in the "Path 3" section below */
+
+    /* ══════════════════════════════════════════════════════════════════
+       PATH 1 — Role-Based Views/Groupings
+       Uses an Asana-portfolio-like surface. No new object, no new page —
+       just filters + groupings applied to what already exists.
+       ══════════════════════════════════════════════════════════════════ */
+    .p1-shell {
+      display: grid; grid-template-columns: 200px 1fr;
+      height: 100%; background: var(--background-weak);
+    }
+    .p1-side {
+      background: var(--background-medium);
+      border-right: 1px solid var(--border);
+      padding: 12px 8px; overflow-y: auto;
+    }
+    .p1-side-head {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px 12px; font-weight: 600; color: var(--text);
+      font-size: 13px;
+    }
+    .p1-side-head__badge {
+      width: 22px; height: 22px; border-radius: 5px;
+      background: #f97316; color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+    }
+    .p1-side-section {
+      font-size: 10px; letter-spacing: 0.06em; font-weight: 700;
+      text-transform: uppercase; color: var(--text-weak);
+      padding: 14px 10px 6px;
+    }
+    .p1-side-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 6px;
+      font-size: 12.5px; color: var(--text-weak); cursor: pointer;
+      transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+    }
+    .p1-side-item:hover { background: var(--background-hover); color: var(--text); }
+    .p1-side-item--active { background: var(--background-active); color: var(--text); font-weight: 500; }
+    .p1-side-item svg { width: 14px; height: 14px; }
+
+    .p1-main {
+      display: flex; flex-direction: column; overflow: hidden;
+      background: var(--background-weak);
+    }
+    .p1-portfolio-head {
+      padding: 20px 32px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .p1-portfolio-head__breadcrumb {
+      font-size: 11.5px; color: var(--text-weak); margin-bottom: 6px;
+    }
+    .p1-portfolio-head__title {
+      font-size: 22px; font-weight: 700; letter-spacing: -0.015em;
+      color: var(--text); margin-bottom: 2px;
+    }
+    .p1-portfolio-head__sub {
+      font-size: 12.5px; color: var(--text-weak); margin-bottom: 14px;
+    }
+    .p1-tabs { display: flex; gap: 4px; }
+    .p1-tab {
+      padding: 8px 12px; font-size: 12.5px; color: var(--text-weak);
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+    }
+    .p1-tab:hover { color: var(--text); }
+    .p1-tab--active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+
+    .p1-toolbar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 32px; border-bottom: 1px solid var(--border);
+      background: var(--background-weak);
+    }
+    .p1-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px 5px 8px; border-radius: 6px;
+      background: var(--background-medium); border: 1px solid var(--border);
+      color: var(--text); font-size: 12px; font-weight: 500;
+      cursor: pointer; font-family: inherit;
+      transition: background var(--duration) var(--ease), border-color var(--duration) var(--ease);
+    }
+    .p1-chip:hover { background: var(--background-strong); }
+    .p1-chip svg { width: 12px; height: 12px; }
+    .p1-chip--active {
+      background: var(--selected-background); border-color: var(--selected-border);
+      color: var(--selected-text);
+    }
+    .p1-role-chip {
+      background: var(--background-medium); border: 1px dashed var(--border-strong);
+    }
+    .p1-role-chip--active {
+      background: var(--accent-p1-bg); border-style: solid; border-color: var(--accent-p1-border);
+      color: var(--accent-p1);
+    }
+    .p1-role-chip__label {
+      font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase;
+      opacity: 0.7; font-weight: 700;
+    }
+
+    .p1-callout {
+      margin: 14px 32px 0;
+      background: var(--accent-p1-bg); border: 1px solid var(--accent-p1-border);
+      border-radius: 8px; padding: 12px 16px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .p1-callout__icon {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent-p1); color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .p1-callout__icon svg { width: 12px; height: 12px; }
+    .p1-callout__body { color: var(--accent-p1); font-size: 12.5px; line-height: 1.5; }
+    .p1-callout__body strong { color: var(--accent-p1); }
+
+    .p1-table-wrap { padding: 16px 32px 32px; overflow-y: auto; flex: 1; }
+    .p1-table {
+      width: 100%; background: var(--background-weak);
+      border: 1px solid var(--border); border-radius: 10px;
+      border-collapse: separate; border-spacing: 0;
+      overflow: hidden; box-shadow: var(--shadow-sm);
+    }
+    .p1-table th, .p1-table td {
+      padding: 10px 14px; text-align: left; font-size: 12.5px;
+      border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    .p1-table th {
+      background: var(--background-medium); color: var(--text-weak);
+      font-size: 11px; letter-spacing: 0.04em;
+      text-transform: uppercase; font-weight: 600;
+    }
+    .p1-table tr:last-child td { border-bottom: none; }
+    .p1-table tr:hover td { background: var(--background-hover); }
+    .p1-table__group-row td {
+      background: var(--background-medium); color: var(--text-weak);
+      font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; padding: 8px 14px;
+    }
+    .p1-cell-name { font-weight: 500; color: var(--text); }
+    .p1-cell-locked {
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .p1-cell-locked svg { width: 10px; height: 10px; color: var(--text-weak); }
+    .p1-cell-mgr {
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .p1-cell-mgr__avatar {
+      width: 20px; height: 20px; border-radius: 50%; color: #fff;
+      font-size: 9.5px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .p1-cell-occ {
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .p1-cell-occ__bar {
+      width: 44px; height: 5px; background: var(--background-strong);
+      border-radius: 3px; overflow: hidden;
+    }
+    .p1-cell-occ__fill {
+      height: 100%; border-radius: 3px;
+    }
+    .p1-cell-badge {
+      display: inline-flex; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 500;
+    }
+    .p1-cell-badge--warning { background: var(--warning-background); color: var(--warning-text); }
+    .p1-cell-badge--success { background: var(--success-background); color: var(--success-text); }
+    .p1-cell-badge--primary { background: var(--selected-background); color: var(--selected-text); }
+    .p1-cell-badge--danger  { background: var(--danger-background);  color: var(--danger-text);  }
+
+    /* Shared Asana chrome — icon rail (60px) + rest (secondary panel + main) */
+    .asana-frame {
+      display: grid; grid-template-columns: 60px 1fr;
+      height: 100%; background: var(--background-medium);
+    }
+    /* Plain sidebar header (no colored workspace badge) */
+    .p1-side-head--plain {
+      font-weight: 700; color: var(--text);
+      padding: 12px 12px 8px;
+    }
+    /* Highlighted sidebar section label — used for the "Hubs" section that
+       Path 2 introduces */
+    .p1-side-section--accent { color: var(--accent-p2); }
+
+    /* Path 1 tab bodies — Overview / Tasks / Projects / Team */
+    .p1-tab-body { overflow-y: auto; flex: 1; }
+    .p1-panel { padding: 16px 32px 32px; }
+    .p1-panel__kpis {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 12px; margin-bottom: 20px;
+    }
+    .p1-panel__two-col {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+
+    /* Projects tab */
+    .p1-projects-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 12px;
+    }
+    .p1-project-card {
+      background: var(--background-weak); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px 12px;
+    }
+    .p1-project-card__head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .p1-project-card__icon {
+      width: 32px; height: 32px; border-radius: 7px;
+      background: var(--background-medium); color: var(--text-weak);
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .p1-project-card__icon svg { width: 15px; height: 15px; }
+    .p1-project-card__title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .p1-project-card__meta { font-size: 11.5px; color: var(--text-weak); margin-top: 2px; }
+    .p1-project-card__bar {
+      height: 5px; background: var(--background-strong); border-radius: 3px; overflow: hidden;
+    }
+    .p1-project-card__bar span { display: block; height: 100%; border-radius: 3px; }
+
+    /* Path 1 Builder mode (AI prompt → building → publish) */
+    .p1-builder { display: flex; flex-direction: column; height: 100%; background: var(--background-weak); }
+    .p1-builder__header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .p1-builder__title {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12.5px; color: var(--text-weak);
+    }
+    .p1-builder__title strong { color: var(--text); font-weight: 500; }
+    .p1-builder__cancel {
+      padding: 5px 12px; border-radius: 6px;
+      background: none; border: 1px solid var(--border);
+      color: var(--text); font-size: 12.5px; font-weight: 500;
+      cursor: pointer; font-family: inherit;
+      transition: background var(--duration) var(--ease);
+    }
+    .p1-builder__cancel:hover { background: var(--background-medium); }
+    .p1-builder__publish {
+      padding: 5px 14px; border-radius: 6px;
+      background: var(--accent-p1); border: 1px solid var(--accent-p1);
+      color: #fff; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: opacity var(--duration) var(--ease);
+    }
+    .p1-builder__publish:hover { opacity: 0.9; }
+    .p1-builder__split { flex: 1; display: grid; grid-template-columns: 340px 1fr; overflow: hidden; }
+    .p1-builder__preview {
+      background: var(--background-medium);
+      overflow: auto; position: relative;
+      padding: 20px;
+      display: flex; align-items: flex-start; justify-content: center;
+    }
+    .p1-builder__preview-chrome {
+      width: 100%;
+      background: var(--background-weak);
+      border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+    /* Shrink the real app shell to fit the preview area while keeping every
+       detail (sidebar, tabs, filter chips, real table columns) visible. */
+    .p1-builder__preview-shell {
+      zoom: 0.8;
+      height: 640px;
+    }
+
+    /* Team tab */
+    .p1-team-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .p1-team-card {
+      background: var(--background-weak); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .p1-team-card__head { display: flex; align-items: center; gap: 12px; }
+    .p1-team-card__name { font-size: 13.5px; font-weight: 600; color: var(--text); }
+    .p1-team-card__role { font-size: 11.5px; color: var(--text-weak); margin-top: 2px; }
+    .p1-team-card__foot {
+      padding-top: 10px; margin-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 11.5px; color: var(--text-weak);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       AI-CHAT MODULE (ported + slimmed from asana-tables-v2.html)
+       Reusable in both Path 2 (step 3) and Path 3 (step 2).
+       Class prefix: .aic-*
+       ══════════════════════════════════════════════════════════════════ */
+
+    /* Empty-state prompt hero — used in Path 3 step 2 */
+    .aic-hero {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 52px 24px 48px; max-width: 620px; margin: 0 auto;
+    }
+    .aic-hero__icon {
+      width: 52px; height: 52px; background: #fff0ee; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; color: #f97316;
+    }
+    .aic-hero__icon svg { width: 22px; height: 22px; }
+    .aic-hero__headline {
+      font-size: 22px; font-weight: 700; color: var(--text);
+      text-align: center; margin-bottom: 20px; line-height: 1.35;
+    }
+    .aic-input-card {
+      width: 100%; background: var(--background-weak);
+      border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; box-shadow: var(--shadow-sm);
+      transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+      margin-bottom: 14px;
+    }
+    .aic-input-card:focus-within { border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+    .aic-input-textarea {
+      width: 100%; min-height: 82px; padding: 14px 16px 6px;
+      font-size: 14px; font-family: inherit; color: var(--text);
+      background: none; border: none; outline: none; resize: none; line-height: 22px;
+    }
+    .aic-input-textarea::placeholder { color: var(--text-weak); }
+    .aic-input-footer {
+      display: flex; align-items: center; justify-content: space-between; padding: 6px 10px;
+    }
+    .aic-input-tools { display: flex; align-items: center; gap: 2px; }
+    .aic-tool-btn {
+      width: 28px; height: 28px; border-radius: 6px; border: none;
+      background: none; color: var(--icon); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+    }
+    .aic-tool-btn:hover { background: var(--background-medium); color: var(--icon-hover); }
+    .aic-tool-btn svg { width: 15px; height: 15px; }
+    .aic-submit-btn {
+      width: 30px; height: 30px; border-radius: 50%; border: none;
+      background: var(--text); color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: opacity var(--duration) var(--ease);
+    }
+    .aic-submit-btn:hover { opacity: 0.82; }
+    .aic-submit-btn svg { width: 14px; height: 14px; }
+
+    /* Featured suggestion cards below input */
+    .aic-feat-label {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      align-self: flex-start; margin: 18px 0 12px;
+    }
+    .aic-feat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 12px; width: 100%;
+    }
+    .aic-feat-card {
+      background: var(--background-weak); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 14px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+      font-family: inherit;
+    }
+    .aic-feat-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .aic-feat-icon {
+      width: 36px; height: 36px; background: #fff0ee; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px; color: #f97316; flex-shrink: 0;
+    }
+    .aic-feat-icon svg { width: 16px; height: 16px; }
+    .aic-feat-title { font-size: 12.5px; font-weight: 600; color: var(--text); margin-bottom: 4px; line-height: 1.35; }
+    .aic-feat-desc { font-size: 11.5px; color: var(--text-weak); line-height: 1.4; }
+
+    /* Chat panel (side rail on Path 2 step 3, embedded on Path 3 step 2 building state) */
+    .aic-panel {
+      width: 340px; flex-shrink: 0;
+      display: flex; flex-direction: column;
+      background: var(--background-weak);
+      border-right: 1px solid var(--border);
+    }
+    .aic-panel__crumb {
+      height: 38px; flex-shrink: 0; padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      font-size: 12.5px; color: var(--text-weak); gap: 5px;
+    }
+    .aic-panel__crumb strong { color: var(--text); font-weight: 500; }
+    .aic-panel__body {
+      flex: 1; overflow-y: auto; padding: 18px 16px 10px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .aic-panel__footer {
+      flex-shrink: 0; padding: 10px 12px 12px;
+      border-top: 1px solid var(--border);
+    }
+    .aic-followup-wrap {
+      border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; background: var(--background-medium);
+      transition: border-color var(--duration) var(--ease), background var(--duration) var(--ease);
+    }
+    .aic-followup-wrap:focus-within { background: var(--background-weak); border-color: var(--border-strong); }
+    .aic-followup-textarea {
+      width: 100%; padding: 9px 12px 4px; font-size: 13px;
+      font-family: inherit; color: var(--text);
+      background: none; border: none; outline: none;
+      resize: none; min-height: 34px; max-height: 90px; line-height: 20px; display: block;
+    }
+    .aic-followup-textarea::placeholder { color: var(--text-weak); }
+    .aic-followup-row {
+      display: flex; align-items: center; justify-content: flex-end; padding: 3px 8px 6px;
+    }
+    .aic-followup-send {
+      width: 24px; height: 24px; border-radius: 50%; border: none;
+      background: var(--text); color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity var(--duration) var(--ease);
+    }
+    .aic-followup-send:hover { opacity: 0.80; }
+    .aic-followup-send svg { width: 12px; height: 12px; }
+
+    /* Chat bubbles */
+    .aic-user-bubble {
+      max-width: 260px; align-self: flex-end;
+      background: #fff1c2;
+      border-radius: 12px 12px 4px 12px;
+      padding: 10px 13px; font-size: 13.5px; color: var(--text); line-height: 1.4;
+    }
+    .aic-ai-text { font-size: 13.5px; color: var(--text); line-height: 1.55; }
+    .aic-ai-text p { margin: 0 0 6px; }
+    .aic-ai-text p:last-child { margin-bottom: 0; }
+    .aic-ai-text ul { padding-left: 18px; margin: 4px 0 8px; display: flex; flex-direction: column; gap: 3px; }
+    .aic-ai-text li { font-size: 13.5px; line-height: 1.5; }
+    .aic-ai-text strong { color: var(--text); font-weight: 600; }
+    .aic-status-row {
+      display: flex; align-items: center; gap: 8px; font-size: 12.5px;
+      color: var(--text-weak);
+    }
+    .aic-status-row--done { color: var(--success-text); }
+    .aic-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(196,124,0,0.25);
+      border-top-color: #c47c00;
+      border-radius: 50%;
+      animation: aic-spin 0.8s linear infinite; flex-shrink: 0;
+    }
+    .aic-check {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--success-text); color: #fff;
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .aic-check svg { width: 8px; height: 8px; }
+    @keyframes aic-spin { to { transform: rotate(360deg); } }
+
+    /* ══════════════════════════════════════════════════════════════════
+       PATH 2 — Portfolio-as-Hub with AI
+       Reuses the p1-shell chrome (portfolio surface) but adds:
+       - a "Hub mode" toggle in the toolbar
+       - a hub layout (KPI strip + widgets) that replaces the list
+       - a side chat panel for AI refinement
+       - role tabs, connected-record slide-in, leadership cut
+       ══════════════════════════════════════════════════════════════════ */
+
+    .p2-hub-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--background-weak); color: var(--text-weak);
+      font-size: 12px; font-weight: 500; font-family: inherit;
+      cursor: pointer;
+      transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+    }
+    .p2-hub-toggle:hover { background: var(--background-medium); color: var(--text); }
+    .p2-hub-toggle--active {
+      background: var(--accent-p2-bg); border-color: var(--accent-p2-border);
+      color: var(--accent-p2);
+    }
+    .p2-hub-toggle svg { width: 13px; height: 13px; }
+
+    /* Hub layout — dashboard-style widget grid */
+    .p2-hub {
+      padding: 20px 32px 40px;
+      display: grid; gap: 16px; overflow-y: auto;
+      grid-template-columns: 2fr 1fr;
+    }
+    .p2-hub__kpi-row {
+      grid-column: 1 / -1;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    .p2-kpi {
+      background: var(--background-weak); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .p2-kpi__label {
+      font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase;
+      font-weight: 700; color: var(--text-weak); margin-bottom: 6px;
+    }
+    .p2-kpi__value {
+      font-size: 24px; font-weight: 700; letter-spacing: -0.015em;
+      color: var(--text); line-height: 1.1;
+    }
+    .p2-kpi__sub { font-size: 11.5px; color: var(--text-weak); margin-top: 4px; }
+    .p2-kpi__value--warn { color: var(--warning-text); }
+    .p2-kpi__value--good { color: var(--success-text); }
+
+    .p2-widget {
+      background: var(--background-weak); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .p2-widget__head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+    }
+    .p2-widget__title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .p2-widget__meta { font-size: 11.5px; color: var(--text-weak); }
+    .p2-widget__body { padding: 10px 12px 12px; }
+
+    /* Property cards grid (inside a widget) */
+    .p2-prop-grid {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+    .p2-prop-card {
+      background: var(--background-medium); border-radius: 8px;
+      padding: 10px 12px; cursor: pointer;
+      transition: background var(--duration) var(--ease);
+    }
+    .p2-prop-card:hover { background: var(--background-strong); }
+    .p2-prop-card__name {
+      font-size: 12px; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+    .p2-prop-card__meta { font-size: 11px; color: var(--text-weak); }
+
+    /* Activity feed inside a widget */
+    .p2-activity {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .p2-activity__item {
+      display: flex; gap: 10px; padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .p2-activity__item:last-child { border-bottom: none; padding-bottom: 0; }
+    .p2-activity__avatar {
+      width: 24px; height: 24px; border-radius: 50%; color: #fff;
+      font-size: 9.5px; font-weight: 700; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .p2-activity__body { font-size: 12px; color: var(--text); line-height: 1.4; }
+    .p2-activity__body strong { font-weight: 600; }
+    .p2-activity__time { font-size: 11px; color: var(--text-weak); margin-top: 2px; }
+
+    /* Cross-portfolio task list widget */
+    .p2-tasks {
+      display: flex; flex-direction: column;
+    }
+    .p2-task {
+      display: grid;
+      grid-template-columns: 20px 1fr 130px 90px;
+      align-items: center;
+      gap: 10px; padding: 8px 4px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+    }
+    .p2-task:last-child { border-bottom: none; }
+    .p2-task__check {
+      width: 16px; height: 16px; border: 1.5px solid var(--border-strong);
+      border-radius: 50%;
+    }
+    .p2-task__name { color: var(--text); }
+    .p2-task__prop { color: var(--text-weak); font-size: 12px; }
+    .p2-task__badge {
+      display: inline-flex; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 500; align-self: center; justify-self: end;
+    }
+
+    /* Role tabs (Step 4) */
+    .p2-role-tabs {
+      display: flex; gap: 4px; padding: 12px 32px 0;
+      background: var(--background-weak);
+      border-bottom: 1px solid var(--border);
+    }
+    .p2-role-tab {
+      padding: 8px 14px; font-size: 12.5px; color: var(--text-weak);
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+    }
+    .p2-role-tab:hover { color: var(--text); }
+    .p2-role-tab--active {
+      color: var(--accent-p2); border-bottom-color: var(--accent-p2);
+      font-weight: 500;
+    }
+
+    /* Split view: chat panel + hub (Step 3) */
+    .p2-split {
+      display: grid; grid-template-columns: 340px 1fr;
+      height: 100%; overflow: hidden;
+    }
+
+    /* Connected records slide-in panel (Step 5) */
+    .p2-connections {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 400px;
+      background: var(--background-weak); border-left: 1px solid var(--border);
+      box-shadow: -12px 0 30px rgba(0,0,0,0.06);
+      display: flex; flex-direction: column;
+      transform: translateX(0);
+      z-index: 10;
+    }
+    .p2-connections__head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+    }
+    .p2-connections__title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .p2-connections__close {
+      width: 26px; height: 26px; border: none; background: none;
+      color: var(--text-weak); cursor: pointer; border-radius: 5px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .p2-connections__close:hover { background: var(--background-medium); color: var(--text); }
+    .p2-connections__close svg { width: 14px; height: 14px; }
+    .p2-connections__body {
+      flex: 1; overflow-y: auto; padding: 12px 20px;
+    }
+    .p2-conn-section-title {
+      font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+      font-weight: 700; color: var(--text-weak);
+      padding: 14px 0 8px;
+    }
+    .p2-conn-row {
+      display: flex; align-items: center; gap: 10px; padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px; color: var(--text);
+    }
+    .p2-conn-row:last-child { border-bottom: none; }
+    .p2-conn-row__icon {
+      width: 24px; height: 24px; border-radius: 5px;
+      background: var(--background-medium); color: var(--text-weak);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .p2-conn-row__icon svg { width: 12px; height: 12px; }
+    .p2-conn-row__body { flex: 1; }
+    .p2-conn-row__meta { font-size: 11px; color: var(--text-weak); margin-top: 2px; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       PATH 3 — Standalone App (AI-Generated)
+       Builder entry → AI prompt → app list → the app → access placeholder
+       ══════════════════════════════════════════════════════════════════ */
+
+    .p3-shell {
+      display: grid; grid-template-columns: 200px 1fr;
+      height: 100%; background: var(--background-weak);
+    }
+    .p3-side { background: var(--background-medium); border-right: 1px solid var(--border); padding: 12px 8px; overflow-y: auto; }
+    /* Reuses .p1-side-head, .p1-side-item pattern */
+    .p3-side-item-new {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 6px;
+      font-size: 12.5px; color: var(--accent-p3); cursor: pointer;
+      font-weight: 600;
+      background: var(--accent-p3-bg); border: 1px dashed var(--accent-p3-border);
+      margin: 4px;
+    }
+    .p3-side-item-new svg { width: 14px; height: 14px; }
+    .p3-side-item-new-badge {
+      margin-left: auto; font-size: 10px; font-weight: 700;
+      background: var(--accent-p3); color: #fff;
+      padding: 1px 6px; border-radius: 10px;
+    }
+    .p3-side-item--active-purple {
+      background: var(--accent-p3-bg); color: var(--accent-p3); font-weight: 500;
+    }
+
+    .p3-main {
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* Step 1: Builder landing page (empty state) */
+    .p3-landing {
+      flex: 1; overflow-y: auto;
+      padding: 48px 40px 40px;
+    }
+    .p3-landing__header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 6px;
+    }
+    .p3-landing__badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 2px 8px; border-radius: 20px;
+      background: var(--accent-p3-bg); color: var(--accent-p3);
+      font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+    }
+    .p3-landing__title {
+      font-size: 26px; font-weight: 700; letter-spacing: -0.015em;
+      color: var(--text); margin-bottom: 8px;
+    }
+    .p3-landing__sub {
+      font-size: 13.5px; color: var(--text-weak); line-height: 1.55;
+      max-width: 560px; margin-bottom: 32px;
+    }
+    .p3-landing__actions {
+      display: flex; gap: 12px; margin-bottom: 40px;
+    }
+    .p3-landing-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; border: 1px solid var(--border);
+      background: var(--background-weak); color: var(--text);
+      transition: background var(--duration) var(--ease), border-color var(--duration) var(--ease);
+    }
+    .p3-landing-btn--primary {
+      background: var(--accent-p3); border-color: var(--accent-p3); color: #fff;
+    }
+    .p3-landing-btn--primary:hover { opacity: 0.9; }
+    .p3-landing-btn:hover { background: var(--background-medium); }
+    .p3-landing-btn svg { width: 14px; height: 14px; }
+
+    .p3-empty-state {
+      background: var(--background-medium);
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 12px; padding: 40px 24px;
+      display: flex; flex-direction: column; align-items: center;
+      max-width: 640px;
+    }
+    .p3-empty-state__icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: var(--accent-p3-bg); color: var(--accent-p3);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+    }
+    .p3-empty-state__icon svg { width: 22px; height: 22px; }
+    .p3-empty-state__title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .p3-empty-state__body { font-size: 13px; color: var(--text-weak); text-align: center; line-height: 1.55; }
+
+    /* Step 3: App list / management */
+    .p3-apps-head {
+      padding: 24px 40px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .p3-apps-head__title { font-size: 22px; font-weight: 700; color: var(--text); }
+    .p3-apps-head__sub { font-size: 12.5px; color: var(--text-weak); margin-top: 4px; }
+    .p3-apps-tabs { display: flex; gap: 4px; margin-top: 16px; }
+    .p3-apps-tab {
+      padding: 6px 12px; font-size: 12.5px; color: var(--text-weak);
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+    }
+    .p3-apps-tab--active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+
+    .p3-apps-body {
+      padding: 20px 40px 40px;
+      overflow-y: auto; flex: 1;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .p3-app-card {
+      background: var(--background-weak); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 16px 14px;
+      display: flex; flex-direction: column; cursor: pointer;
+      transition: box-shadow var(--duration) var(--ease), border-color var(--duration) var(--ease);
+    }
+    .p3-app-card:hover { box-shadow: var(--shadow-sm); border-color: var(--border-strong); }
+    .p3-app-card__icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; color: #fff;
+      margin-bottom: 12px;
+    }
+    .p3-app-card__title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .p3-app-card__desc { font-size: 12px; color: var(--text-weak); line-height: 1.5; margin-bottom: 12px; flex: 1; }
+    .p3-app-card__foot {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 10px; border-top: 1px solid var(--border);
+      font-size: 11.5px; color: var(--text-weak);
+    }
+    .p3-app-card__pill {
+      display: inline-flex; padding: 2px 8px; border-radius: 20px;
+      font-size: 10.5px; font-weight: 600;
+      background: var(--background-medium); color: var(--text-weak);
+    }
+    .p3-app-card__pill--new {
+      background: var(--accent-p3-bg); color: var(--accent-p3);
+    }
+
+    /* Northline app embedded — note bar + iframe fills the remainder */
+    .p3-embed-container {
+      display: flex; flex-direction: column;
+      background: var(--background-weak); overflow: hidden;
+    }
+    .p3-embed-frame {
+      flex: 1; width: 100%; border: none;
+      background: var(--background-weak);
+    }
+    .p3-embed-note {
+      padding: 8px 16px; background: var(--accent-p3-bg);
+      color: var(--accent-p3); font-size: 11.5px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--accent-p3-border);
+    }
+    .p3-embed-note__label { color: var(--accent-p3); }
+    .p3-embed-note__label strong { font-weight: 600; }
+    .p3-embed-note__link {
+      margin-left: auto; color: var(--accent-p3); font-weight: 600;
+      text-decoration: none;
+    }
+    .p3-embed-note__link:hover { text-decoration: underline; }
+
+    /* Step 1: Asana Tables view — the state before the user clicks Builder */
+    .p3-asana {
+      display: grid; grid-template-columns: 60px 260px 1fr;
+      height: 100%; background: var(--background-medium);
+    }
+    .p3-asana__rail {
+      background: var(--background-medium);
+      border-right: 1px solid var(--border);
+      padding: 12px 0 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .p3-asana__rail-item {
+      width: 44px; padding: 6px 0;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      color: var(--text-weak); font-size: 10px; font-weight: 500;
+      cursor: pointer; border-radius: 6px;
+      transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+    }
+    .p3-asana__rail-item:hover { background: var(--background-hover); color: var(--text); }
+    .p3-asana__rail-item svg { width: 18px; height: 18px; }
+    .p3-asana__rail-item--active {
+      background: var(--background-active); color: var(--text); font-weight: 600;
+    }
+    .p3-asana__rail-item--builder {
+      color: var(--accent-p3);
+      border: 1px dashed var(--accent-p3-border);
+      background: var(--accent-p3-bg);
+      margin-top: 4px;
+      position: relative;
+    }
+    .p3-asana__rail-item--builder:hover {
+      background: var(--accent-p3-bg); color: var(--accent-p3);
+      box-shadow: 0 0 0 2px rgba(117, 107, 196, 0.15);
+    }
+    /* Northline custom-app icon — appears in the rail after publish */
+    .p3-asana__rail-item--northline {
+      color: #fff;
+    }
+    .p3-asana__rail-item--northline .p3-asana__rail-icon {
+      width: 26px; height: 26px; border-radius: 6px;
+      background: #f97316;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff;
+    }
+    .p3-asana__rail-item--northline .p3-asana__rail-icon svg { display: none; }
+    .p3-asana__rail-item--northline.p3-asana__rail-item--active .p3-asana__rail-icon {
+      box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.35);
+    }
+    .p3-asana__rail-item--northline { color: var(--text-weak); }
+    .p3-asana__rail-item--northline.p3-asana__rail-item--active { color: var(--text); font-weight: 600; }
+    .p3-asana__rail-spacer { flex: 1; }
+    .p3-asana__rail-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #d97706; color: #fff;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 6px;
+    }
+
+    .p3-asana__sidenav {
+      background: var(--background-weak);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+    .p3-asana__sidenav-head {
+      padding: 14px 16px 6px;
+      font-size: 13px; font-weight: 600; color: var(--text);
+    }
+    .p3-asana__sidenav-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 14px; font-size: 13px; color: var(--text-weak);
+      cursor: pointer;
+      transition: background var(--duration) var(--ease);
+    }
+    .p3-asana__sidenav-item:hover { background: var(--background-hover); color: var(--text); }
+    .p3-asana__sidenav-item--active {
+      background: var(--background-active); color: var(--text); font-weight: 500;
+    }
+    .p3-asana__sidenav-item svg { width: 14px; height: 14px; color: var(--icon); }
+    .p3-asana__sidenav-section {
+      font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+      font-weight: 700; color: var(--text-weak);
+      padding: 14px 16px 4px;
+    }
+    .p3-asana__sidenav-foot { margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--border); }
+    .p3-asana__invite {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12.5px; color: var(--text-weak); cursor: pointer;
+    }
+    .p3-asana__invite svg { width: 14px; height: 14px; }
+
+    .p3-asana__main {
+      display: flex; flex-direction: column; background: var(--background-weak);
+      overflow: hidden;
+    }
+    .p3-asana__topbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--background-weak);
+    }
+    .p3-asana__create {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px 6px 10px; border-radius: 20px;
+      background: #f97316; color: #fff; font-weight: 600; font-size: 12.5px;
+      border: none; cursor: pointer; font-family: inherit;
+    }
+    .p3-asana__create svg { width: 14px; height: 14px; }
+    .p3-asana__nav-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: none; border: none; color: var(--icon); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .p3-asana__nav-btn:hover { background: var(--background-hover); color: var(--text); }
+    .p3-asana__nav-btn svg { width: 14px; height: 14px; }
+    .p3-asana__search {
+      flex: 1; max-width: 640px; margin: 0 auto;
+      background: var(--background-medium); border-radius: 20px;
+      padding: 6px 12px; display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--text-weak);
+    }
+    .p3-asana__search svg { width: 14px; height: 14px; }
+    .p3-asana__topbar-right { display: inline-flex; align-items: center; gap: 4px; }
+
+    .p3-asana__page-head {
+      padding: 16px 24px 12px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .p3-asana__page-title {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 18px; font-weight: 700; color: var(--text);
+    }
+    .p3-asana__pill {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.03em;
+      background: var(--warning-background); color: var(--warning-text);
+      padding: 2px 8px; border-radius: 20px;
+    }
+    .p3-asana__feedback { font-size: 12.5px; color: var(--primary-text); text-decoration: none; }
+    .p3-asana__page-tools { display: inline-flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--text-weak); }
+    .p3-asana__page-tools svg { width: 12px; height: 12px; }
+    .p3-asana__create-tbl {
+      display: inline-flex; padding: 6px 14px; border-radius: 6px;
+      background: var(--text); color: #fff; font-size: 12.5px; font-weight: 600;
+      border: none; cursor: pointer; font-family: inherit;
+    }
+    .p3-asana__body { flex: 1; overflow-y: auto; padding: 40px; }
+
+    /* Rail-tooltip callout that nudges the user to click Builder */
+    .p3-asana__nudge {
+      position: absolute; left: 68px; bottom: 44px;
+      background: var(--text); color: var(--background-weak);
+      padding: 8px 12px; border-radius: 8px;
+      font-size: 11.5px; font-weight: 500; white-space: nowrap;
+      box-shadow: var(--shadow-md);
+    }
+    .p3-asana__nudge::before {
+      content: ''; position: absolute; left: -5px; top: 50%; transform: translateY(-50%);
+      border: 5px solid transparent; border-right-color: var(--text);
+    }
+
+    /* Step 2: App Builder / Custom apps list */
+    .p3-appbuilder { display: flex; flex-direction: column; height: 100%; background: var(--background-weak); }
+    .p3-appbuilder__topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .p3-appbuilder__title {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: 14px; font-weight: 600; color: var(--text);
+    }
+    .p3-appbuilder__title svg { width: 16px; height: 16px; color: var(--accent-p3); }
+    .p3-appbuilder__back {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: none; border: none; color: var(--text-weak); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-right: 4px;
+    }
+    .p3-appbuilder__back:hover { background: var(--background-hover); color: var(--text); }
+    .p3-appbuilder__back svg { width: 14px; height: 14px; }
+    .p3-appbuilder__new {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 6px;
+      background: #ef4444; color: #fff; font-size: 13px; font-weight: 600;
+      border: none; cursor: pointer; font-family: inherit;
+    }
+    .p3-appbuilder__new svg { width: 14px; height: 14px; }
+    .p3-appbuilder__body { flex: 1; overflow-y: auto; padding: 32px 40px; }
+    .p3-appbuilder__heading { font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .p3-appbuilder__sub { font-size: 13px; color: var(--text-weak); margin-bottom: 22px; }
+    .p3-appbuilder__list {
+      background: var(--background-weak); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .p3-appbuilder__list-head {
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      padding: 10px 20px;
+      background: var(--background-medium);
+      font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase;
+      font-weight: 700; color: var(--text-weak);
+    }
+    .p3-appbuilder__row {
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      padding: 12px 20px; align-items: center;
+      border-top: 1px solid var(--border);
+      cursor: pointer;
+      transition: background var(--duration) var(--ease);
+    }
+    .p3-appbuilder__row:hover { background: var(--background-hover); }
+    .p3-appbuilder__row--new {
+      background: var(--accent-p3-bg);
+    }
+    .p3-appbuilder__row--new:hover { background: var(--accent-p3-bg); filter: brightness(0.98); }
+    .p3-appbuilder__app-cell {
+      display: inline-flex; align-items: center; gap: 10px;
+      color: var(--primary-text); font-size: 13px; font-weight: 500;
+    }
+    .p3-appbuilder__app-icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      color: #fff; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .p3-appbuilder__updated { font-size: 12.5px; color: var(--text-weak); }
+    .p3-appbuilder__status {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 9px; border-radius: 20px;
+      font-size: 11.5px; font-weight: 500;
+    }
+    .p3-appbuilder__status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .p3-appbuilder__status--published { background: var(--success-background); color: var(--success-text); }
+    .p3-appbuilder__status--draft { background: var(--background-medium); color: var(--text-weak); }
+
+    /* Step 5: Access/role placeholder */
+    .p3-placeholder {
+      flex: 1; overflow-y: auto;
+      padding: 48px 40px;
+      background:
+        linear-gradient(to bottom right, var(--background-medium) 0%, transparent 30%),
+        var(--background-weak);
+    }
+    .p3-placeholder__title {
+      font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 8px;
+    }
+    .p3-placeholder__sub {
+      font-size: 13.5px; color: var(--text-weak); margin-bottom: 32px;
+      max-width: 520px; line-height: 1.55;
+    }
+    .p3-question-card {
+      background: var(--background-weak); border: 1.5px dashed var(--border-strong);
+      border-radius: 12px; padding: 22px 22px 18px;
+      display: flex; gap: 16px; align-items: flex-start;
+      max-width: 720px; margin-bottom: 12px;
+      position: relative;
+    }
+    .p3-question-card__num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--accent-p3-bg); color: var(--accent-p3);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+    }
+    .p3-question-card__body { flex: 1; }
+    .p3-question-card__q {
+      font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px;
+    }
+    .p3-question-card__notes {
+      font-size: 12.5px; color: var(--text-weak); line-height: 1.55;
+    }
+    .p3-question-card__notes ul { margin: 6px 0 0 16px; padding: 0; }
+    .p3-question-card__stamp {
+      position: absolute; top: 14px; right: 16px;
+      font-size: 10px; letter-spacing: 0.06em; font-weight: 700;
+      color: var(--warning-text); background: var(--warning-background);
+      padding: 2px 8px; border-radius: 20px; text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       LANDING PAGE
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="studio-landing" id="view-landing">
+    <div class="studio-landing__eyebrow">Builder Studio · Stakeholder Review</div>
+    <h1 class="studio-landing__title">Three directions for how customers build in Asana</h1>
+    <p class="studio-landing__sub">
+      Same underlying scenario — Northline's property portfolio, teams, and workflows — presented three different ways.
+      Click a card to walk through the experience.
+    </p>
+
+    <div class="studio-cards">
+      <a href="#" class="studio-card studio-card--p2" data-path="2">
+        <span class="studio-card__badge"><span class="studio-card__badge-dot"></span>Path 1 · Standalone hubs</span>
+        <div class="studio-card__title">Role-Based Hubs</div>
+        <div class="studio-card__one-liner">
+          Hubs as first-class objects — standalone in the sidebar, AI-generated, purpose-built for the role that reads them.
+        </div>
+        <div class="studio-card__facts">
+          <div class="studio-card__fact"><span class="studio-card__fact-label">Surface</span><span class="studio-card__fact-value">New "Hubs" section in Work</span></div>
+          <div class="studio-card__fact"><span class="studio-card__fact-label">Build lift</span><span class="studio-card__fact-value">Lightest</span></div>
+          <div class="studio-card__fact"><span class="studio-card__fact-label">Best for</span><span class="studio-card__fact-value">Cross-team monitoring views</span></div>
+        </div>
+        <span class="studio-card__enter">Walk the path <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h8M9 4l4 4-4 4"/></svg></span>
+      </a>
+
+      <a href="#" class="studio-card studio-card--p1" data-path="1">
+        <span class="studio-card__badge"><span class="studio-card__badge-dot"></span>Path 2 · Portfolios + hubs</span>
+        <div class="studio-card__title">Portfolios with Hubs</div>
+        <div class="studio-card__one-liner">
+          Same portfolios you already have, enhanced — role-scoped views in the sidebar, hub as the Overview tab.
+        </div>
+        <div class="studio-card__facts">
+          <div class="studio-card__fact"><span class="studio-card__fact-label">Surface</span><span class="studio-card__fact-value">Existing portfolio + hub tab</span></div>
+          <div class="studio-card__fact"><span class="studio-card__fact-label">Build lift</span><span class="studio-card__fact-value">Medium</span></div>
+          <div class="studio-card__fact"><span class="studio-card__fact-label">Best for</span><span class="studio-card__fact-value">Teams already using portfolios</span></div>
+        </div>
+        <span class="studio-card__enter">Walk the path <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h8M9 4l4 4-4 4"/></svg></span>
+      </a>
+
+      <a href="#" class="studio-card studio-card--p3" data-path="3">
+        <span class="studio-card__badge"><span class="studio-card__badge-dot"></span>Path 3 · Build something new</span>
+        <div class="studio-card__title">Standalone App (AI-Generated)</div>
+        <div class="studio-card__one-liner">
+          A fully custom, AI-generated app — its own space, built from your data, purpose-built for one team's workflow.
+        </div>
+        <div class="studio-card__facts">
+          <div class="studio-card__fact"><span class="studio-card__fact-label">Surface</span><span class="studio-card__fact-value">New "Builder" workspace</span></div>
+          <div class="studio-card__fact"><span class="studio-card__fact-label">Build lift</span><span class="studio-card__fact-value">Heaviest</span></div>
+          <div class="studio-card__fact"><span class="studio-card__fact-label">Best for</span><span class="studio-card__fact-value">Bespoke domain workflows</span></div>
+        </div>
+        <span class="studio-card__enter">Walk the path <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h8M9 4l4 4-4 4"/></svg></span>
+      </a>
+    </div>
+
+    <div class="studio-landing__footer">
+      All three paths use the same scenario data — Northline's property portfolio, departments, and team.
+      Each path shows a different lens on the same reality, so you can compare directions on equal footing.
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       PATH 1 — Role-Based Views/Groupings
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="path-frame" id="view-path-1" data-path-frame="1" data-hide-steps="true">
+    <div class="path-frame__topbar">
+      <button class="path-back" data-back>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8H4M7 4L3 8l4 4"/></svg>
+        Back to overview
+      </button>
+      <span class="path-crumb">
+        <span class="path-crumb__badge path-crumb__badge--p1">Path 2</span>
+        Portfolios with Hubs
+      </span>
+      <div class="path-steps" data-path-steps="1">
+        <button class="path-step path-step--active" data-step="1"><span class="path-step__num">1</span> Everyone</button>
+        <button class="path-step" data-step="2"><span class="path-step__num">2</span> Property Ops</button>
+        <button class="path-step" data-step="3"><span class="path-step__num">3</span> Leadership</button>
+      </div>
+    </div>
+    <div class="path-frame__body" data-path-body="1">
+      <!-- Populated by JS below -->
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       PATH 2 — Portfolio-as-Hub with AI
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="path-frame" id="view-path-2" data-path-frame="2" data-hide-steps="true">
+    <div class="path-frame__topbar">
+      <button class="path-back" data-back>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8H4M7 4L3 8l4 4"/></svg>
+        Back to overview
+      </button>
+      <span class="path-crumb">
+        <span class="path-crumb__badge path-crumb__badge--p2">Path 1</span>
+        Role-Based Hubs
+      </span>
+      <div class="path-steps" data-path-steps="2">
+        <button class="path-step path-step--active" data-step="1"><span class="path-step__num">1</span> Prompt</button>
+        <button class="path-step" data-step="2"><span class="path-step__num">2</span> Ops Hub</button>
+        <button class="path-step" data-step="3"><span class="path-step__num">3</span> Leadership Hub</button>
+      </div>
+    </div>
+    <div class="path-frame__body" data-path-body="2">
+      <!-- Populated by JS below -->
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       PATH 3 — Standalone App (AI-Generated)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="path-frame" id="view-path-3" data-path-frame="3" data-hide-steps="true">
+    <div class="path-frame__topbar">
+      <button class="path-back" data-back>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8H4M7 4L3 8l4 4"/></svg>
+        Back to overview
+      </button>
+      <span class="path-crumb">
+        <span class="path-crumb__badge path-crumb__badge--p3">Path 3</span>
+        Standalone App
+      </span>
+      <div class="path-steps" data-path-steps="3">
+        <button class="path-step path-step--active" data-step="1"><span class="path-step__num">1</span> Asana Tables</button>
+        <button class="path-step" data-step="2"><span class="path-step__num">2</span> Custom apps</button>
+        <button class="path-step" data-step="3"><span class="path-step__num">3</span> Prompt</button>
+        <button class="path-step" data-step="4"><span class="path-step__num">4</span> Build</button>
+        <button class="path-step" data-step="5"><span class="path-step__num">5</span> The app</button>
+        <button class="path-step" data-step="6"><span class="path-step__num">6</span> Access</button>
+      </div>
+    </div>
+    <div class="path-frame__body" data-path-body="3">
+      <!-- Populated by JS below -->
+    </div>
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════════
+       SHARED SCENARIO DATA — pulled from Northline / Bozzuto prototype
+       Property portfolio, departments, team, tasks — reused across all
+       three paths so stakeholders see different lenses on the same data.
+       ═══════════════════════════════════════════════════════════════════ */
+
+    const PROPERTIES = [
+      { id: 'PROP-042', name: 'The Marlow',           location: 'Oakland, CA',    units: 84,  status: 'Takeover',        occ: 68, regionalMgr: 'James Wu',    mgrKey: 'james',   go: 'Jul 15, 2026' },
+      { id: 'PROP-011', name: 'Beacon Hill Apartments', location: 'Boston, MA',   units: 156, status: 'Stabilized',      occ: 96, regionalMgr: 'Sarah Chen',  mgrKey: 'sarah',   go: 'Sep 1, 2020', confidential: true },
+      { id: 'PROP-018', name: 'Sunset Commons',       location: 'Los Angeles, CA', units: 42,  status: 'Takeover',        occ: 52, regionalMgr: 'James Wu',    mgrKey: 'james',   go: 'Oct 30, 2026' },
+      { id: 'PROP-009', name: 'Riverside Lofts',      location: 'Portland, OR',   units: 98,  status: 'Stabilized',      occ: 94, regionalMgr: 'James Wu',    mgrKey: 'james',   go: 'May 1, 2019' },
+      { id: 'PROP-053', name: 'The Hollis',           location: 'Denver, CO',     units: 120, status: 'New Development', occ: 0,  regionalMgr: 'Marcus Reid', mgrKey: 'marcus',  go: 'Mar 1, 2027', confidential: true },
+      { id: 'PROP-027', name: 'North Park Residences', location: 'Austin, TX',    units: 68,  status: 'New Development', occ: 74, regionalMgr: 'Priya Patel', mgrKey: 'priya',   go: 'Jun 30, 2026' },
+      { id: 'PROP-021', name: 'Ivy & Vine',           location: 'Seattle, WA',    units: 54,  status: 'Renovation',      occ: 61, regionalMgr: 'James Wu',    mgrKey: 'james',   go: 'Jul 20, 2026' },
+      { id: 'PROP-034', name: 'Riverbend Flats',      location: 'Nashville, TN',  units: 76,  status: 'Separation',      occ: 63, regionalMgr: 'Priya Patel', mgrKey: 'priya',   go: 'Aug 30, 2026' },
+    ];
+
+    const OWNERS = {
+      james:  { name: 'James Wu',    color: '#059669' },
+      sarah:  { name: 'Sarah Chen',  color: '#dc2626' },
+      marcus: { name: 'Marcus Reid', color: '#7c3aed' },
+      priya:  { name: 'Priya Patel', color: '#d97706' },
+      devon:  { name: 'Devon Kim',   color: '#be185d' },
+      nadia:  { name: 'Nadia Osei',  color: '#0891b2' },
+    };
+
+    const STATUS_BADGE = {
+      'Takeover':        'warning',
+      'Stabilized':      'success',
+      'New Development': 'primary',
+      'Renovation':      'primary',
+      'Separation':      'danger',
+    };
+
+    /* ═══════════════════════════════════════════════════════════════════
+       ROUTER — landing ↔ path-1 / path-2 / path-3, each with N steps
+       ═══════════════════════════════════════════════════════════════════ */
+
+    const state = { view: 'landing', path: null, step: 1, p1Phase: 'prompt', p2Phase: 'prompt' };
+
+    function applyState() {
+      // Hide all frames
+      document.getElementById('view-landing').style.display = state.view === 'landing' ? 'flex' : 'none';
+      document.querySelectorAll('.path-frame').forEach(f => f.classList.remove('path-frame--active'));
+      if (state.view === 'path' && state.path) {
+        document.querySelector(`.path-frame[data-path-frame="${state.path}"]`).classList.add('path-frame--active');
+        // Update step-nav active state
+        const steps = document.querySelector(`[data-path-steps="${state.path}"]`);
+        if (steps) {
+          steps.querySelectorAll('.path-step').forEach(b => {
+            b.classList.toggle('path-step--active', Number(b.dataset.step) === state.step);
+          });
+        }
+        // Render path body
+        renderPathBody(state.path, state.step);
+      }
+    }
+
+    function goToLanding() {
+      state.view = 'landing';
+      state.path = null;
+      state.step = 1;
+      applyState();
+    }
+    function enterPath(pathId) {
+      state.view = 'path';
+      state.path = String(pathId);
+      // Path 1 starts in the AI builder prompt phase; step 2 = Property Ops
+      // (the default template) so when the user publishes they land there.
+      if (String(pathId) === '1') {
+        state.p1Phase = 'prompt';
+        state.step = 2;
+      } else if (String(pathId) === '2') {
+        // Path 2 also starts with a prompt hero; step 1 = Property Ops Hub
+        // (the default template) so publish lands on that hub.
+        state.p2Phase = 'prompt';
+        state.step = 1;
+      } else {
+        state.step = 1;
+      }
+      applyState();
+    }
+    function goToStep(step) {
+      state.step = step;
+      applyState();
+    }
+
+    // Card click → enter path
+    document.querySelectorAll('.studio-card').forEach(c => {
+      c.addEventListener('click', (e) => {
+        e.preventDefault();
+        enterPath(c.dataset.path);
+      });
+    });
+    // Back button → landing
+    document.querySelectorAll('[data-back]').forEach(b => b.addEventListener('click', goToLanding));
+    // Step nav
+    document.querySelectorAll('.path-step').forEach(b => {
+      b.addEventListener('click', () => goToStep(Number(b.dataset.step)));
+    });
+
+    /* ═══════════════════════════════════════════════════════════════════
+       AI-CHAT HELPERS — bubble builders + fake generation sequences
+       Used by Path 2 (refining a portfolio hub) and Path 3 (generating a new app)
+       ═══════════════════════════════════════════════════════════════════ */
+
+    function aicUserBubble(text) {
+      return `<div class="aic-user-bubble">${text}</div>`;
+    }
+    function aicAiText(html) {
+      return `<div class="aic-ai-text">${html}</div>`;
+    }
+    function aicStatusRow(text, done) {
+      if (done) {
+        return `<div class="aic-status-row aic-status-row--done">
+          <span class="aic-check"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 8 7 12 13 4"/></svg></span>
+          ${text}
+        </div>`;
+      }
+      return `<div class="aic-status-row"><span class="aic-spinner"></span>${text}</div>`;
+    }
+
+    // Append a chat sequence with realistic pacing. Steps is an array like:
+    // [{type:'user', text:'…'}, {type:'ai', html:'…'}, {type:'status', text:'…'}, {type:'status', text:'…', done:true}]
+    function aicPlaySequence(container, steps, opts = {}) {
+      let i = 0;
+      const stepDelay = opts.stepDelay || 500;
+      const initialDelay = opts.initialDelay || 250;
+      const onStep = opts.onStep || (() => {});
+      function next() {
+        if (i >= steps.length) { opts.onDone && opts.onDone(); return; }
+        const s = steps[i];
+        // Status rows can REPLACE the previous status row instead of appending
+        if (s.type === 'status' && s.replaces) {
+          const prev = container.querySelector('.aic-status-row:last-of-type');
+          if (prev) prev.outerHTML = aicStatusRow(s.text, s.done);
+        } else {
+          const html =
+            s.type === 'user'   ? aicUserBubble(s.text) :
+            s.type === 'ai'     ? aicAiText(s.html) :
+            s.type === 'status' ? aicStatusRow(s.text, s.done) : '';
+          container.insertAdjacentHTML('beforeend', html);
+        }
+        container.scrollTop = container.scrollHeight;
+        onStep(s, i);
+        i++;
+        setTimeout(next, s.delay || stepDelay);
+      }
+      setTimeout(next, initialDelay);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SHARED ASANA ICON RAIL — used by Path 1 (Work active) and Path 3
+       (Tables / Builder / Northline active depending on step).
+       ═══════════════════════════════════════════════════════════════════ */
+
+    // Returns HTML for the Asana-style icon rail at the far left.
+    // opts: { active: 'work'|'dev'|'strategy'|'workflow'|'tables'|'people'|'service'|'builder'|'northline',
+    //         hasNorthline: bool, builderNudge: string|null, builderClickable: bool }
+    function asanaRail(opts = {}) {
+      const active = opts.active || 'work';
+      const A = (k) => k === active ? 'p3-asana__rail-item--active' : '';
+      const northlineIcon = opts.hasNorthline ? `
+        <div class="p3-asana__rail-item p3-asana__rail-item--northline ${A('northline')}" data-asana-nav="northline">
+          <span class="p3-asana__rail-icon">N</span>
+          Northline
+        </div>` : '';
+      const builderClass = opts.builderClickable === false ? '' : 'p3-asana__rail-item--builder';
+      const builderNudge = opts.builderNudge ? `<div class="p3-asana__nudge">${opts.builderNudge}</div>` : '';
+      return `
+        <nav class="p3-asana__rail">
+          <div class="p3-asana__rail-item ${A('work')}" data-asana-nav="work"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg>Work</div>
+          <div class="p3-asana__rail-item ${A('dev')}" data-asana-nav="dev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 8 4 13 9 18"/><polyline points="15 8 20 13 15 18"/></svg>Dev</div>
+          <div class="p3-asana__rail-item ${A('strategy')}" data-asana-nav="strategy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 20V4M3 20h18"/><rect x="6" y="12" width="3" height="7"/><rect x="12" y="7" width="3" height="12"/><rect x="18" y="15" width="3" height="4"/></svg>Strategy</div>
+          <div class="p3-asana__rail-item ${A('workflow')}" data-asana-nav="workflow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M6 8v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8M12 14v2"/></svg>Workflow</div>
+          <div class="p3-asana__rail-item ${A('tables')}" data-asana-nav="tables"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg>Tables</div>
+          <div class="p3-asana__rail-item ${A('people')}" data-asana-nav="people"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1M17 7a2.5 2.5 0 1 1 0 5M21 20v-1a4 4 0 0 0-3-3.9"/></svg>People</div>
+          <div class="p3-asana__rail-item ${A('service')}" data-asana-nav="service"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Service</div>
+          ${northlineIcon}
+          <div class="p3-asana__rail-spacer"></div>
+          <div class="p3-asana__rail-item ${builderClass} ${A('builder')}" data-asana-nav="builder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
+            Builder
+          </div>
+          <div class="p3-asana__rail-avatar">PT</div>
+          ${builderNudge}
+        </nav>`;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       PATH BODY RENDERERS (filled in below per path)
+       ═══════════════════════════════════════════════════════════════════ */
+
+    function renderPathBody(pathId, step) {
+      const body = document.querySelector(`[data-path-body="${pathId}"]`);
+      if (!body) return;
+      if (pathId === '1') return renderPath1(body, step);
+      if (pathId === '2') return renderPath2(body, step);
+      if (pathId === '3') return renderPath3(body, step);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       PATH 1 — Role-Based Views/Groupings
+       Same portfolio, three different lenses.
+       ══════════════════════════════════════════════════════════════════ */
+
+    // Per-property extras for role-specific columns (deterministic, not random)
+    const P1_EXTRAS = {
+      'PROP-042': { vendor: 'Coastal Facilities',   openTasks: 24, nextMilestone: 'Lease-up plan · Jul 8',   monthlyRent: 2400, ytd: -3.1, region: 'West' },
+      'PROP-011': { vendor: 'Beacon Services Co.',  openTasks: 4,  nextMilestone: 'HVAC inspection · Aug 1', monthlyRent: 3100, ytd:  2.4, region: 'Northeast' },
+      'PROP-018': { vendor: 'Coastal Facilities',   openTasks: 31, nextMilestone: 'Vendor RFP · Aug 20',     monthlyRent: 2650, ytd: -5.8, region: 'West' },
+      'PROP-009': { vendor: 'Rose City Maintenance', openTasks: 6, nextMilestone: 'Annual review · Sep 1',   monthlyRent: 2100, ytd:  1.1, region: 'West' },
+      'PROP-053': { vendor: 'Rocky Mountain Build',  openTasks: 47, nextMilestone: 'Cert. of occupancy · Q1', monthlyRent: 2850, ytd:  0.0, region: 'Mountain' },
+      'PROP-027': { vendor: 'Lone Star Build',       openTasks: 22, nextMilestone: 'Punch list · Sep 10',    monthlyRent: 2200, ytd: -0.4, region: 'South' },
+      'PROP-021': { vendor: 'Emerald Contracting',   openTasks: 18, nextMilestone: 'Amenity reveal · Jul 20', monthlyRent: 2500, ytd: -1.6, region: 'West' },
+      'PROP-034': { vendor: 'Music City Vendors',    openTasks: 9,  nextMilestone: 'Handoff to buyer · Aug 30', monthlyRent: 1950, ytd: -8.2, region: 'South' },
+    };
+
+    // Three "portfolios" on the same underlying data (from the user's POV
+    // they're separate portfolios in the sidebar; under the hood they're
+    // just role-scoped filters + column swaps on one dataset).
+    const P1_ROLES = {
+      1: {
+        key: 'everyone',
+        label: 'Northline Portfolio',
+        subtitle: '8 properties · 698 units across 12 regions · owned by Priya Ramesh',
+        columns: ['name', 'location', 'units', 'status', 'occupancy', 'mgr', 'go'],
+        filter: () => true,
+        groupBy: null,
+      },
+      2: {
+        key: 'ops',
+        label: 'Property Ops Portfolio',
+        subtitle: '5 active properties · owned by the Property Ops team',
+        columns: ['name', 'location', 'status', 'vendor', 'openTasks', 'nextMilestone', 'mgr'],
+        filter: (p) => ['Takeover', 'Renovation', 'New Development'].includes(p.status),
+        groupBy: null,
+      },
+      3: {
+        key: 'leadership',
+        label: 'Leadership Portfolio',
+        subtitle: '8 properties · grouped by lifecycle stage · owned by CEO',
+        columns: ['name', 'region', 'units', 'occupancy', 'revenue', 'ytd'],
+        filter: () => true,
+        groupBy: 'status',
+      },
+    };
+
+    const P1_COL_LABEL = {
+      name: 'Property', location: 'Location', units: 'Units', status: 'Status',
+      occupancy: 'Occupancy', mgr: 'Regional Mgr', go: 'Go-live',
+      vendor: 'Primary vendor', openTasks: 'Open tasks', nextMilestone: 'Next milestone',
+      region: 'Region', revenue: 'Monthly revenue', ytd: 'YTD vs plan',
+    };
+
+    function p1Cell(p, col) {
+      const x = P1_EXTRAS[p.id] || {};
+      const initials = (name) => name.split(' ').map(w => w[0]).join('').toUpperCase();
+      switch (col) {
+        case 'name':
+          return `<span class="p1-cell-name p1-cell-locked">${p.confidential ? '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>' : ''}${p.name}</span>`;
+        case 'location': return p.location;
+        case 'units':    return `${p.units}`;
+        case 'status':   return `<span class="p1-cell-badge p1-cell-badge--${STATUS_BADGE[p.status]}">${p.status}</span>`;
+        case 'occupancy': {
+          const c = p.occ >= 90 ? 'var(--success-background-strong)' :
+                    p.occ >= 70 ? 'var(--primary-background-strong)' :
+                    p.occ >= 40 ? 'var(--warning-background-strong)' :
+                                  'var(--danger-background-strong)';
+          return `<span class="p1-cell-occ"><span class="p1-cell-occ__bar"><span class="p1-cell-occ__fill" style="width:${p.occ}%;background:${c}"></span></span><span>${p.occ}%</span></span>`;
+        }
+        case 'mgr': {
+          const o = OWNERS[p.mgrKey];
+          return `<span class="p1-cell-mgr"><span class="p1-cell-mgr__avatar" style="background:${o.color}">${initials(o.name)}</span>${o.name}</span>`;
+        }
+        case 'go':       return p.go;
+        case 'vendor':   return x.vendor || '—';
+        case 'openTasks':return x.openTasks != null ? `${x.openTasks}` : '—';
+        case 'nextMilestone': return x.nextMilestone || '—';
+        case 'region':   return x.region || '—';
+        case 'revenue':  return `$${(p.units * x.monthlyRent * (p.occ/100) / 1000).toFixed(0)}k`;
+        case 'ytd': {
+          const v = x.ytd;
+          const color = v > 0 ? 'var(--success-text)' : v < 0 ? 'var(--danger-text)' : 'var(--text-weak)';
+          const sign = v > 0 ? '+' : '';
+          return `<span style="color:${color};font-weight:500">${sign}${v.toFixed(1)}%</span>`;
+        }
+      }
+      return '';
+    }
+
+    // Currently-active sub-tab within Path 1. Reset when switching portfolio.
+    let currentP1Tab = 'properties';
+
+    function renderPath1(body, step) {
+      if (state.p1Phase === 'prompt')   return renderP1Prompt(body);
+      if (state.p1Phase === 'building') return renderP1Building(body, step);
+      return renderP1Published(body, step);
+    }
+
+    function renderP1Published(body, step) {
+      const role = P1_ROLES[step];
+      const rows = PROPERTIES.filter(role.filter);
+      const tab = currentP1Tab;
+
+      // Grouping (only Leadership step)
+      let rowsHtml = '';
+      if (role.groupBy === 'status') {
+        const order = ['Takeover', 'New Development', 'Renovation', 'Stabilized', 'Separation'];
+        for (const status of order) {
+          const group = rows.filter(p => p.status === status);
+          if (!group.length) continue;
+          rowsHtml += `<tr class="p1-table__group-row"><td colspan="${role.columns.length}">${status} · ${group.length}</td></tr>`;
+          rowsHtml += group.map(p => `<tr>${role.columns.map(c => `<td>${p1Cell(p, c)}</td>`).join('')}</tr>`).join('');
+        }
+      } else {
+        rowsHtml = rows.map(p => `<tr>${role.columns.map(c => `<td>${p1Cell(p, c)}</td>`).join('')}</tr>`).join('');
+      }
+
+      const header = role.columns.map(c => `<th>${P1_COL_LABEL[c]}</th>`).join('');
+
+      // Sidebar portfolio items — each maps to a role-step in P1_ROLES.
+      const portfolioNav = [1, 2, 3].map(stepId => {
+        const r = P1_ROLES[stepId];
+        const active = stepId === step ? 'p1-side-item--active' : '';
+        return `<div class="p1-side-item ${active}" data-p1-portfolio="${stepId}">${r.label}</div>`;
+      }).join('');
+
+      body.innerHTML = `
+        <div class="asana-frame">
+          ${asanaRail({ active: 'work' })}
+          <div class="p1-shell">
+            <aside class="p1-side">
+              <div class="p1-side-head p1-side-head--plain">Work</div>
+              <div class="p1-side-section">Portfolios</div>
+              ${portfolioNav}
+              <div class="p1-side-item">Q3 Roadmap</div>
+              <div class="p1-side-item">Vendor Contracts</div>
+              <div class="p1-side-section">Projects</div>
+              <div class="p1-side-item">The Marlow — Takeover</div>
+              <div class="p1-side-item">Sunset Commons — Takeover</div>
+              <div class="p1-side-item">The Hollis — New Dev</div>
+            </aside>
+
+            <div class="p1-main">
+            <div class="p1-portfolio-head">
+              <div class="p1-portfolio-head__breadcrumb">Portfolios · ${role.label}</div>
+              <h1 class="p1-portfolio-head__title">${role.label}</h1>
+              <div class="p1-portfolio-head__sub">${role.subtitle}</div>
+              <div class="p1-tabs">
+                <button class="p1-tab ${tab === 'overview'   ? 'p1-tab--active' : ''}" data-p1-tab="overview">Hub</button>
+                <button class="p1-tab ${tab === 'tasks'      ? 'p1-tab--active' : ''}" data-p1-tab="tasks">Tasks <span class="tab-count">${p1TaskCount(rows)}</span></button>
+                <button class="p1-tab ${tab === 'properties' ? 'p1-tab--active' : ''}" data-p1-tab="properties">Properties <span class="tab-count">${rows.length}</span></button>
+                <button class="p1-tab ${tab === 'projects'   ? 'p1-tab--active' : ''}" data-p1-tab="projects">Projects <span class="tab-count">${rows.length}</span></button>
+                <button class="p1-tab ${tab === 'team'       ? 'p1-tab--active' : ''}" data-p1-tab="team">Team <span class="tab-count">${p1TeamCount(rows)}</span></button>
+              </div>
+            </div>
+
+            <div class="p1-tab-body">${renderP1TabBody(tab, role, rows, rowsHtml, header)}</div>
+          </div>
+        </div>
+        </div>
+      `;
+
+      // Wire sidebar portfolio clicks → switch step (drives the whole view swap)
+      body.querySelectorAll('[data-p1-portfolio]').forEach(el => {
+        el.addEventListener('click', () => {
+          currentP1Tab = 'properties'; // Reset to primary tab when switching portfolio
+          goToStep(Number(el.dataset.p1Portfolio));
+        });
+      });
+      // Wire tab clicks
+      body.querySelectorAll('[data-p1-tab]').forEach(el => {
+        el.addEventListener('click', () => {
+          currentP1Tab = el.dataset.p1Tab;
+          renderPath1(body, step);
+        });
+      });
+    }
+
+    // Helpers for tab counts
+    function p1TaskCount(rows) {
+      return rows.reduce((n, p) => n + (P1_EXTRAS[p.id]?.openTasks || 0), 0);
+    }
+    function p1TeamCount(rows) {
+      const owners = new Set(rows.map(p => p.mgrKey));
+      // Add a couple of cross-cutting collaborators
+      return owners.size + 3;
+    }
+
+    // Sub-tab body renderer for Path 1
+    function renderP1TabBody(tab, role, rows, rowsHtml, header) {
+      if (tab === 'properties') {
+        return `
+          <div class="p1-toolbar">
+            <button class="p1-chip"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4h12M4 8h8M6 12h4"/></svg>Filter</button>
+            <button class="p1-chip"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 3v10M4 3l-2 2M4 3l2 2M12 13V3M12 13l-2-2M12 13l2-2"/></svg>Sort</button>
+            <button class="p1-chip ${role.groupBy ? 'p1-chip--active' : ''}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="2" width="5" height="5"/><rect x="9" y="2" width="5" height="5"/><rect x="2" y="9" width="5" height="5"/><rect x="9" y="9" width="5" height="5"/></svg>Group ${role.groupBy ? '· ' + role.groupBy : ''}</button>
+            <div style="margin-left:auto;font-size:12px;color:var(--text-weak)">Showing ${rows.length} of ${PROPERTIES.length}</div>
+          </div>
+          <div class="p1-table-wrap">
+            <table class="p1-table">
+              <thead><tr>${header}</tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>`;
+      }
+
+      if (tab === 'overview') {
+        // Reuse the Path 2 hub widget shell so the Overview tab and a
+        // standalone hub render the same content. Portfolio role maps to hub role.
+        const hubRole = role.key === 'everyone' ? 'default' : role.key;
+        return p2Hub({ role: hubRole });
+      }
+
+      if (tab === 'tasks') {
+        // Synthesize a task list from properties + their open task counts
+        const tasks = [];
+        rows.forEach(p => {
+          const x = P1_EXTRAS[p.id] || {};
+          if (x.nextMilestone) {
+            tasks.push({ name: x.nextMilestone.split(' · ')[0], due: x.nextMilestone.split(' · ')[1] || '—', propId: p.id, status: p.status === 'Stabilized' ? 'success' : p.status === 'Separation' ? 'danger' : 'primary', label: 'In Progress' });
+          }
+        });
+        // A few extra fabricated ones
+        const extra = [
+          { name: 'Q3 marketing budget approval', due: 'Aug 5',  propId: 'PROP-042', status: 'success', label: 'Done' },
+          { name: 'Broker open-house series',     due: 'Sep 3',  propId: 'PROP-042', status: 'warning', label: 'Scheduled' },
+          { name: 'Refresh photography',          due: 'Sep 20', propId: 'PROP-011', status: 'warning', label: 'Scheduled' },
+          { name: 'Vendor onboarding',            due: 'Oct 10', propId: 'PROP-018', status: 'primary', label: 'In Progress' },
+        ];
+        // Only include extras whose propId is in the filtered rows
+        const propIds = new Set(rows.map(p => p.id));
+        extra.forEach(t => propIds.has(t.propId) && tasks.push(t));
+
+        const taskRows = tasks.map(t => {
+          const p = PROPERTIES.find(x => x.id === t.propId);
+          return `
+            <tr>
+              <td style="width:20px"><span class="p2-task__check"></span></td>
+              <td class="p1-cell-name">${t.name}</td>
+              <td class="p1-cell-loc" style="color:var(--text-weak)">${p ? p.name : t.propId}</td>
+              <td style="color:var(--text-weak);white-space:nowrap">${t.due}</td>
+              <td><span class="p1-cell-badge p1-cell-badge--${t.status}">${t.label}</span></td>
+            </tr>`;
+        }).join('');
+
+        return `
+          <div class="p1-panel">
+            <div class="p1-toolbar">
+              <button class="p1-chip">Filter</button>
+              <button class="p1-chip">Sort</button>
+              <button class="p1-chip">Group</button>
+              <div style="margin-left:auto;font-size:12px;color:var(--text-weak)">${tasks.length} tasks</div>
+            </div>
+            <div class="p1-table-wrap">
+              <table class="p1-table">
+                <thead><tr><th></th><th>Task</th><th>Property</th><th>Due</th><th>Status</th></tr></thead>
+                <tbody>${taskRows}</tbody>
+              </table>
+            </div>
+          </div>`;
+      }
+
+      if (tab === 'projects') {
+        const cards = rows.map(p => {
+          const x = P1_EXTRAS[p.id] || {};
+          const progress = p.status === 'Stabilized' ? 100 : p.status === 'New Development' ? 30 : p.status === 'Separation' ? 90 : 60;
+          return `
+            <div class="p1-project-card">
+              <div class="p1-project-card__head">
+                <span class="p1-project-card__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 5h14M5 5v10"/></svg></span>
+                <div>
+                  <div class="p1-project-card__title">${p.status}: ${p.name}</div>
+                  <div class="p1-project-card__meta">${x.openTasks ?? '—'} open · Due ${p.go}</div>
+                </div>
+              </div>
+              <div class="p1-project-card__bar"><span style="width:${progress}%;background:${progress >= 90 ? 'var(--success-background-strong)' : progress >= 50 ? 'var(--primary-background-strong)' : 'var(--warning-background-strong)'}"></span></div>
+            </div>`;
+        }).join('');
+        return `
+          <div class="p1-panel">
+            <div class="p1-projects-grid">${cards}</div>
+          </div>`;
+      }
+
+      if (tab === 'team') {
+        // Unique regional managers in the filtered rows + a couple of cross-cutting contributors
+        const seen = new Set();
+        const managers = [];
+        rows.forEach(p => {
+          if (!seen.has(p.mgrKey)) {
+            seen.add(p.mgrKey);
+            const propsFor = rows.filter(x => x.mgrKey === p.mgrKey);
+            managers.push({ key: p.mgrKey, role: 'Regional Manager', props: propsFor });
+          }
+        });
+        const extras = [
+          { key: 'sarah', role: 'Marketing Lead', props: rows.slice(0, 3) },
+          { key: 'devon', role: 'Leasing Manager', props: rows.slice(0, 2) },
+          { key: 'nadia', role: 'Compliance', props: rows },
+        ];
+        const all = [...managers, ...extras];
+        const initials = (name) => name.split(' ').map(w => w[0]).join('').toUpperCase();
+        const cards = all.map(t => {
+          const o = OWNERS[t.key];
+          return `
+            <div class="p1-team-card">
+              <div class="p1-team-card__head">
+                <span class="p1-cell-mgr__avatar" style="background:${o.color};width:36px;height:36px;font-size:12px">${initials(o.name)}</span>
+                <div>
+                  <div class="p1-team-card__name">${o.name}</div>
+                  <div class="p1-team-card__role">${t.role}</div>
+                </div>
+              </div>
+              <div class="p1-team-card__foot">
+                <span>${t.props.length} ${t.props.length === 1 ? 'property' : 'properties'}</span>
+              </div>
+            </div>`;
+        }).join('');
+        return `
+          <div class="p1-panel">
+            <div class="p1-team-grid">${cards}</div>
+          </div>`;
+      }
+
+      return '';
+    }
+
+    // Path 1 template cards for the prompt hero
+    const P1_TEMPLATES = [
+      {
+        key: 'ops',
+        title: 'Property Ops Portfolio',
+        desc: 'Active turnaround work · vendors · milestones · role-scoped for the ops team.',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg>',
+        stepTarget: 2,
+        prompt: 'A property ops portfolio for the Northline field team. Filter to active work-in-progress (Takeover, Renovation, New Development). Columns: vendor, open tasks, next milestone. Owned by the Property Ops team.',
+      },
+      {
+        key: 'leadership',
+        title: 'Leadership Portfolio',
+        desc: 'Financial + status view · grouped by lifecycle stage · portfolio-level KPIs.',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13V3M2 13h12"/><rect x="4" y="8" width="2.4" height="5"/><rect x="8" y="5" width="2.4" height="8"/><rect x="12" y="10" width="2.4" height="3"/></svg>',
+        stepTarget: 3,
+        prompt: 'A leadership view of the Northline portfolio. Group properties by lifecycle stage. Show monthly revenue and YTD variance instead of ops columns. Owned by the CEO.',
+      },
+      {
+        key: 'everyone',
+        title: 'Cross-role portfolio hub',
+        desc: 'One portfolio, multiple role-scoped lenses in the sidebar — Ops, Leadership, everyone.',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2.5"/><path d="M2 14v-.5a4 4 0 0 1 4-4h1a4 4 0 0 1 4 4v.5"/><circle cx="12" cy="4.5" r="1.7"/><path d="M11 8.4a3 3 0 0 1 3.5 3v.5"/></svg>',
+        stepTarget: 1,
+        prompt: 'A property portfolio for Northline where different roles get different lenses in the sidebar — Property Ops sees active work, Leadership sees financial KPIs, everyone sees the full portfolio. Same underlying data, different filters + columns per role.',
+      },
+    ];
+
+    // Phase 1 — Prompt hero (asana-tables-v2 style empty state)
+    function renderP1Prompt(body) {
+      const featured = P1_TEMPLATES.map(t => `
+        <button class="aic-feat-card" data-p1-template="${t.key}">
+          <span class="aic-feat-icon">${t.icon}</span>
+          <div class="aic-feat-title">${t.title}</div>
+          <div class="aic-feat-desc">${t.desc}</div>
+        </button>`).join('');
+
+      body.innerHTML = `
+        <div style="flex:1;overflow-y:auto;background:var(--background-weak)">
+          <div class="aic-hero">
+            <div class="aic-hero__icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="1.5" width="6" height="6"/><rect x="8.5" y="1.5" width="6" height="3"/><rect x="8.5" y="5.5" width="6" height="9"/><rect x="1.5" y="8.5" width="6" height="6"/></svg>
+            </div>
+            <div class="aic-hero__headline">Map your portfolio.<br>Build for the roles inside it.</div>
+            <div class="aic-input-card">
+              <textarea class="aic-input-textarea" id="p1-prompt" placeholder="Describe the portfolio and who works with it. We'll identify the roles and build tailored views for each person."></textarea>
+              <div class="aic-input-footer">
+                <div class="aic-input-tools">
+                  <button class="aic-tool-btn" title="Attach"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10.5 2.5L4.2 8.8a2.5 2.5 0 0 0 3.5 3.5l7-7a4 4 0 1 0-5.7-5.7L2.5 6.5"/></svg></button>
+                  <button class="aic-tool-btn" title="Reference data"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 10a3 3 0 0 0 4.2 0l2.8-2.8a3 3 0 0 0-4.2-4.2l-1 1M10 6a3 3 0 0 0-4.2 0L3 8.8a3 3 0 0 0 4.2 4.2l1-1"/></svg></button>
+                </div>
+                <button class="aic-submit-btn" id="p1-prompt-submit"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+              </div>
+            </div>
+            <div class="aic-feat-label">Featured templates</div>
+            <div class="aic-feat-grid">${featured}</div>
+          </div>
+        </div>`;
+
+      // Wire template clicks → prefill prompt, remember target, advance to builder
+      body.querySelectorAll('[data-p1-template]').forEach(el => {
+        el.addEventListener('click', () => {
+          const t = P1_TEMPLATES.find(x => x.key === el.dataset.p1Template);
+          const textarea = document.getElementById('p1-prompt');
+          if (textarea) textarea.value = t.prompt;
+          state.step = t.stepTarget;
+          state.p1Phase = 'building';
+          applyState();
+        });
+      });
+      // Wire submit → advance to builder with default template (Property Ops)
+      const submit = () => {
+        state.step = state.step || 2;
+        state.p1Phase = 'building';
+        applyState();
+      };
+      body.querySelector('#p1-prompt-submit')?.addEventListener('click', submit);
+    }
+
+    // Phase 2 — Builder interface (chat panel + preview + Publish)
+    function renderP1Building(body, step) {
+      const role = P1_ROLES[step];
+      const rows = PROPERTIES.filter(role.filter);
+
+      // Full-fidelity preview: reuse the published view's Properties table exactly
+      const previewRowsHtml = rows.map(p => `<tr>${role.columns.map(c => `<td>${p1Cell(p, c)}</td>`).join('')}</tr>`).join('');
+      const previewHeader = role.columns.map(c => `<th>${P1_COL_LABEL[c]}</th>`).join('');
+      const taskCount = p1TaskCount(rows);
+      const teamCount = p1TeamCount(rows);
+      // Sidebar portfolio nav (mirrors the published view)
+      const portfolioNav = [1, 2, 3].map(sid => {
+        const r = P1_ROLES[sid];
+        const active = sid === step ? 'p1-side-item--active' : '';
+        return `<div class="p1-side-item ${active}">${r.label}</div>`;
+      }).join('');
+
+      body.innerHTML = `
+        <div class="p1-builder">
+          <div class="p1-builder__header">
+            <div class="p1-builder__title">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--accent-p1)"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L8 15.5 2.6 18.2l.9-5.5-4-3.9L5.5 8z" transform="translate(0 -2) scale(0.85)"/></svg>
+              <strong>Building</strong> · ${role.label}
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="p1-builder__cancel" id="p1-cancel">Cancel</button>
+              <button class="p1-builder__publish" id="p1-publish">Publish</button>
+            </div>
+          </div>
+          <div class="p1-builder__split">
+            <div class="aic-panel" style="border-right:1px solid var(--border)">
+              <div class="aic-panel__crumb">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v6a1.5 1.5 0 0 1-1.5 1.5H6l-3.5 3v-3H3.5A1.5 1.5 0 0 1 2 9.5z"/></svg>
+                AI · <strong>${role.label}</strong>
+              </div>
+              <div class="aic-panel__body" id="p1-build-chat"></div>
+              <div class="aic-panel__footer">
+                <div class="aic-followup-wrap">
+                  <textarea class="aic-followup-textarea" placeholder="Refine the portfolio…"></textarea>
+                  <div class="aic-followup-row">
+                    <button class="aic-followup-send"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p1-builder__preview">
+              <div class="p1-builder__preview-chrome">
+                <div class="p1-shell p1-builder__preview-shell">
+                  <aside class="p1-side">
+                    <div class="p1-side-head">
+                      <span class="p1-side-head__badge">N</span>
+                      Northline
+                    </div>
+                    <div class="p1-side-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l6-5 6 5v7a1 1 0 0 1-1 1h-3v-4H6v4H3a1 1 0 0 1-1-1z"/></svg>Home</div>
+                    <div class="p1-side-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 6h6M5 9h6M5 12h3"/></svg>My tasks</div>
+                    <div class="p1-side-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9v4a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9M2 9l2-6h8l2 6"/></svg>Inbox</div>
+                    <div class="p1-side-section">Portfolios</div>
+                    ${portfolioNav}
+                    <div class="p1-side-item">Q3 Roadmap</div>
+                    <div class="p1-side-item">Vendor Contracts</div>
+                    <div class="p1-side-section">Projects</div>
+                    <div class="p1-side-item">The Marlow — Takeover</div>
+                    <div class="p1-side-item">The Hollis — New Dev</div>
+                  </aside>
+                  <div class="p1-main">
+                    <div class="p1-portfolio-head">
+                      <div class="p1-portfolio-head__breadcrumb">Portfolios · ${role.label}</div>
+                      <h1 class="p1-portfolio-head__title">${role.label}</h1>
+                      <div class="p1-portfolio-head__sub">${role.subtitle}</div>
+                      <div class="p1-tabs">
+                        <button class="p1-tab">Overview</button>
+                        <button class="p1-tab">Tasks <span class="tab-count">${taskCount}</span></button>
+                        <button class="p1-tab p1-tab--active">Properties <span class="tab-count">${rows.length}</span></button>
+                        <button class="p1-tab">Projects <span class="tab-count">${rows.length}</span></button>
+                        <button class="p1-tab">Team <span class="tab-count">${teamCount}</span></button>
+                      </div>
+                    </div>
+                    <div class="p1-toolbar">
+                      <button class="p1-chip">Filter</button>
+                      <button class="p1-chip">Sort</button>
+                      <button class="p1-chip ${role.groupBy ? 'p1-chip--active' : ''}">Group ${role.groupBy ? '· ' + role.groupBy : ''}</button>
+                      <div style="margin-left:auto;font-size:12px;color:var(--text-weak)">Showing ${rows.length} of ${PROPERTIES.length}</div>
+                    </div>
+                    <div class="p1-table-wrap">
+                      <table class="p1-table">
+                        <thead><tr>${previewHeader}</tr></thead>
+                        <tbody>${previewRowsHtml}</tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      // Play the AI generation sequence
+      const chatBody = document.getElementById('p1-build-chat');
+      const rowCount = PROPERTIES.filter(role.filter).length;
+      aicPlaySequence(chatBody, [
+        { type: 'user', text: `Build me a ${role.label.toLowerCase()}.`, delay: 700 },
+        { type: 'ai', html: `<p>Got it. Building the <strong>${role.label}</strong> for Northline. I'll:</p><ul><li>Filter to ${rowCount} relevant properties</li><li>Swap in role-scoped columns</li>${role.groupBy ? `<li>Group by <strong>${role.groupBy}</strong></li>` : ''}<li>Wire the role's team as members</li></ul>`, delay: 1300 },
+        { type: 'status', text: 'Configuring filters and columns…', delay: 900 },
+        { type: 'status', text: 'Configuration ready', done: true, replaces: true, delay: 800 },
+        { type: 'status', text: 'Seeding sample data…', delay: 900 },
+        { type: 'status', text: 'Ready to publish', done: true, replaces: true, delay: 800 },
+      ]);
+
+      // Wire Publish button → advance to published view
+      document.getElementById('p1-publish')?.addEventListener('click', () => {
+        state.p1Phase = 'published';
+        currentP1Tab = 'properties';
+        applyState();
+      });
+      // Wire Cancel button → back to prompt
+      document.getElementById('p1-cancel')?.addEventListener('click', () => {
+        state.p1Phase = 'prompt';
+        applyState();
+      });
+    }
+
+    // Small helper: "Recent properties" activity-style list for Overview
+    function p1RecentPropertiesWidget(rows) {
+      const items = rows.slice(0, 5).map(p => `
+        <div class="p2-activity__item">
+          <span class="p2-activity__avatar" style="background:${OWNERS[p.mgrKey].color}">${OWNERS[p.mgrKey].name.split(' ').map(w => w[0]).join('')}</span>
+          <div>
+            <div class="p2-activity__body"><strong>${p.name}</strong> · <span class="p1-cell-badge p1-cell-badge--${STATUS_BADGE[p.status]}">${p.status}</span></div>
+            <div class="p2-activity__time">${p.location} · ${p.units} units · ${p.occ}% occupied</div>
+          </div>
+        </div>`).join('');
+      return `
+        <div class="p2-widget">
+          <div class="p2-widget__head">
+            <span class="p2-widget__title">Recent properties</span>
+            <span class="p2-widget__meta">Top ${Math.min(5, rows.length)}</span>
+          </div>
+          <div class="p2-widget__body"><div class="p2-activity">${items}</div></div>
+        </div>`;
+    }
+    /* ══════════════════════════════════════════════════════════════════
+       PATH 2 — Portfolio Hub with AI
+       Six steps: list → hub → AI refine → role sections → connections → leadership
+       ══════════════════════════════════════════════════════════════════ */
+
+    function p2Sidebar() {
+      return `
+        <aside class="p1-side">
+          <div class="p1-side-head">
+            <span class="p1-side-head__badge">N</span>
+            Northline
+          </div>
+          <div class="p1-side-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l6-5 6 5v7a1 1 0 0 1-1 1h-3v-4H6v4H3a1 1 0 0 1-1-1z"/></svg>Home</div>
+          <div class="p1-side-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 6h6M5 9h6M5 12h3"/></svg>My tasks</div>
+          <div class="p1-side-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9v4a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9M2 9l2-6h8l2 6"/></svg>Inbox</div>
+          <div class="p1-side-section">Portfolios</div>
+          <div class="p1-side-item p1-side-item--active">Northline Portfolio</div>
+          <div class="p1-side-item">Q3 Roadmap</div>
+          <div class="p1-side-item">Vendor Contracts</div>
+        </aside>`;
+    }
+
+    function p2PortfolioHeader(hubOn) {
+      const listActive = !hubOn ? 'p1-tab--active' : '';
+      const hubActive  = hubOn  ? 'p1-tab--active' : '';
+      return `
+        <div class="p1-portfolio-head">
+          <div class="p1-portfolio-head__breadcrumb">Portfolios · Northline Portfolio</div>
+          <h1 class="p1-portfolio-head__title">Northline Portfolio</h1>
+          <div class="p1-portfolio-head__sub">8 properties · 698 units · owned by Priya Ramesh</div>
+          <div class="p1-tabs">
+            <button class="p1-tab ${listActive}">List</button>
+            <button class="p1-tab ${hubActive}">Hub</button>
+            <button class="p1-tab">Timeline</button>
+            <button class="p1-tab">Workload</button>
+          </div>
+        </div>`;
+    }
+
+    function p2HubToggleButton(active) {
+      return `
+        <button class="p2-hub-toggle ${active ? 'p2-hub-toggle--active' : ''}">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="1.5" width="6" height="6"/><rect x="8.5" y="1.5" width="6" height="3"/><rect x="8.5" y="5.5" width="6" height="9"/><rect x="1.5" y="8.5" width="6" height="6"/></svg>
+          ${active ? 'Hub mode: ON' : 'Hub mode'}
+        </button>`;
+    }
+
+    // KPI strip content — varies by role/step
+    function p2KpiRow(role) {
+      const kpis = {
+        default: [
+          { label: 'Total properties', value: '8', sub: '698 units total' },
+          { label: 'Avg occupancy',    value: '63.5%', sub: 'Across portfolio', tone: 'warn' },
+          { label: 'Active projects',  value: '15', sub: '5 in takeover' },
+          { label: 'Team members',     value: '24', sub: '6 regions' },
+        ],
+        ops: [
+          { label: 'Active work',    value: '5', sub: 'Takeovers + New Dev', tone: 'warn' },
+          { label: 'Open tasks',     value: '122', sub: 'Across ops team' },
+          { label: 'Vendors',        value: '8', sub: 'Contracted' },
+          { label: 'Overdue',        value: '3', sub: 'Urgent', tone: 'warn' },
+        ],
+        marketing: [
+          { label: 'Campaigns live',  value: '4', sub: 'Q3 push' },
+          { label: 'Lease-up tours',  value: '48', sub: 'Last 30 days' },
+          { label: 'Cost / lead',     value: '$142', sub: '-8% vs Q2', tone: 'good' },
+          { label: 'Assets in review', value: '11', sub: 'Awaiting sign-off' },
+        ],
+        leadership: [
+          { label: 'Portfolio value', value: '$1.2B', sub: 'Est. carrying value' },
+          { label: 'Occupancy',        value: '63.5%', sub: '-1.4% MoM', tone: 'warn' },
+          { label: 'YTD vs plan',      value: '-2.1%', sub: 'Revenue', tone: 'warn' },
+          { label: 'At-risk',          value: '2', sub: 'Marlow, Sunset', tone: 'warn' },
+        ],
+      };
+      const set = kpis[role] || kpis.default;
+      return `
+        <div class="p2-hub__kpi-row">
+          ${set.map(k => `
+            <div class="p2-kpi">
+              <div class="p2-kpi__label">${k.label}</div>
+              <div class="p2-kpi__value ${k.tone === 'warn' ? 'p2-kpi__value--warn' : k.tone === 'good' ? 'p2-kpi__value--good' : ''}">${k.value}</div>
+              <div class="p2-kpi__sub">${k.sub}</div>
+            </div>`).join('')}
+        </div>`;
+    }
+
+    function p2PropGridWidget() {
+      const cards = PROPERTIES.map(p => `
+        <div class="p2-prop-card" data-p2-property="${p.id}">
+          <div class="p2-prop-card__name">${p.name}</div>
+          <div class="p2-prop-card__meta">${p.units} units · ${p.occ}%</div>
+        </div>`).join('');
+      return `
+        <div class="p2-widget">
+          <div class="p2-widget__head">
+            <span class="p2-widget__title">Properties</span>
+            <span class="p2-widget__meta">Click for connections</span>
+          </div>
+          <div class="p2-widget__body"><div class="p2-prop-grid">${cards}</div></div>
+        </div>`;
+    }
+
+    function p2ActivityWidget() {
+      const items = [
+        { who: 'sarah',  color: OWNERS.sarah.color,  html: 'Approved <strong>Q3 marketing budget</strong> for The Marlow', when: '2h ago' },
+        { who: 'devon',  color: OWNERS.devon.color,  html: 'Signed 4 new leases at Beacon Hill this week — total 57/84', when: 'Yesterday' },
+        { who: 'marcus', color: OWNERS.marcus.color, html: 'Occupancy target moved from Aug 30 to <strong>Sep 15</strong>', when: '3 days ago' },
+      ];
+      const initials = (name) => name.split(' ').map(w => w[0]).join('').toUpperCase();
+      return `
+        <div class="p2-widget">
+          <div class="p2-widget__head">
+            <span class="p2-widget__title">Portfolio activity</span>
+            <span class="p2-widget__meta">Last 7 days</span>
+          </div>
+          <div class="p2-widget__body"><div class="p2-activity">
+            ${items.map(it => `
+              <div class="p2-activity__item">
+                <span class="p2-activity__avatar" style="background:${it.color}">${initials(OWNERS[it.who].name)}</span>
+                <div>
+                  <div class="p2-activity__body">${it.html}</div>
+                  <div class="p2-activity__time">${it.when}</div>
+                </div>
+              </div>`).join('')}
+          </div></div>
+        </div>`;
+    }
+
+    function p2TasksWidget() {
+      const tasks = [
+        { name: 'Refresh photography — model unit',  prop: 'Beacon Hill',    status: 'warning', label: 'Scheduled' },
+        { name: 'Vendor RFP for Sunset Commons',     prop: 'Sunset Commons', status: 'primary', label: 'In Progress' },
+        { name: 'Cert of occupancy filing',          prop: 'The Hollis',     status: 'warning', label: 'Blocked' },
+        { name: 'Q3 rent-roll reconciliation',       prop: 'The Marlow',     status: 'success', label: 'Done' },
+        { name: 'Broker open-house series',          prop: 'The Marlow',     status: 'warning', label: 'Scheduled' },
+      ];
+      return `
+        <div class="p2-widget">
+          <div class="p2-widget__head">
+            <span class="p2-widget__title">Cross-portfolio tasks</span>
+            <span class="p2-widget__meta">${tasks.length} shown</span>
+          </div>
+          <div class="p2-widget__body"><div class="p2-tasks">
+            ${tasks.map(t => `
+              <div class="p2-task">
+                <span class="p2-task__check"></span>
+                <span class="p2-task__name">${t.name}</span>
+                <span class="p2-task__prop">${t.prop}</span>
+                <span class="p2-task__badge p1-cell-badge--${t.status}">${t.label}</span>
+              </div>`).join('')}
+          </div></div>
+        </div>`;
+    }
+
+    // Full hub layout with variations
+    function p2Hub(opts = {}) {
+      const role = opts.role || 'default';
+      const compact = opts.compact || false; // step 3 & 6 use a more compressed hub
+      const roleTabs = opts.showRoleTabs ? `
+        <div class="p2-role-tabs">
+          <button class="p2-role-tab ${role === 'ops' ? 'p2-role-tab--active' : ''}" data-p2-role="ops">Property Ops</button>
+          <button class="p2-role-tab ${role === 'marketing' ? 'p2-role-tab--active' : ''}" data-p2-role="marketing">Marketing</button>
+          <button class="p2-role-tab ${role === 'leadership' ? 'p2-role-tab--active' : ''}" data-p2-role="leadership">Leadership</button>
+        </div>` : '';
+      const bodyWidgets = compact
+        ? `${p2KpiRow(role)}
+           <div class="p2-widget" style="grid-column:1/-1"><div class="p2-widget__head"><span class="p2-widget__title">At-risk properties</span><span class="p2-widget__meta">Leadership priority</span></div>
+             <div class="p2-widget__body"><div class="p2-prop-grid">
+               ${PROPERTIES.filter(p => ['Takeover','Separation'].includes(p.status)).map(p => `<div class="p2-prop-card"><div class="p2-prop-card__name">${p.name}</div><div class="p2-prop-card__meta">${p.status} · ${p.occ}%</div></div>`).join('')}
+             </div></div>
+           </div>`
+        : `${p2KpiRow(role)}${p2PropGridWidget()}${p2ActivityWidget()}<div style="grid-column:1/-1">${p2TasksWidget()}</div>`;
+
+      return `
+        ${roleTabs}
+        <div class="p2-hub">${bodyWidgets}</div>`;
+    }
+
+    function p2Chat(step) {
+      return `
+        <div class="aic-panel">
+          <div class="aic-panel__crumb">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v6a1.5 1.5 0 0 1-1.5 1.5H6l-3.5 3v-3H3.5A1.5 1.5 0 0 1 2 9.5z"/></svg>
+            AI · <strong>Northline Portfolio hub</strong>
+          </div>
+          <div class="aic-panel__body" id="p2-chat-body"></div>
+          <div class="aic-panel__footer">
+            <div class="aic-followup-wrap">
+              <textarea class="aic-followup-textarea" placeholder="Ask AI to refine the hub…"></textarea>
+              <div class="aic-followup-row">
+                <button class="aic-followup-send"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function p2Connections(propertyId) {
+      const p = PROPERTIES.find(x => x.id === propertyId);
+      if (!p) return '';
+      return `
+        <aside class="p2-connections">
+          <div class="p2-connections__head">
+            <div class="p2-connections__title">${p.name}</div>
+            <button class="p2-connections__close" id="p2-conn-close" aria-label="Close">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+            </button>
+          </div>
+          <div class="p2-connections__body">
+            <div style="font-size:12.5px;color:var(--text-weak);line-height:1.5">
+              ${p.location} · ${p.units} units · ${p.status} · ${p.occ}% occupied
+            </div>
+
+            <div class="p2-conn-section-title">Linked project</div>
+            <div class="p2-conn-row">
+              <span class="p2-conn-row__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="1" y1="5" x2="15" y2="5"/></svg></span>
+              <div class="p2-conn-row__body">
+                <div>${p.status}: ${p.name}</div>
+                <div class="p2-conn-row__meta">Due ${p.go}</div>
+              </div>
+            </div>
+
+            <div class="p2-conn-section-title">Tasks · 5</div>
+            <div class="p2-conn-row">
+              <span class="p2-conn-row__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/></svg></span>
+              <div class="p2-conn-row__body">
+                <div>Refresh photography — model unit</div>
+                <div class="p2-conn-row__meta">Sep 20 · Marketing</div>
+              </div>
+            </div>
+            <div class="p2-conn-row">
+              <span class="p2-conn-row__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/></svg></span>
+              <div class="p2-conn-row__body">
+                <div>Vendor RFP</div>
+                <div class="p2-conn-row__meta">Aug 20 · Property Ops</div>
+              </div>
+            </div>
+            <div class="p2-conn-row">
+              <span class="p2-conn-row__icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/></svg></span>
+              <div class="p2-conn-row__body">
+                <div>Q3 marketing budget approval</div>
+                <div class="p2-conn-row__meta">Aug 5 · Marketing · Done</div>
+              </div>
+            </div>
+
+            <div class="p2-conn-section-title">Team · 4</div>
+            <div class="p2-conn-row">
+              <span class="p2-cell-mgr__avatar p1-cell-mgr__avatar" style="background:${OWNERS[p.mgrKey].color}">${OWNERS[p.mgrKey].name.split(' ').map(w=>w[0]).join('')}</span>
+              <div class="p2-conn-row__body">
+                <div>${OWNERS[p.mgrKey].name}</div>
+                <div class="p2-conn-row__meta">Regional Manager</div>
+              </div>
+            </div>
+            <div class="p2-conn-row">
+              <span class="p1-cell-mgr__avatar" style="background:${OWNERS.sarah.color}">SC</span>
+              <div class="p2-conn-row__body">
+                <div>Sarah Chen</div>
+                <div class="p2-conn-row__meta">Marketing Lead</div>
+              </div>
+            </div>
+            <div class="p2-conn-row">
+              <span class="p1-cell-mgr__avatar" style="background:${OWNERS.devon.color}">DK</span>
+              <div class="p2-conn-row__body">
+                <div>Devon Kim</div>
+                <div class="p2-conn-row__meta">Leasing Manager</div>
+              </div>
+            </div>
+          </div>
+        </aside>`;
+    }
+
+    /* Path 2 hub definitions — each is a standalone role-based hub in Work. */
+    const P2_HUBS = {
+      1: {
+        key: 'ops',
+        label: 'Property Ops Hub',
+        subtitle: 'Cross-portfolio operations at a glance — active work, vendors, milestones',
+        role: 'ops',
+      },
+      2: {
+        key: 'leadership',
+        label: 'Leadership Hub',
+        subtitle: 'Executive summary — portfolio KPIs, at-risk properties, YTD variance',
+        role: 'leadership',
+      },
+      3: {
+        key: 'marketing',
+        label: 'Marketing Hub',
+        subtitle: 'Campaign + lease-up + asset activity across the portfolio',
+        role: 'marketing',
+      },
+    };
+
+    const P2_TEMPLATES = [
+      {
+        key: 'ops',
+        title: 'Property Ops Hub',
+        desc: 'Cross-portfolio operational view — active work, vendors, milestones, at a glance.',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg>',
+        stepTarget: 1,
+        prompt: 'A Property Ops hub for the Northline field team. Show active work-in-progress across the portfolio, vendor activity, and key milestones. Pull data from all 8 properties.',
+      },
+      {
+        key: 'leadership',
+        title: 'Leadership Hub',
+        desc: 'Executive summary — portfolio value, occupancy, YTD variance, at-risk properties.',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13V3M2 13h12"/><rect x="4" y="8" width="2.4" height="5"/><rect x="8" y="5" width="2.4" height="8"/><rect x="12" y="10" width="2.4" height="3"/></svg>',
+        stepTarget: 2,
+        prompt: 'A Leadership hub for the Northline CEO. Show top-level KPIs (portfolio value, occupancy, YTD variance), at-risk properties, and a leadership-oriented monitoring view.',
+      },
+      {
+        key: 'marketing',
+        title: 'Marketing Hub',
+        desc: 'Campaign, lease-up, and asset activity across the portfolio.',
+        icon: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v4l9 3V3zM2 6H1a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h1M11 5.5c1.5.5 2.5 1.5 2.5 2.5s-1 2-2.5 2.5M6 10.5l.7 3a1 1 0 0 0 1 .7h.6a1 1 0 0 0 .9-1.3L8.5 11"/></svg>',
+        stepTarget: 3,
+        prompt: 'A Marketing hub for the Northline marketing team. Show active campaigns, lease-up tour metrics, cost per lead, and assets in review across all properties.',
+      },
+    ];
+
+    function renderPath2(body, step) {
+      if (state.p2Phase === 'prompt')   return renderP2Prompt(body);
+      if (state.p2Phase === 'building') return renderP2Building(body, step);
+      return renderP2Published(body, step);
+    }
+
+    // Phase 1 — Prompt hero (same shape as Path 1)
+    function renderP2Prompt(body) {
+      const featured = P2_TEMPLATES.map(t => `
+        <button class="aic-feat-card" data-p2-template="${t.key}">
+          <span class="aic-feat-icon">${t.icon}</span>
+          <div class="aic-feat-title">${t.title}</div>
+          <div class="aic-feat-desc">${t.desc}</div>
+        </button>`).join('');
+
+      body.innerHTML = `
+        <div style="flex:1;overflow-y:auto;background:var(--background-weak)">
+          <div class="aic-hero">
+            <div class="aic-hero__icon" style="background:var(--accent-p2-bg);color:var(--accent-p2)">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="1.5" width="6" height="6"/><rect x="8.5" y="1.5" width="6" height="3"/><rect x="8.5" y="5.5" width="6" height="9"/><rect x="1.5" y="8.5" width="6" height="6"/></svg>
+            </div>
+            <div class="aic-hero__headline">What should this hub show?<br>Build for the role that reads it.</div>
+            <div class="aic-input-card">
+              <textarea class="aic-input-textarea" id="p2-prompt" placeholder="Describe the hub — who reads it, what they need to see, and how it should aggregate work."></textarea>
+              <div class="aic-input-footer">
+                <div class="aic-input-tools">
+                  <button class="aic-tool-btn" title="Attach"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10.5 2.5L4.2 8.8a2.5 2.5 0 0 0 3.5 3.5l7-7a4 4 0 1 0-5.7-5.7L2.5 6.5"/></svg></button>
+                  <button class="aic-tool-btn" title="Reference data"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 10a3 3 0 0 0 4.2 0l2.8-2.8a3 3 0 0 0-4.2-4.2l-1 1M10 6a3 3 0 0 0-4.2 0L3 8.8a3 3 0 0 0 4.2 4.2l1-1"/></svg></button>
+                </div>
+                <button class="aic-submit-btn" id="p2-prompt-submit"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+              </div>
+            </div>
+            <div class="aic-feat-label">Featured hub templates</div>
+            <div class="aic-feat-grid">${featured}</div>
+          </div>
+        </div>`;
+
+      body.querySelectorAll('[data-p2-template]').forEach(el => {
+        el.addEventListener('click', () => {
+          const t = P2_TEMPLATES.find(x => x.key === el.dataset.p2Template);
+          const textarea = document.getElementById('p2-prompt');
+          if (textarea) textarea.value = t.prompt;
+          state.step = t.stepTarget;
+          state.p2Phase = 'building';
+          applyState();
+        });
+      });
+      body.querySelector('#p2-prompt-submit')?.addEventListener('click', () => {
+        state.p2Phase = 'building';
+        applyState();
+      });
+    }
+
+    // Phase 2 — Builder (chat panel + hub preview + Publish)
+    function renderP2Building(body, step) {
+      const hub = P2_HUBS[step];
+      const rowCount = hub.role === 'ops' ? 5 : 8;
+
+      body.innerHTML = `
+        <div class="p1-builder">
+          <div class="p1-builder__header">
+            <div class="p1-builder__title">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--accent-p2)"><rect x="1.5" y="1.5" width="6" height="6"/><rect x="8.5" y="1.5" width="6" height="3"/><rect x="8.5" y="5.5" width="6" height="9"/><rect x="1.5" y="8.5" width="6" height="6"/></svg>
+              <strong>Building</strong> · ${hub.label}
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="p1-builder__cancel" id="p2-cancel">Cancel</button>
+              <button class="p1-builder__publish p2-publish-btn" id="p2-publish">Publish</button>
+            </div>
+          </div>
+          <div class="p1-builder__split">
+            <div class="aic-panel" style="border-right:1px solid var(--border)">
+              <div class="aic-panel__crumb">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v6a1.5 1.5 0 0 1-1.5 1.5H6l-3.5 3v-3H3.5A1.5 1.5 0 0 1 2 9.5z"/></svg>
+                AI · <strong>${hub.label}</strong>
+              </div>
+              <div class="aic-panel__body" id="p2-build-chat"></div>
+              <div class="aic-panel__footer">
+                <div class="aic-followup-wrap">
+                  <textarea class="aic-followup-textarea" placeholder="Refine the hub…"></textarea>
+                  <div class="aic-followup-row">
+                    <button class="aic-followup-send"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="p1-builder__preview">
+              <div class="p1-builder__preview-chrome" style="max-width:none">
+                <div class="p1-builder__preview-shell" style="height:640px;zoom:0.75">
+                  ${renderP2WorkShell(step, /* preview */ true)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      const chatBody = document.getElementById('p2-build-chat');
+      aicPlaySequence(chatBody, [
+        { type: 'user', text: `Build the ${hub.label}.`, delay: 700 },
+        { type: 'ai', html: `<p>Got it. Building the <strong>${hub.label}</strong>. I'll:</p><ul><li>Aggregate data from ${rowCount} properties</li><li>Pick widgets that match the reader's role</li><li>Add it to Work · <strong>Hubs</strong> in the sidebar</li></ul>`, delay: 1300 },
+        { type: 'status', text: 'Selecting widgets…', delay: 900 },
+        { type: 'status', text: 'Widgets configured', done: true, replaces: true, delay: 800 },
+        { type: 'status', text: 'Wiring live data…', delay: 900 },
+        { type: 'status', text: 'Ready to publish', done: true, replaces: true, delay: 800 },
+      ]);
+
+      document.getElementById('p2-publish')?.addEventListener('click', () => {
+        state.p2Phase = 'published';
+        applyState();
+      });
+      document.getElementById('p2-cancel')?.addEventListener('click', () => {
+        state.p2Phase = 'prompt';
+        applyState();
+      });
+    }
+
+    // Phase 3 — Published hub inside the Work app, with Hubs section in sidebar
+    function renderP2Published(body, step) {
+      body.innerHTML = `
+        <div class="asana-frame">
+          ${asanaRail({ active: 'work' })}
+          ${renderP2WorkShell(step, false)}
+        </div>`;
+      body.querySelectorAll('[data-p2-hub-nav]').forEach(el => {
+        el.addEventListener('click', () => {
+          goToStep(Number(el.dataset.p2HubNav));
+        });
+      });
+    }
+
+    // Shared shell: Work app with Portfolios + Hubs + Projects sidebar, and a hub in main.
+    // Used both for the published view and for the builder preview.
+    function renderP2WorkShell(step, isPreview) {
+      const hub = P2_HUBS[step];
+      const hubsNav = Object.entries(P2_HUBS).map(([sid, h]) => {
+        const active = Number(sid) === step ? 'p1-side-item--active' : '';
+        return `<div class="p1-side-item ${active}" data-p2-hub-nav="${sid}">${h.label}</div>`;
+      }).join('');
+
+      return `
+        <div class="p1-shell">
+          <aside class="p1-side">
+            <div class="p1-side-head p1-side-head--plain">Work</div>
+            <div class="p1-side-section">Portfolios</div>
+            <div class="p1-side-item">Northline Portfolio</div>
+            <div class="p1-side-item">Q3 Roadmap</div>
+            <div class="p1-side-item">Vendor Contracts</div>
+            <div class="p1-side-section p1-side-section--accent">Hubs</div>
+            ${hubsNav}
+            <div class="p1-side-section">Projects</div>
+            <div class="p1-side-item">The Marlow — Takeover</div>
+            <div class="p1-side-item">Sunset Commons — Takeover</div>
+            <div class="p1-side-item">The Hollis — New Dev</div>
+          </aside>
+
+          <div class="p1-main">
+            <div class="p1-portfolio-head">
+              <div class="p1-portfolio-head__breadcrumb">Work · Hubs · ${hub.label}</div>
+              <h1 class="p1-portfolio-head__title">${hub.label}</h1>
+              <div class="p1-portfolio-head__sub">${hub.subtitle}</div>
+            </div>
+            <div style="flex:1;overflow-y:auto">
+              ${p2Hub({ role: hub.role })}
+            </div>
+          </div>
+        </div>`;
+    }
+    /* ══════════════════════════════════════════════════════════════════
+       PATH 3 — Standalone App (AI-Generated)
+       Five steps: builder entry → generate → my apps → the app → access
+       ══════════════════════════════════════════════════════════════════ */
+
+    function p3Sidebar(activeItem = 'builder') {
+      const isActive = (k) => activeItem === k ? 'p1-side-item--active' : '';
+      const isPurpleActive = (k) => activeItem === k ? 'p3-side-item--active-purple' : '';
+      return `
+        <aside class="p3-side">
+          <div class="p1-side-head">
+            <span class="p1-side-head__badge">N</span>
+            Northline
+          </div>
+          <div class="p1-side-item ${isActive('home')}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l6-5 6 5v7a1 1 0 0 1-1 1h-3v-4H6v4H3a1 1 0 0 1-1-1z"/></svg>Home</div>
+          <div class="p1-side-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 6h6M5 9h6M5 12h3"/></svg>My tasks</div>
+          <div class="p1-side-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9v4a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9M2 9l2-6h8l2 6"/></svg>Inbox</div>
+          <div class="p1-side-section">Portfolios</div>
+          <div class="p1-side-item">Northline Portfolio</div>
+          <div class="p1-side-item">Q3 Roadmap</div>
+          <div class="p1-side-section">Projects</div>
+          <div class="p1-side-item">The Marlow — Takeover</div>
+          <div class="p1-side-item">The Hollis — New Dev</div>
+          <div class="p3-side-item-new ${isPurpleActive('builder')}">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M8 5v6M5 8h6"/></svg>
+            Builder
+            <span class="p3-side-item-new-badge">NEW</span>
+          </div>
+          ${activeItem === 'builder' ? `
+            <div class="p1-side-item ${isPurpleActive('all-apps')}" style="margin-left:24px;font-size:12px">All apps</div>
+            <div class="p1-side-item" style="margin-left:24px;font-size:12px">Shared with me</div>
+            <div class="p1-side-item" style="margin-left:24px;font-size:12px">Templates</div>
+          ` : ''}
+        </aside>`;
+    }
+
+    function renderPath3(body, step) {
+      // Step 1: Asana Tables — user is in normal Asana, sees Builder in mini-rail
+      if (step === 1) {
+        body.innerHTML = `
+          <div class="p3-asana">
+            <nav class="p3-asana__rail">
+              <div class="p3-asana__rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg>Work</div>
+              <div class="p3-asana__rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 8 4 13 9 18"/><polyline points="15 8 20 13 15 18"/></svg>Dev</div>
+              <div class="p3-asana__rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 20V4M3 20h18"/><rect x="6" y="12" width="3" height="7"/><rect x="12" y="7" width="3" height="12"/><rect x="18" y="15" width="3" height="4"/></svg>Strategy</div>
+              <div class="p3-asana__rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M6 8v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8M12 14v2"/></svg>Workflow</div>
+              <div class="p3-asana__rail-item p3-asana__rail-item--active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg>Tables</div>
+              <div class="p3-asana__rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1M17 7a2.5 2.5 0 1 1 0 5M21 20v-1a4 4 0 0 0-3-3.9"/></svg>People</div>
+              <div class="p3-asana__rail-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Service</div>
+
+              <div class="p3-asana__rail-spacer"></div>
+
+              <div class="p3-asana__rail-item p3-asana__rail-item--builder" data-p3-enter-builder>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
+                Builder
+              </div>
+              <div class="p3-asana__rail-avatar">PT</div>
+              <div class="p3-asana__nudge">Click Builder to spin up a custom app →</div>
+            </nav>
+
+            <aside class="p3-asana__sidenav">
+              <div class="p3-asana__sidenav-head">Tables</div>
+              <div class="p3-asana__sidenav-item p3-asana__sidenav-item--active">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="11" rx="1"/><path d="M1.5 6h13M5 2.5v11"/></svg>
+                Manage tables
+              </div>
+              <div class="p3-asana__sidenav-section">★ Starred</div>
+              <div class="p3-asana__sidenav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="2.5" width="13" height="11" rx="1"/><path d="M1.5 6h13M5 2.5v11"/></svg>PG's Suggestions for T…</div>
+              <div class="p3-asana__sidenav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="2.5" width="13" height="11" rx="1"/><path d="M1.5 6h13M5 2.5v11"/></svg>Records / P3 Feature Ta…</div>
+              <div class="p3-asana__sidenav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="2.5" width="13" height="11" rx="1"/><path d="M1.5 6h13M5 2.5v11"/></svg>Records Roadmap / Re…</div>
+              <div class="p3-asana__sidenav-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="2.5" width="13" height="11" rx="1"/><path d="M1.5 6h13M5 2.5v11"/></svg>Peter's episodes</div>
+              <div class="p3-asana__sidenav-foot">
+                <span class="p3-asana__invite">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="1.5" y="4" width="13" height="9" rx="1"/><path d="M1.5 5l6.5 4 6.5-4"/></svg>
+                  Invite teammates
+                </span>
+              </div>
+            </aside>
+
+            <div class="p3-asana__main">
+              <div class="p3-asana__topbar">
+                <button class="p3-asana__nav-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
+                <button class="p3-asana__create"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>Create</button>
+                <button class="p3-asana__nav-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><polyline points="10 4 6 8 10 12"/></svg></button>
+                <button class="p3-asana__nav-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><polyline points="6 4 10 8 6 12"/></svg></button>
+                <button class="p3-asana__nav-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 3v3h3M3 6a5 5 0 1 0 2-4"/></svg></button>
+                <div class="p3-asana__search">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M11 11l3 3"/></svg>
+                  Search Asana, Inc
+                </div>
+                <div class="p3-asana__topbar-right">
+                  <button class="p3-asana__nav-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="6"/><path d="M6 6a2 2 0 1 1 3 1.7c-.6.3-1 .7-1 1.3M8 12v.01"/></svg></button>
+                  <div class="p3-asana__rail-avatar" style="margin:0">PT</div>
+                </div>
+              </div>
+
+              <div class="p3-asana__page-head">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div class="p3-asana__page-title">Tables <span class="p3-asana__pill">Pilot</span></div>
+                  <a href="#" class="p3-asana__feedback">Send feedback</a>
+                </div>
+                <div class="p3-asana__page-tools">
+                  <span style="display:inline-flex;align-items:center;gap:4px"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 4h12M4 8h8M6 12h4"/></svg>Filter</span>
+                  <span style="display:inline-flex;align-items:center;gap:4px"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 3v10M4 3l-2 2M4 3l2 2M12 13V3M12 13l-2-2M12 13l2-2"/></svg>Sort: Creation time (Newest)</span>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" style="width:14px;height:14px"><circle cx="7" cy="7" r="4.5"/><path d="M11 11l3 3"/></svg>
+                  <button class="p3-asana__create-tbl">Create table</button>
+                </div>
+              </div>
+
+              <div class="p3-asana__body"></div>
+            </div>
+          </div>`;
+        // Wire click on Builder icon in mini-rail → advance to Custom apps
+        body.querySelector('[data-p3-enter-builder]')?.addEventListener('click', () => goToStep(2));
+        return;
+      }
+
+      // Step 2: Custom apps list — the App Builder home
+      if (step === 2) {
+        const apps = [
+          { name: 'Salesforce Sync',    letter: 'SS', bg: '#2563eb', updated: '2 days ago',  status: 'Published' },
+          { name: 'Sprint Planner',     letter: 'SP', bg: '#7c3aed', updated: '5 days ago',  status: 'Draft' },
+          { name: 'Time Tracker',       letter: 'TT', bg: '#059669', updated: 'Jan 15, 2026', status: 'Published' },
+          { name: 'Invoice Generator',  letter: 'IG', bg: '#d97706', updated: 'Dec 28, 2025', status: 'Draft' },
+          { name: 'HR Onboarding',      letter: 'HO', bg: '#dc2626', updated: 'Nov 12, 2025', status: 'Published' },
+        ];
+        body.innerHTML = `
+          <div class="p3-appbuilder">
+            <div class="p3-appbuilder__topbar">
+              <div style="display:inline-flex;align-items:center">
+                <button class="p3-appbuilder__back" data-p3-goto="1"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><polyline points="10 4 6 8 10 12"/></svg></button>
+                <div class="p3-appbuilder__title">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="1.5" width="6" height="6"/><rect x="8.5" y="1.5" width="6" height="6"/><rect x="1.5" y="8.5" width="6" height="6"/><rect x="8.5" y="8.5" width="6" height="6"/></svg>
+                  App Builder
+                </div>
+              </div>
+              <button class="p3-appbuilder__new" data-p3-new-app>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+                New app
+              </button>
+            </div>
+            <div class="p3-appbuilder__body">
+              <div class="p3-appbuilder__heading">Custom apps</div>
+              <div class="p3-appbuilder__sub">Build integrations and workflow automations powered by Asana data.</div>
+              <div class="p3-appbuilder__list">
+                <div class="p3-appbuilder__list-head">
+                  <span>Name</span>
+                  <span>Last updated</span>
+                  <span>Status</span>
+                </div>
+                ${apps.map(a => `
+                  <div class="p3-appbuilder__row">
+                    <span class="p3-appbuilder__app-cell">
+                      <span class="p3-appbuilder__app-icon" style="background:${a.bg}">${a.letter}</span>
+                      ${a.name}
+                    </span>
+                    <span class="p3-appbuilder__updated">${a.updated}</span>
+                    <span><span class="p3-appbuilder__status p3-appbuilder__status--${a.status.toLowerCase()}"><span class="p3-appbuilder__status-dot"></span>${a.status}</span></span>
+                  </div>`).join('')}
+              </div>
+            </div>
+          </div>`;
+        body.querySelector('[data-p3-new-app]')?.addEventListener('click', () => goToStep(3));
+        body.querySelector('[data-p3-goto="1"]')?.addEventListener('click', () => goToStep(1));
+        return;
+      }
+
+      // Step 3: AI prompt hero — full-page (part of the app-builder flow,
+      // no outer nav, matching the Custom apps and Build screens).
+      if (step === 3) {
+        body.innerHTML = `
+          <div style="flex:1;overflow-y:auto;background:var(--background-weak);height:100%">
+                <div class="aic-hero">
+                  <div class="aic-hero__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.5 7.1 18.2l.9-5.5-4-3.9L9.5 8z"/></svg>
+                  </div>
+                  <div class="aic-hero__headline">What should we build for your team?</div>
+                  <div class="aic-input-card">
+                    <textarea class="aic-input-textarea" id="p3-app-prompt" placeholder="Describe the app — the primary object, how the team works with it, and any custom views…"></textarea>
+                    <div class="aic-input-footer">
+                      <div class="aic-input-tools">
+                        <button class="aic-tool-btn" title="Attach"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10.5 2.5L4.2 8.8a2.5 2.5 0 0 0 3.5 3.5l7-7a4 4 0 1 0-5.7-5.7L2.5 6.5"/></svg></button>
+                        <button class="aic-tool-btn" title="Link data source"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 10a3 3 0 0 0 4.2 0l2.8-2.8a3 3 0 0 0-4.2-4.2l-1 1M10 6a3 3 0 0 0-4.2 0L3 8.8a3 3 0 0 0 4.2 4.2l1-1"/></svg></button>
+                      </div>
+                      <button class="aic-submit-btn" id="p3-app-submit"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+                    </div>
+                  </div>
+                  <div class="aic-feat-label">Start from a scenario</div>
+                  <div class="aic-feat-grid">
+                    <button class="aic-feat-card" data-p3-feat="An app for our property portfolio operations team — Northline. Track properties across regions with lifecycle status (Takeover, Stabilized, New Development, etc.). Each property has a linked project, marketing tasks, and a team. Cross-cutting departments — Property Ops, Marketing, Legal, Facilities, HR, Finance, IT — need their own landing pages.">
+                      <span class="aic-feat-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14V5l6-3 6 3v9M6 14V8h4v6"/></svg></span>
+                      <div class="aic-feat-title">Property portfolio ops</div>
+                      <div class="aic-feat-desc">Multi-property tracker with departments and role-based views.</div>
+                    </button>
+                    <button class="aic-feat-card" data-p3-feat="A talent-agency roster app — clients (actors, musicians, athletes) with lifecycle status (Prospect, Signed, Active, Off-boarding). Group by division (Music, Film, Sports, Brand). KPIs on each client: revenue this year, active projects, next contract renewal.">
+                      <span class="aic-feat-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2.5"/><path d="M2 14v-.5a4 4 0 0 1 4-4h1a4 4 0 0 1 4 4v.5"/><circle cx="12" cy="4.5" r="1.7"/></svg></span>
+                      <div class="aic-feat-title">Talent agency roster</div>
+                      <div class="aic-feat-desc">Client-first CRM with divisions and revenue tracking.</div>
+                    </button>
+                    <button class="aic-feat-card" data-p3-feat="A film-production tracker for indie studio Halcyon Pictures. Productions as the primary object with status (Development, Pre-Prod, Filming, Post, Released). Departments: Development, Physical Production, Post, Marketing, Distribution, Legal, Finance. KPIs: budget spent, days to delivery, rights sold.">
+                      <span class="aic-feat-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="13" height="8" rx="1"/><path d="M6 4L4 1M10 4l2-3M2 8h12"/></svg></span>
+                      <div class="aic-feat-title">Film production tracker</div>
+                      <div class="aic-feat-desc">Lifecycle-driven productions with cross-team departments.</div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        // Prompt submission and template clicks both advance to the Build step.
+        const promptEl = body.querySelector('#p3-app-prompt');
+        body.querySelector('#p3-app-submit')?.addEventListener('click', () => goToStep(4));
+        promptEl?.addEventListener('keydown', (e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') goToStep(4);
+        });
+        body.querySelectorAll('[data-p3-feat]').forEach(card => {
+          card.addEventListener('click', () => {
+            promptEl.value = card.dataset.p3Feat;
+            goToStep(4);
+          });
+        });
+        return;
+      }
+
+      // Step 4: Build (chat panel + preview + Publish) — same shape as Path 1's builder
+      if (step === 4) {
+        body.innerHTML = `
+          <div class="p1-builder">
+            <div class="p1-builder__header">
+              <div class="p1-builder__title">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--accent-p3)"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M8 5v6M5 8h6"/></svg>
+                <strong>Building</strong> · Northline app
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="p1-builder__cancel" data-p3-goto="3">Cancel</button>
+                <button class="p1-builder__publish p3-publish-btn" data-p3-publish>Publish</button>
+              </div>
+            </div>
+            <div class="p1-builder__split">
+              <div class="aic-panel" style="border-right:1px solid var(--border)">
+                <div class="aic-panel__crumb">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v6a1.5 1.5 0 0 1-1.5 1.5H6l-3.5 3v-3H3.5A1.5 1.5 0 0 1 2 9.5z"/></svg>
+                  AI · <strong>Northline app</strong>
+                </div>
+                <div class="aic-panel__body" id="p3-build-chat"></div>
+                <div class="aic-panel__footer">
+                  <div class="aic-followup-wrap">
+                    <textarea class="aic-followup-textarea" placeholder="Refine the app…"></textarea>
+                    <div class="aic-followup-row">
+                      <button class="aic-followup-send"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="p1-builder__preview">
+                <div class="p1-builder__preview-chrome" style="max-width:none">
+                  <div class="p1-builder__preview-shell" style="height:640px;zoom:0.7">
+                    <iframe src="northline.html?embedded=true" style="width:100%;height:100%;border:none" title="Northline preview"></iframe>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+
+        // Play generation sequence in the chat
+        const chatBody = document.getElementById('p3-build-chat');
+        aicPlaySequence(chatBody, [
+          { type: 'user', text: 'Build the Northline app for our property portfolio ops team.', delay: 700 },
+          { type: 'ai', html: '<p>Got it. Scaffolding a <strong>Northline app</strong> with:</p><ul><li>Property as the primary object</li><li>Departments in the sidebar (Property Ops, Marketing, Legal, Facilities, HR, Finance, IT)</li><li>Detail pane with metrics + comments rail</li><li>8 sample properties from your workspace</li></ul>', delay: 1400 },
+          { type: 'status', text: 'Creating object schema…', delay: 1000 },
+          { type: 'status', text: 'Object schema created', done: true, replaces: true, delay: 800 },
+          { type: 'status', text: 'Building views (list, board, hub)…', delay: 900 },
+          { type: 'status', text: 'Views ready', done: true, replaces: true, delay: 800 },
+          { type: 'status', text: 'Seeding sample data…', delay: 900 },
+          { type: 'status', text: 'Ready to publish', done: true, replaces: true, delay: 800 },
+        ]);
+
+        // Wire Publish + Cancel
+        body.querySelector('[data-p3-publish]')?.addEventListener('click', () => goToStep(5));
+        body.querySelector('[data-p3-goto="3"]')?.addEventListener('click', () => goToStep(3));
+        return;
+      }
+
+      // Step 5: The generated app itself. Asana icon rail on the left (with the
+       // new Northline icon active); the app's own chrome fills the rest.
+      if (step === 5) {
+        body.innerHTML = `
+          <div class="asana-frame">
+            ${asanaRail({ active: 'northline', hasNorthline: true })}
+            <div class="p3-embed-container">
+              <div class="p3-embed-note">
+                <span class="p3-embed-note__label"><strong>Northline</strong> · Custom app · running inside Asana</span>
+                <a href="#" class="p3-embed-note__link" data-p3-goto="6">Access &amp; permissions →</a>
+              </div>
+              <iframe class="p3-embed-frame" src="northline.html?embedded=true" title="Northline app"></iframe>
+            </div>
+          </div>`;
+        body.querySelector('[data-p3-goto="6"]')?.addEventListener('click', (e) => { e.preventDefault(); goToStep(6); });
+        return;
+      }
+
+      // Step 6: Access/role placeholder — deliberately open questions
+      if (step === 6) {
+        body.innerHTML = `
+          <div class="asana-frame">
+            ${asanaRail({ active: 'northline', hasNorthline: true })}
+            <div class="p3-embed-container">
+              <div class="p3-placeholder">
+                <div class="p3-landing__badge" style="margin-bottom:12px">Northline · Access &amp; Permissions</div>
+                <div class="p3-placeholder__title">Who can see and edit this app?</div>
+                <div class="p3-placeholder__sub">
+                  This is where you'd configure who has access to Northline. We haven't designed the full flow yet — it's presented as a set of open questions for stakeholder discussion.
+                </div>
+
+                <div class="p3-question-card">
+                  <span class="p3-question-card__num">1</span>
+                  <div class="p3-question-card__body">
+                    <div class="p3-question-card__q">Access model: per-app or per-record?</div>
+                    <div class="p3-question-card__notes">
+                      Do we set a single access policy at the app level (e.g., "the whole Property Ops team can see this app"),
+                      or do we let individual records have their own permissions on top?
+                      <ul><li>App-level is simpler but may over-share confidential properties.</li><li>Record-level matches how portfolios work today but is more UI to build.</li></ul>
+                    </div>
+                  </div>
+                  <span class="p3-question-card__stamp">Open</span>
+                </div>
+
+                <div class="p3-question-card">
+                  <span class="p3-question-card__num">2</span>
+                  <div class="p3-question-card__body">
+                    <div class="p3-question-card__q">Roles vs. groups?</div>
+                    <div class="p3-question-card__notes">
+                      When Path 1 and Path 2 talk about "roles" (Property Ops, Marketing, Leadership), are those Asana teams, portfolio-scoped groups, or something new to Builder?
+                    </div>
+                  </div>
+                  <span class="p3-question-card__stamp">Open</span>
+                </div>
+
+                <div class="p3-question-card">
+                  <span class="p3-question-card__num">3</span>
+                  <div class="p3-question-card__body">
+                    <div class="p3-question-card__q">Sharing outside the workspace</div>
+                    <div class="p3-question-card__notes">
+                      Should Builder apps be shareable to guests / clients (like Asana projects), or is Builder org-internal-only in V1?
+                    </div>
+                  </div>
+                  <span class="p3-question-card__stamp">Open</span>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        return;
+      }
+    }
+
+    // Initial paint
+    applyState();
+  </script>
+</body>
+</html>

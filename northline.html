@@ -928,7 +928,24 @@
       font-size: 11.5px; color: var(--text-weak); font-style: italic;
       padding: 4px 0;
     }
+
+    /* When embedded inside another app (e.g. Builder Studio's outer Asana
+       chrome), hide the internal mini-rail so we don't stack two nav columns.
+       Triggered by ?embedded=true — see the small inline script below. */
+    body.northline--embedded .cvs-mini-rail { display: none; }
   </style>
+  <script>
+    // When Northline is embedded inside another app (iframed), hide the
+    // internal mini-rail so we don't stack two navigation columns.
+    if (window !== window.parent) {
+      const mark = () => document.body && document.body.classList.add('northline--embedded');
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', mark);
+      } else {
+        mark();
+      }
+    }
+  </script>
 </head>
 <body>
 
