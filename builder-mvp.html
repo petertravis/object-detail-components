@@ -332,7 +332,7 @@
       border: none; background: none; border-radius: 6px;
       color: var(--text-weak); cursor: pointer; font-family: inherit;
       font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
-      position: relative;
+      position: relative; white-space: nowrap; flex-shrink: 0;
     }
     .db-tab svg { width: 14px; height: 14px; }
     .db-tab--active { color: var(--text); font-weight: 500; }
@@ -766,7 +766,12 @@
     }
     .pf-head__actions { margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-8); }
     .pf-head__crumb { font-size: 11.5px; color: var(--text-weak); margin-bottom: 4px; }
-    .pf-head__tabs { display: flex; align-items: center; gap: var(--spacing-4); margin-top: var(--spacing-8); }
+    .pf-head__tabs {
+      display: flex; align-items: center; gap: var(--spacing-4);
+      margin-top: var(--spacing-8);
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .pf-head__tabs::-webkit-scrollbar { display: none; }
 
     /* Facepile in the portfolio header */
     .facepile { display: inline-flex; }
@@ -856,6 +861,25 @@
     .hub-xtask__right { display: inline-flex; align-items: center; gap: var(--spacing-12); flex-shrink: 0; }
     .hub-xtask__prop, .hub-xtask__date {
       font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; white-space: nowrap;
+    }
+
+    /* "Synced from the Properties table" strip above the records view —
+       makes the Records/Tables data layer visible */
+    .pf-source {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: var(--spacing-12) var(--spacing-24);
+      background: var(--selected-background);
+      border-bottom: 1px solid var(--border);
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      letter-spacing: 0; color: var(--selected-text);
+    }
+    .pf-source .ico { color: var(--selected-text); }
+    .pf-source strong { font-weight: 600; }
+
+    /* Builder empty-chips state, once every suggestion has been used */
+    .aip__done {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text-weak);
     }
 
     /* ══════════════════════════════════════════════════════════════════
@@ -1828,8 +1852,50 @@
 
     const PF_TABS = ['List', 'Timeline', 'Dashboard', 'Progress', 'Workload', 'Messages'];
 
-    let pfPublished = false;   // has the Hub view been added to the portfolio?
+    /* The connected Records table this portfolio pulls from — the Tables pilot
+       acting as the data layer, per the MVP scope. */
+    const PF_RECORDS = {
+      source: 'Properties',
+      cols: [
+        { key: 'name',    label: 'Name',       w: 240 },
+        { key: 'loc',     label: 'Location',   w: 150 },
+        { key: 'address', label: 'Address',    w: 210 },
+        { key: 'units',   label: 'Units',      w: 80  },
+        { key: 'year',    label: 'Year built', w: 100 },
+        { key: 'market',  label: 'Market',     w: 150 },
+        { key: 'status',  label: 'Status',     w: 140 },
+        { key: 'owner',   label: 'Owner group', w: 190 },
+      ],
+      rows: [
+        { name: 'The Marlow',             loc: ['Oakland, CA', 'purple'],    address: '1725 Broadway, Oakland, CA 94612',      units: 84,  year: 2024, market: ['Bay Area', 'green'],       status: ['Takeover', 'yellow-orange'], owner: 'Greystar Capital' },
+        { name: 'Beacon Hill Apartments', loc: ['Sacramento, CA', 'blue'],   address: '4800 Stockton Blvd, Sacramento, CA 95820', units: 156, year: 2019, market: ['Central Valley', 'pink'], status: ['Stabilized', 'hot-pink'],    owner: 'Brookfield Residential' },
+        { name: 'Sunset Commons',         loc: ['San Jose, CA', 'aqua'],     address: '200 Park Ave, San Jose, CA 95113',      units: 112, year: 2023, market: ['South Bay', 'orange'],     status: ['Separation', 'blue-green'],  owner: 'Hines' },
+      ],
+    };
+
+    /* Each recipe is one thing the user can ask AI for. Publishing a recipe
+       adds its view to the portfolio's tab bar. */
+    const PF_RECIPES = {
+      metrics: {
+        view: 'Hub',
+        chip: 'Add a view with portfolio metrics',
+        prompt: 'Add a new view to this page that adds:<br>· active work<br>· open tasks<br>· vendors<br>· overdue tasks',
+        bullets: ['Added <strong>4 widgets</strong> to a new view'],
+      },
+      records: {
+        view: 'Property records',
+        chip: 'Add a view that shows connected property records',
+        prompt: 'Add a view that shows the connected property records.',
+        bullets: [
+          'Found <strong>Properties</strong> in your connected tables',
+          'Added a <strong>Property records</strong> view with 8 columns',
+        ],
+      },
+    };
+
+    let pfViews = [];          // view names added to the portfolio, in order
     let pfTab = 'List';
+    let pfRecipe = 'metrics';  // which recipe the builder is currently running
 
     const av = (i, hue, cls) => `<span class="${cls || 'avatar-24'}" style="background:var(--cz-${hue}-bg);color:var(--cz-${hue}-fg)">${i}</span>`;
 
@@ -1909,12 +1975,41 @@
         </div>`;
     }
 
+    // The connected Records table, rendered as a portfolio view
+    function pfRecordsHtml() {
+      const R = PF_RECORDS;
+      const cell = (r, c) => {
+        const v = r[c.key];
+        if (Array.isArray(v)) return `<span class="pill pill--${v[1]}">${v[0]}</span>`;
+        if (c.key === 'owner') {
+          return `<span class="pill pill--none" style="gap:6px">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 5.2 8 2.4l5.6 2.8-5.6 2.8z"/><path d="m2.4 9 5.6 2.8L13.6 9"/></svg>
+            ${v}</span>`;
+        }
+        if (c.key === 'name') return `<span class="grid__name">${v}</span>`;
+        return v;
+      };
+      return `
+        <div class="pf-source">
+          <span class="ico ico--16"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 14H11C12.6545 14 14 12.6545 14 11V3C14 1.345 12.6545 0 11 0H3C1.3455 0 0 1.345 0 3V11C0 12.6545 1.3455 14 3 14ZM9 13H5V6H9V13ZM13 11C13 12.103 12.103 13 11 13H10V6H13V11ZM1 3C1 1.897 1.897 1 3 1H11C12.103 1 13 1.897 13 3V5H1V3ZM1 6H4V13H3C1.897 13 1 12.103 1 11V6Z" fill="currentColor"/></svg></span>
+          Synced from the <strong>${R.source}</strong> table · ${R.rows.length} records
+        </div>
+        <div class="grid-wrap">
+          <table class="grid" style="min-width:1160px">
+            <thead><tr>${R.cols.map(c => `<th style="width:${c.w}px">${c.label}</th>`).join('')}</tr></thead>
+            <tbody>${R.rows.map(r => `<tr>${R.cols.map(c => `<td>${cell(r, c)}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+          <div class="grid__add">Add property…</div>
+        </div>`;
+    }
+
     // Renders the whole portfolio surface. `opts.preview` omits the paintbrush
     // and forces a tab, for use inside the builder's live preview.
+    // `opts.views` overrides which added views the tab bar shows.
     function renderPortfolio(target, opts = {}) {
-      const showHub = opts.hubPublished !== undefined ? opts.hubPublished : pfPublished;
-      const tab     = opts.tab || pfTab;
-      const tabs    = (showHub ? ['Hub'] : []).concat(PF_TABS);
+      const views = opts.views || pfViews;
+      const tab   = opts.tab || pfTab;
+      const tabs  = views.concat(PF_TABS);
 
       const tabsHtml = tabs.map(t => `
         <button class="db-tab ${t === tab ? 'db-tab--active' : ''}" data-pf-tab="${t}">${t}</button>`).join('') + `
@@ -1960,7 +2055,11 @@
           </div>
         </div>
 
-        <div class="pf-body">${tab === 'Hub' ? pfHubHtml() : pfListHtml()}</div>`;
+        <div class="pf-body">${
+          tab === 'Hub'              ? pfHubHtml()     :
+          tab === 'Property records' ? pfRecordsHtml() :
+                                       pfListHtml()
+        }</div>`;
 
       if (!opts.preview) {
         target.querySelector('#pf-customize-btn')?.addEventListener('click', () => openBuilder('portfolio'));
@@ -1994,11 +2093,24 @@
       portfolio: {
         crumb: 'Portfolios&nbsp;&nbsp;/&nbsp;&nbsp;<strong>Transitions</strong>',
         previewWidth: '100%',
-        chips: ['Add a view with portfolio metrics', 'Group projects by status', 'Surface cross-portfolio tasks'],
-        prompts: ['Add a new view to this page that adds:<br>· active work<br>· open tasks<br>· vendors<br>· overdue tasks'],
-        bullets: ['Added <strong>4 widgets</strong> to a new view'],
-        drawPreview: (el, done) => { renderPortfolio(el, { preview: true, hubPublished: done, tab: done ? 'Hub' : 'List' }); },
-        apply: () => { pfPublished = true; pfTab = 'Hub'; renderPortfolio(pfCanvas); },
+        // Only offer recipes whose view hasn't been added yet
+        chips: () => Object.entries(PF_RECIPES)
+          .filter(([k, r]) => !pfViews.includes(r.view))
+          .map(([k, r]) => ({ key: k, text: r.chip })),
+        prompts: () => [PF_RECIPES[pfRecipe].prompt],
+        bullets: () => PF_RECIPES[pfRecipe].bullets,
+        drawPreview: (el, done) => {
+          const view = PF_RECIPES[pfRecipe].view;
+          // While building, preview the portfolio as it WILL be once published
+          const views = done && !pfViews.includes(view) ? pfViews.concat(view) : pfViews;
+          renderPortfolio(el, { preview: true, views, tab: done ? view : (pfViews[0] || 'List') });
+        },
+        apply: () => {
+          const view = PF_RECIPES[pfRecipe].view;
+          if (!pfViews.includes(view)) pfViews.push(view);
+          pfTab = view;
+          renderPortfolio(pfCanvas);
+        },
       },
     };
 
@@ -2013,26 +2125,41 @@
       previewEl.appendChild(inner);
     }
 
+    // Config values may be plain arrays or functions (when they depend on state)
+    const val = (x) => (typeof x === 'function' ? x() : x);
+    // Chips may be strings or { key, text }
+    const asChip = (c) => (typeof c === 'string' ? { key: null, text: c } : c);
+
     function openBuilder(mode) {
       buildMode = mode;
       document.getElementById('builder-crumb').innerHTML = cfg().crumb;
       builder.classList.add('builder--on');
+
+      const chips = val(cfg().chips).map(asChip);
       aipScroll.innerHTML = `
         ${ASANA_MARK}
         <div class="aip__headline">What do you want to build?</div>
         <div class="aip__chips">
-          ${cfg().chips.map(s => `<button class="aip__chip" data-suggestion>${s}</button>`).join('')}
+          ${chips.length
+            ? chips.map(c => `<button class="aip__chip" data-suggestion data-recipe="${c.key || ''}">${c.text}</button>`).join('')
+            : `<div class="aip__done">Every suggested view has been added. Describe something else below.</div>`}
         </div>`;
-      // Preview mirrors the object's CURRENT published state
-      paintPreview(mode === 'record' ? published : pfPublished);
-      aipScroll.querySelectorAll('[data-suggestion]').forEach(b => b.addEventListener('click', runCustomization));
+
+      // Preview mirrors the object's CURRENT state, before any new request
+      paintPreview(mode === 'record' ? published : false);
+      aipScroll.querySelectorAll('[data-suggestion]').forEach(b => {
+        b.addEventListener('click', () => {
+          if (b.dataset.recipe) pfRecipe = b.dataset.recipe;
+          runCustomization();
+        });
+      });
     }
 
     function runCustomization() {
       const c = cfg();
       aipScroll.innerHTML = `
         <div class="aip__msgs">
-          ${c.prompts.map(p => `<div class="aip__user">${p}</div>`).join('')}
+          ${val(c.prompts).map(p => `<div class="aip__user">${p}</div>`).join('')}
           <div id="aip-result"><div class="aip__thinking"><span class="aip__spinner"></span>Thinking…</div></div>
         </div>`;
       aipScroll.scrollTop = aipScroll.scrollHeight;
@@ -2045,7 +2172,7 @@
             Thinking Complete
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="4.4 3 7.4 6 4.4 9"/></svg>
           </div>
-          <ul class="aip__bullets">${c.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+          <ul class="aip__bullets">${val(c.bullets).map(b => `<li>${b}</li>`).join('')}</ul>
           <div class="aip__feedback">
             <button class="icon-btn icon-btn--sm" aria-label="Copy"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="3.4" y="3.4" width="6.2" height="6.2" rx="1"/><path d="M8.2 3.4V2.4a1 1 0 0 0-1-1H2.4a1 1 0 0 0-1 1v4.8a1 1 0 0 0 1 1h1"/></svg></button>
             <button class="icon-btn icon-btn--sm" aria-label="Good response"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 10.4V5.2l2-3.6a1 1 0 0 1 1.8.8l-.5 2h2.5a1 1 0 0 1 1 1.2l-.7 3.4a1 1 0 0 1-1 .8z"/><path d="M3.4 5.4H1.8v5h1.6z"/></svg></button>
@@ -2088,7 +2215,7 @@
     // Reset both experiences to their un-customized state
     document.getElementById('proto-reset').addEventListener('click', () => {
       published = false; currentRecordId = 'marlow';
-      pfPublished = false; pfTab = 'List';
+      pfViews = []; pfTab = 'List'; pfRecipe = 'metrics';
       document.querySelectorAll('#grid-body tr').forEach(r => r.classList.remove('is-selected'));
       renderPane();
       renderPortfolio(pfCanvas);
