@@ -1,0 +1,166 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   FALCON TOKENS — pulled directly from Figma variables
+   Source: MVP-exploration (KULonj1RGHWtpRG8VmBitZ), nodes 5:12893 + 5:27215
+   via Figma MCP get_variable_defs.
+
+   These are the REAL Asana Falcon values, not the hand-transcribed subset in
+   object-detail-components/tokens.css. Notable corrections vs that file:
+     border          #edeae9  (was #e0e1e3 — real value is warmer)
+     border-strong   #cfcbcb  (was #c4c6c8)
+     background-strong #f5f3f3 (was #e8e9ea — real value is much lighter)
+     text-weak       #6d6e6f  (was #626364)
+     creation bg     #ff584a  (the coral Create button; was using orange)
+   Plus: the full 13-hue customization palette, avatar tokens, and the real
+   type ramp with its letter-spacing (body -0.15px, display +0.35px).
+
+   NOTE ON SOURCE FIDELITY: frames 5:12893 and 5:27215 resolve a few Default/*
+   variables differently (border #edeae9 vs #e0e1e3, border-strong #cfcbcb vs
+   #c4c6c8) because they bind different variable collections. This file uses
+   the 5:12893 (GA Components / app-shell) values throughout so one prototype
+   stays internally consistent.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Type families ─────────────────────────────────────────────────── */
+  --font-text:    'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* ── Type ramp ─────────────────────────────────────────────────────────
+     Figma bakes letter-spacing into each style. Body text is NEGATIVE
+     (-0.15px) and display headings are POSITIVE (+0.35px) — getting this
+     wrong is the main reason hand-built Asana mockups look subtly off. */
+  --type-s-size:   12px;   --type-s-line:   18px;  --type-s-track:  0;
+  --type-m-size:   14px;   --type-m-line:   22px;  --type-m-track:  -0.15px;
+  --type-h6-size:  14px;   --type-h6-line:  20px;  --type-h6-track: -0.15px;
+  --type-xl-size:  20px;   --type-xl-line:  28px;  --type-xl-track: 0.35px;
+  --type-h3-size:  24px;   --type-h3-line:  32px;  --type-h3-track: 0.35px;
+  --type-rail-size: 10px;  /* icon-rail labels */
+
+  /* ── Default / surfaces ────────────────────────────────────────────── */
+  --background-weak:    #ffffff;
+  --background-medium:  #f2f3f4;
+  --background-strong:  #f5f3f3;
+  --background-hover:   #25272808;
+  --background-active:  #3717170d;
+
+  /* ── Default / text ───────────────────────────────────────────────── */
+  --text:            #1d1f21;
+  --text-weak:       #6d6e6f;
+  --text-disabled:   #a9abad;
+  --text-foreground: #ffffff;
+
+  /* ── Default / icon ───────────────────────────────────────────────── */
+  --icon:          #757677;
+  --icon-active:   #1d1f21;
+  --icon-disabled: #a9abad;
+
+  /* ── Default / border ─────────────────────────────────────────────── */
+  --border:        #edeae9;
+  --border-strong: #cfcbcb;
+  --border-active: #6d6e6f;
+
+  /* ── Primary ──────────────────────────────────────────────────────── */
+  --primary-background-strong: #4573d2;
+  --primary-text-strong:       #ffffff;
+
+  /* ── Selected ─────────────────────────────────────────────────────── */
+  --selected-text:       #335fb5;
+  --selected-background: #e9f1fe;
+  --selected-border:     #335fb5;
+
+  /* ── Inverse (tooltips, dark surfaces) ────────────────────────────── */
+  --inverse-text:              #f2f3f4;
+  --inverse-background-strong:  #313436;
+
+  /* ── Buttons ──────────────────────────────────────────────────────── */
+  --button-background-secondary: #ffffff;
+  --button-border-secondary:     #cfcbcb;
+  --button-background-subtle:    #00000000;
+  --button-border-subtle:        #00000000;
+  --button-creation-background:  #ff584a;   /* the coral Create button */
+  --button-creation-icon:        #ffffff;
+  --button-background-primary-disabled: #ffffff;
+
+  /* ── Avatars ──────────────────────────────────────────────────────── */
+  --avatar-tertiary-background: #e8e9ea;
+  --avatar-tertiary-border:     #e0e1e3;
+  --avatar-tertiary-icon:       #757677;
+  --avatar-none-background:     #c5c5c5;
+  --avatar-none-icon:           #2b2b2b;
+  --avatar-red-background:      #ff878a;
+  --avatar-blue-background:     #79abff;
+  --avatar-hairline:            rgba(0, 0, 0, 0.07);
+
+  /* ── Shadows ──────────────────────────────────────────────────────── */
+  --shadow-medium-color: #7576771a;
+  --shadow-large-color:  #6d6e6f1f;
+  --shadow-medium: 0 3px 8px 0 var(--shadow-medium-color);
+  --shadow-large:  0 6px 14px 0 var(--shadow-large-color);
+
+  /* ── Spacing scale ────────────────────────────────────────────────── */
+  --spacing-4:  4px;
+  --spacing-8:  8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-24: 24px;
+
+  /* ── Sizing scale ─────────────────────────────────────────────────── */
+  --sizing-12: 12px;
+  --sizing-16: 16px;
+  --sizing-20: 20px;
+  --sizing-24: 24px;
+  --sizing-28: 28px;
+  --sizing-36: 36px;
+  --sizing-48: 48px;
+
+  /* ── Customization palette ─────────────────────────────────────────────
+     Asana's field/tag colors. Each hue is a background + a foreground that
+     is guaranteed legible on it — always use them as a pair. */
+  --cz-none-bg:        #e8e5e4;  --cz-none-fg:        #1e1f21;
+  --cz-yellow-bg:      #f8df72;  --cz-yellow-fg:      #1e1f21;
+  --cz-yellow-orange-bg: #f7bd51; --cz-yellow-orange-fg: #3c2800;
+  --cz-orange-bg:      #ec8d71;  --cz-orange-fg:      #1e1f21;
+  --cz-pink-bg:        #fc979a;  --cz-pink-fg:        #1e1f21;
+  --cz-hot-pink-bg:    #f26fb2;  --cz-hot-pink-fg:    #1e1f21;
+  --cz-magenta-bg:     #faaee9;  --cz-magenta-fg:     #461c3e;
+  --cz-purple-bg:      #e39ef2;  --cz-purple-fg:      #3f1f47;
+  --cz-indigo-bg:      #a69ff3;  --cz-indigo-fg:      #1e1f21;
+  --cz-blue-bg:        #4573d2;  --cz-blue-fg:        #ffffff;
+  --cz-blue-green-bg:  #77d3e9;  --cz-blue-green-fg:  #00303a;
+  --cz-aqua-bg:        #9ee7e3;  --cz-aqua-fg:        #1e1f21;
+  --cz-green-bg:       #83c9a9;  --cz-green-fg:       #1e1f21;
+
+  /* ── Layout constants (measured off frame 5:12893) ─────────────────── */
+  --topbar-height:   48px;
+  --rail-width:      64px;
+  --sidebar-width:  182px;
+  --pane-width:     680px;
+  --row-height:      36px;   /* grid + custom-field rows */
+  --pane-inset:      24px;
+  --cf-label-width: 200px;   /* custom-field label column */
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-text);
+  font-size: var(--type-m-size);
+  line-height: var(--type-m-line);
+  letter-spacing: var(--type-m-track);
+  color: var(--text);
+  background: var(--background-weak);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Type utilities ─────────────────────────────────────────────────── */
+.t-s      { font-size: var(--type-s-size);  line-height: var(--type-s-line);  letter-spacing: var(--type-s-track); }
+.t-s-med  { font-size: var(--type-s-size);  line-height: var(--type-s-line);  letter-spacing: var(--type-s-track); font-weight: 500; }
+.t-m      { font-size: var(--type-m-size);  line-height: var(--type-m-line);  letter-spacing: var(--type-m-track); }
+.t-m-med  { font-size: var(--type-m-size);  line-height: var(--type-m-line);  letter-spacing: var(--type-m-track); font-weight: 500; }
+.t-h6     { font-size: var(--type-h6-size); line-height: var(--type-h6-line); letter-spacing: var(--type-h6-track); font-weight: 500; }
+.t-xl     { font-family: var(--font-display); font-size: var(--type-xl-size); line-height: var(--type-xl-line); letter-spacing: var(--type-xl-track); font-weight: 500; }
+.t-h3     { font-family: var(--font-display); font-size: var(--type-h3-size); line-height: var(--type-h3-line); letter-spacing: var(--type-h3-track); font-weight: 500; }

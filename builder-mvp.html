@@ -1,0 +1,2131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Builder MVP — Customize a Record in Place</title>
+  <link rel="stylesheet" href="falcon-tokens.css">
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════
+       BUILDER MVP — AI customization as a layer on an existing object.
+       Geometry measured off Figma frame 5:12893; tokens from falcon-tokens.css.
+       ═══════════════════════════════════════════════════════════════════ */
+
+    body { overflow: hidden; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       PROTOTYPE NAV — deliberately NOT Asana chrome. Dark bar so nobody
+       mistakes it for product UI during the review.
+       ══════════════════════════════════════════════════════════════════ */
+    .proto-nav {
+      height: 44px; flex-shrink: 0;
+      display: flex; align-items: center; gap: var(--spacing-16);
+      padding: 0 var(--spacing-16);
+      background: var(--inverse-background-strong);
+      color: var(--inverse-text);
+    }
+    .proto-nav__brand {
+      display: inline-flex; align-items: center; gap: var(--spacing-8);
+      font-size: var(--type-s-size); letter-spacing: 0.04em;
+      text-transform: uppercase; font-weight: 700;
+      color: rgba(242, 243, 244, 0.6);
+      white-space: nowrap;
+    }
+    .proto-nav__tabs { display: inline-flex; gap: var(--spacing-4); }
+    .proto-tab {
+      height: 28px; padding: 0 var(--spacing-12);
+      border: none; border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(242, 243, 244, 0.75);
+      font-family: inherit; font-size: var(--type-s-size);
+      letter-spacing: 0; cursor: pointer;
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .proto-tab:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+    .proto-tab--active {
+      background: var(--background-weak); color: var(--text); font-weight: 500;
+    }
+    .proto-nav__hint {
+      margin-left: auto; font-size: var(--type-s-size);
+      color: rgba(242, 243, 244, 0.55); letter-spacing: 0;
+      white-space: nowrap;
+    }
+    .proto-nav__reset {
+      height: 26px; padding: 0 10px;
+      background: none; border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 6px; color: rgba(242, 243, 244, 0.85);
+      font-family: inherit; font-size: var(--type-s-size);
+      letter-spacing: 0; cursor: pointer;
+    }
+    .proto-nav__reset:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+
+    /* Page = nav row + whichever experience is active */
+    .page { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    .experience { flex: 1; min-height: 0; display: none; }
+    .experience--on { display: block; }
+
+    /* ── Root shell ──────────────────────────────────────────────────── */
+    .app {
+      display: grid;
+      grid-template-rows: var(--topbar-height) 1fr;
+      height: 100%;
+      background: var(--background-medium);
+      overflow: hidden;
+    }
+    .app__lower {
+      display: grid;
+      grid-template-columns: var(--rail-width) var(--sidebar-width) 1fr;
+      min-height: 0;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       TOPBAR — 48px
+       ══════════════════════════════════════════════════════════════════ */
+    .topbar {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: 0 var(--spacing-12);
+      background: var(--background-medium);
+    }
+    /* left/right flex evenly so the search sits dead-centre in the viewport,
+       matching the Figma frame (search spans 450–990 of 1440) */
+    .topbar__left  { flex: 1; display: flex; align-items: center; gap: var(--spacing-8); }
+    .topbar__right { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-4); }
+
+    /* Coral Create button */
+    .create-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 28px; padding: 0 12px 0 8px;
+      background: var(--button-creation-background);
+      color: var(--button-creation-icon);
+      border: none; border-radius: 500px;
+      font-family: inherit; font-size: var(--type-m-size);
+      line-height: var(--type-m-line); letter-spacing: var(--type-m-track);
+      font-weight: 500; cursor: pointer;
+      transition: filter 120ms ease;
+    }
+    .create-btn:hover { filter: brightness(0.95); }
+    .create-btn svg { width: 14px; height: 14px; }
+
+    /* Search */
+    .search {
+      width: 540px; flex-shrink: 0;
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 28px; padding: 0 12px;
+      background: var(--background-weak);
+      border: 1px solid var(--border-strong);
+      border-radius: 500px;
+      color: var(--text-weak);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+    }
+    .search svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--icon); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       ICON RAIL — 64px. Modes stack top, actions pinned bottom.
+       ══════════════════════════════════════════════════════════════════ */
+    .rail {
+      display: flex; flex-direction: column;
+      justify-content: space-between; align-items: stretch;
+      background: var(--background-medium);
+      overflow: hidden;
+    }
+    .rail__modes { display: flex; flex-direction: column; gap: var(--spacing-4); }
+    .rail__mode {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: var(--spacing-4);
+      padding: 6px var(--spacing-4) 2px;
+      border-radius: 6px; cursor: pointer;
+      background: none; border: none; width: 100%;
+      font-family: inherit;
+    }
+    .rail__mode-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: var(--spacing-8);
+      border-radius: 6px;
+      color: var(--icon);
+      transition: background 120ms ease;
+    }
+    .rail__mode:hover .rail__mode-icon { background: var(--background-hover); }
+    .rail__mode-label {
+      font-family: var(--font-text);
+      font-size: var(--type-rail-size); font-weight: 500;
+      color: var(--text-weak); text-align: center;
+      line-height: normal;
+    }
+    /* Active mode: tinted icon chip + full-strength label */
+    .rail__mode--active .rail__mode-icon { background: var(--background-active); color: var(--icon-active); }
+    .rail__mode--active .rail__mode-label { color: var(--text); }
+
+    .rail__actions {
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+      gap: var(--spacing-16);
+      padding: 18px 0;
+    }
+
+    /* 28px circular avatar, yellow customization pair + hairline */
+    .avatar-28 {
+      width: var(--sizing-28); height: var(--sizing-28);
+      border-radius: 500px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--cz-yellow-bg); color: var(--cz-yellow-fg);
+      border: 1px solid var(--avatar-hairline);
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      flex-shrink: 0;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       SIDEBAR — 182px. Rounded top-left, hairline on 3 sides.
+       ══════════════════════════════════════════════════════════════════ */
+    .sidebar {
+      position: relative;
+      display: flex; flex-direction: column; align-items: stretch;
+      padding: var(--spacing-4) 0;
+      background: var(--background-medium);
+      border: 1px solid var(--border-strong);
+      border-bottom: none;
+      border-top-left-radius: var(--spacing-8);
+      overflow: hidden;
+    }
+    /* Section label ("Knowledge", "Recents") */
+    .sb__section {
+      display: flex; align-items: flex-end;
+      height: 30px; padding: 0 var(--spacing-12) var(--spacing-8);
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      font-weight: 500; color: var(--text-weak);
+    }
+    .sb__group { display: flex; flex-direction: column; padding: 0 var(--spacing-4); }
+    .sb__group--recents { padding-top: var(--spacing-12); }
+
+    /* Object rows (Pages / Meetings / Tables) */
+    .sb__row {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 32px; padding: 1px var(--spacing-8);
+      border-radius: var(--spacing-8);
+      cursor: pointer; color: var(--text);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track);
+      transition: background 120ms ease;
+    }
+    .sb__row:hover { background: var(--background-hover); }
+    .sb__row--active { background: var(--background-active); }
+    .sb__row-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Recents header row — caret + label + plus */
+    .sb__recents-head {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 28px; padding: 1px var(--spacing-8);
+      border-radius: var(--spacing-8);
+    }
+    .sb__recents-head-label {
+      flex: 1; min-width: 0;
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      font-weight: 500; color: var(--text-weak);
+    }
+
+    /* Recents item rows use a 20px squircle object avatar, tighter gap */
+    .sb__row--recent { gap: 6px; padding: 0 6px; }
+
+    /* TertiarySquircleIconAvatar — 20px box holding an 18px squircle (r5),
+       with a 12px mini-icon centred on top. Sizes from node 5:27875. */
+    .squircle-20 {
+      width: var(--sizing-20); height: var(--sizing-20);
+      flex-shrink: 0; position: relative;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--avatar-tertiary-icon);
+    }
+    .squircle-20::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; border-radius: 5px;
+      background: var(--avatar-tertiary-background);
+      border: 1px solid var(--avatar-tertiary-border);
+    }
+    .squircle-20 > .ico { position: relative; }
+
+    .sb__footer {
+      position: absolute; bottom: 0; left: -1px;
+      width: var(--sidebar-width);
+      padding: var(--spacing-8);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       ICON BOXES
+       Asana icons are filled paths whose artwork is often SMALLER than the
+       nominal box (e.g. NoteIcon is 13×16 in a 16px box, MoreIcon 16×3).
+       These wrappers hold the box size; each <svg> keeps its own true leaf
+       dimensions so nothing gets stretched.
+       ══════════════════════════════════════════════════════════════════ */
+    .ico {
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--icon);
+    }
+    .ico--16 { width: 16px; height: 16px; }
+    .ico--12 { width: 12px; height: 12px; }
+    .ico > svg { display: block; }
+
+    /* ── Buttons ─────────────────────────────────────────────────────── */
+    .btn-secondary {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px; width: 100%; height: 36px; padding: 0 12px;
+      background: var(--button-background-secondary);
+      border: 1px solid var(--button-border-secondary);
+      border-radius: 6px;
+      color: var(--text); font-family: inherit;
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); font-weight: 500;
+      cursor: pointer; transition: background 120ms ease;
+    }
+    .btn-secondary:hover { background: var(--background-medium); }
+    /* direct-child only, so .ico-wrapped icons keep their own leaf sizes */
+    .btn-secondary > svg { width: 16px; height: 16px; color: var(--icon); }
+    .btn-secondary--sm {
+      width: auto; height: 28px; padding: 0 var(--spacing-8);
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      letter-spacing: 0; font-weight: 400;
+    }
+
+    /* Subtle icon button — 28px, used across toolbars */
+    .icon-btn {
+      width: var(--sizing-28); height: var(--sizing-28);
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--button-background-subtle);
+      border: 1px solid var(--button-border-subtle);
+      border-radius: 6px;
+      color: var(--icon); cursor: pointer;
+      transition: background 120ms ease, color 120ms ease;
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { background: var(--background-hover); color: var(--icon-active); }
+    /* direct-child only — .ico wrappers manage their own geometry */
+    .icon-btn > svg { width: 16px; height: 16px; }
+    .icon-btn--sm { width: 20px; height: 20px; border-radius: 4px; }
+    .icon-btn--sm > svg { width: 12px; height: 12px; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       CANVAS — the Properties table
+       ══════════════════════════════════════════════════════════════════ */
+    .canvas {
+      display: flex; flex-direction: column;
+      min-width: 0; min-height: 0;
+      background: var(--background-weak);
+      border-top: 1px solid var(--border-strong);
+      border-left: 1px solid var(--border-strong);
+      border-top-left-radius: var(--spacing-8);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Database header — 82px */
+    .db-head {
+      display: flex; flex-direction: column; justify-content: center;
+      gap: 2px; height: 82px; padding: 0 var(--spacing-24);
+      flex-shrink: 0;
+    }
+    .db-head__title-row { display: flex; align-items: center; gap: 6px; }
+    .db-head__title {
+      font-family: var(--font-display);
+      font-size: var(--type-xl-size); line-height: var(--type-xl-line);
+      letter-spacing: var(--type-xl-track); font-weight: 500;
+      color: var(--text);
+    }
+    .db-head__tabs { display: flex; align-items: center; gap: var(--spacing-4); }
+    .db-tab {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 28px; padding: 0 var(--spacing-8);
+      border: none; background: none; border-radius: 6px;
+      color: var(--text-weak); cursor: pointer; font-family: inherit;
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      position: relative;
+    }
+    .db-tab svg { width: 14px; height: 14px; }
+    .db-tab--active { color: var(--text); font-weight: 500; }
+    .db-tab--active::after {
+      content: ''; position: absolute; left: var(--spacing-8); right: var(--spacing-8);
+      bottom: -6px; height: 2px; background: var(--text); border-radius: 2px;
+    }
+
+    /* Toolbar — 56px */
+    .db-toolbar {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 56px; padding: 0 var(--spacing-24);
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Grid */
+    .grid-wrap { flex: 1; min-height: 0; overflow: auto; padding: 0 20px; }
+    .grid { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .grid th, .grid td {
+      height: var(--row-height);
+      padding: 0 var(--spacing-8);
+      text-align: left; vertical-align: middle;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);   /* column dividers, as in Figma */
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track);
+    }
+    .grid th:last-child, .grid td:last-child { border-right: none; }
+    .grid th {
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      font-weight: 500; color: var(--text-weak); letter-spacing: 0;
+      white-space: nowrap;
+    }
+    .grid td:first-child, .grid th:first-child { padding-left: 0; }
+    .grid tbody tr { cursor: pointer; }
+    .grid tbody tr:hover td { background: var(--background-hover); }
+    .grid tbody tr.is-selected td { background: var(--background-active); }
+    .grid__name { font-weight: 400; color: var(--text); }
+    .grid__add {
+      display: flex; align-items: center; height: 38px;
+      color: var(--text-weak); font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track); cursor: pointer;
+    }
+
+    /* Customization pill (field values, locations) */
+    .pill {
+      display: inline-flex; align-items: center;
+      height: var(--sizing-24); padding: 0 var(--spacing-8);
+      border-radius: 500px;
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      letter-spacing: 0; white-space: nowrap;
+    }
+    .pill--purple      { background: var(--cz-purple-bg);      color: var(--cz-purple-fg); }
+    .pill--indigo      { background: var(--cz-indigo-bg);      color: var(--cz-indigo-fg); }
+    .pill--blue        { background: var(--cz-blue-bg);        color: var(--cz-blue-fg); }
+    .pill--green       { background: var(--cz-green-bg);       color: var(--cz-green-fg); }
+    .pill--aqua        { background: var(--cz-aqua-bg);        color: var(--cz-aqua-fg); }
+    .pill--yellow      { background: var(--cz-yellow-bg);      color: var(--cz-yellow-fg); }
+    .pill--yellow-orange { background: var(--cz-yellow-orange-bg); color: var(--cz-yellow-orange-fg); }
+    .pill--none        { background: var(--cz-none-bg);        color: var(--cz-none-fg); }
+    .pill--magenta     { background: var(--cz-magenta-bg);     color: var(--cz-magenta-fg); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       RECORD PANE — 680px, overlays the canvas from the right
+       ══════════════════════════════════════════════════════════════════ */
+    .pane {
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: var(--pane-width);
+      display: flex; flex-direction: column;
+      background: var(--background-weak);
+      border-left: 1px solid var(--border);
+      box-shadow: var(--shadow-large);
+      z-index: 20;
+    }
+    .pane__topbar {
+      display: flex; align-items: center;
+      height: 56px; padding: 0 var(--pane-inset);
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);   /* per node 5:24850 */
+    }
+    .pane__crumb {
+      display: inline-flex; align-items: center; gap: var(--spacing-8);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+    .pane__actions { display: flex; align-items: center; gap: var(--spacing-8); margin-left: auto; }
+    .pane__sep { width: 1px; height: 16px; background: #d9d9d9; }
+
+    .pane__body { flex: 1; min-height: 0; overflow-y: auto; }
+
+    /* Title block — 64px */
+    .pane__title-wrap { padding: 0 var(--pane-inset); }
+    .pane__title {
+      display: flex; align-items: center; min-height: 64px;
+      font-family: var(--font-display);
+      font-size: var(--type-h3-size); line-height: var(--type-h3-line);
+      letter-spacing: var(--type-h3-track); font-weight: 500;
+      color: var(--text);
+    }
+
+    /* Section header — "Fields 8 +" */
+    .pane__section-head {
+      display: flex; align-items: center; gap: var(--spacing-4);
+      height: var(--row-height); padding: 0 var(--pane-inset);
+    }
+    .pane__section-label {
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      font-weight: 500; color: var(--text-weak);
+    }
+    .count-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 16px; height: 20px; padding: 0 5px;
+      border-radius: 500px; background: var(--background-strong);
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+
+    /* Custom-field rows: 200px label / 1px divider / value */
+    .cf { padding: var(--spacing-12) var(--pane-inset) 0; }
+    .cf__row {
+      display: grid;
+      grid-template-columns: var(--cf-label-width) 1px 1fr;
+      align-items: stretch;
+      min-height: var(--row-height);
+      border-bottom: 1px solid var(--border);
+    }
+    .cf__label {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding-right: var(--spacing-8);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text-weak);
+    }
+    .cf__label svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--icon); }
+    .cf__divider { background: var(--border); }
+    .cf__value {
+      display: flex; align-items: center; gap: var(--spacing-4);
+      flex-wrap: wrap;
+      padding: 7px var(--spacing-4) 7px var(--spacing-12);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+    .cf__value--multiline { flex-direction: column; align-items: flex-start; gap: 0; }
+
+    /* Comments */
+    .pane__tabs {
+      display: flex; align-items: center; gap: var(--spacing-4);
+      padding: var(--spacing-16) var(--pane-inset) 0;
+    }
+    .pane__tab {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 28px; padding: 3px var(--spacing-8);
+      border: none; background: none; border-radius: 6px;
+      color: var(--text-weak); cursor: pointer; font-family: inherit;
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      position: relative;
+    }
+    /* Selected comment tab is a filled blue chip, not an underline */
+    .pane__tab--active {
+      background: var(--selected-background);
+      color: var(--selected-text);
+      font-weight: 500;
+    }
+    .pane__tabs-right { margin-left: auto; }
+
+    .activity { padding: var(--spacing-16) var(--pane-inset) 0; }
+    .activity__item { display: flex; gap: var(--spacing-8); padding: 6px 0; }
+    /* Reaction button sits right-aligned, revealed on row hover */
+    .activity__react { margin-left: auto; opacity: 0; transition: opacity 120ms ease; }
+    .activity__item:hover .activity__react { opacity: 1; }
+    .avatar-24 {
+      width: var(--sizing-24); height: var(--sizing-24);
+      border-radius: 500px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--avatar-hairline);
+      font-size: 10px; font-weight: 500; letter-spacing: 0;
+    }
+    .activity__body {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+      min-width: 0;
+    }
+    .activity__meta { color: var(--text-weak); }
+    .activity__name { font-weight: 500; }
+    /* Mention chip: neutral-light background with a small square initial tile */
+    .mention {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 1px 6px 1px 2px; border-radius: 4px;
+      background: var(--cz-none-bg); color: var(--text);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      white-space: nowrap;
+    }
+    .mention__dot {
+      width: 18px; height: 18px; border-radius: 4px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 600; flex-shrink: 0;
+      letter-spacing: 0;
+    }
+
+    /* Comment composer */
+    .composer { padding: var(--spacing-12) var(--pane-inset) var(--spacing-16); flex-shrink: 0; }
+    .composer__box {
+      border: 1px solid var(--border-strong);
+      border-radius: var(--spacing-8);
+      background: var(--background-weak);
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .composer__box:focus-within {
+      border-color: var(--border-active);
+      box-shadow: var(--shadow-medium);
+    }
+    .composer__input {
+      width: 100%; border: none; outline: none; background: none;
+      padding: var(--spacing-12) var(--spacing-16) 0;
+      font-family: inherit; font-size: var(--type-m-size);
+      line-height: var(--type-m-line); letter-spacing: var(--type-m-track);
+      color: var(--text); resize: none; min-height: 22px;
+    }
+    .composer__input::placeholder { color: var(--text-weak); }
+    .composer__tools {
+      display: flex; align-items: center; gap: var(--spacing-4);
+      padding: var(--spacing-8) var(--spacing-12) var(--spacing-8);
+    }
+    .composer__send { margin-left: auto; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       CUSTOMIZE AFFORDANCE — paintbrush + tooltip
+       ══════════════════════════════════════════════════════════════════ */
+    .customize-wrap { position: relative; display: inline-flex; }
+    .tooltip {
+      position: absolute; top: calc(100% + 6px); right: 0;
+      background: var(--inverse-background-strong);
+      color: var(--inverse-text);
+      padding: 6px var(--spacing-8);
+      border-radius: 6px;
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      letter-spacing: 0; white-space: nowrap;
+      box-shadow: var(--shadow-medium);
+      opacity: 0; pointer-events: none;
+      transform: translateY(-2px);
+      transition: opacity 120ms ease, transform 120ms ease;
+      z-index: 40;
+    }
+    .customize-wrap:hover .tooltip { opacity: 1; transform: translateY(0); }
+    /* Paintbrush gets a subtle tint so it reads as the new affordance */
+    #customize-btn { color: var(--selected-text); }
+    #customize-btn:hover { background: var(--selected-background); color: var(--selected-text); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       CUSTOMIZED PANE — geometry from Figma frame 5:27215
+       Sections are inset 24px (632 content width) with 24px between them.
+       ══════════════════════════════════════════════════════════════════ */
+
+    /* Pinned meta chips under the title: label + value pill pairs */
+    .pane__meta {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 28px; padding: 0 var(--pane-inset);
+    }
+    .meta-field { display: inline-flex; align-items: center; gap: var(--spacing-8); }
+    .meta-field__label {
+      padding-left: var(--spacing-4);
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text-weak); letter-spacing: 0;
+    }
+    .meta-field__pill {
+      display: inline-flex; align-items: center; height: 20px;
+      padding: 0 var(--spacing-8); border-radius: 500px;
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      letter-spacing: 0; white-space: nowrap;
+    }
+
+    /* Generic customized section */
+    .sec { padding: 0 var(--pane-inset); margin-bottom: var(--spacing-24); }
+    .sec__title {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      min-height: 20px;
+    }
+    .sec__title > svg { width: 12px; height: 12px; flex-shrink: 0; color: var(--icon); }
+    .sec__title-label {
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text-weak); letter-spacing: 0;
+    }
+    .sec__body { padding-top: var(--spacing-12); }
+
+    /* Key metrics — 3 cards, 8px gutters, light fill */
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-8); }
+    .metric {
+      background: var(--background-strong);
+      border-radius: var(--spacing-8);
+      padding: var(--spacing-12);
+    }
+    .metric__label {
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text-weak); letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .metric__value {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); font-weight: 500; color: var(--text);
+      margin-top: 2px;
+    }
+    .metric__sub {
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text-weak); letter-spacing: 0;
+    }
+
+    /* Branding asset — 632×251, @2x source, cover-cropped */
+    .branding-img {
+      display: block; width: 100%; height: 251px;
+      object-fit: cover; border-radius: var(--spacing-8);
+    }
+    /* Same section, no asset uploaded on this record yet */
+    .branding-empty {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: var(--spacing-16);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--spacing-8);
+      background: var(--background-medium);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text-weak);
+    }
+
+    /* Primary project card */
+    .proj { display: flex; gap: var(--spacing-12); padding: var(--spacing-12); }
+    .proj__avatar {
+      width: var(--sizing-36); height: var(--sizing-36); flex-shrink: 0;
+      border-radius: var(--spacing-8);
+      background: var(--inverse-background-strong); color: var(--inverse-text);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .proj__avatar svg { width: 18px; height: 18px; }
+    .proj__body { flex: 1; min-width: 0; }
+    .proj__name {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); font-weight: 500; color: var(--text);
+    }
+    .proj__meta {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text-weak); letter-spacing: 0;
+    }
+    .dot-sep { width: 4px; height: 4px; border-radius: 500px; background: var(--border-strong); flex-shrink: 0; }
+    .proj__bar {
+      margin-top: var(--spacing-8);
+      height: 4px; border-radius: 500px;
+      background: var(--background-strong); overflow: hidden;
+    }
+    .proj__bar-fill { height: 100%; border-radius: 500px; background: var(--primary-background-strong); }
+
+    /* Team rows */
+    .person { display: flex; align-items: center; gap: var(--spacing-12); padding: var(--spacing-8) var(--spacing-12); }
+    .avatar-36 {
+      width: var(--sizing-36); height: var(--sizing-36); flex-shrink: 0;
+      border-radius: 500px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--avatar-hairline);
+      font-size: var(--type-m-size); font-weight: 500; letter-spacing: 0;
+    }
+    .person__name {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); font-weight: 500; color: var(--text);
+    }
+    .person__meta {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text-weak); letter-spacing: 0;
+    }
+
+    /* Connections — bordered box with collapsible groups */
+    .conn {
+      border: 1px solid var(--border); border-radius: var(--spacing-8);
+      padding: var(--spacing-12);
+    }
+    .conn__group + .conn__group { margin-top: var(--spacing-8); }
+    .conn__count {
+      display: flex; align-items: center; gap: var(--spacing-12);
+      height: 18px; cursor: pointer;
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text); letter-spacing: 0;
+    }
+    .conn__count-num { color: var(--text); }
+    .conn__count-label { flex: 1; min-width: 0; }
+    .conn__count svg { width: 16px; height: 16px; color: var(--icon); transition: transform 140ms ease; }
+    .conn__group--open .conn__count svg { transform: rotate(180deg); }
+    .conn__divider { height: 1px; background: var(--border); margin: var(--spacing-8) 0; }
+    .conn__rows { display: none; padding-top: var(--spacing-12); }
+    .conn__group--open .conn__rows { display: block; }
+
+    .ctask {
+      display: flex; align-items: center; gap: var(--spacing-4);
+      height: var(--row-height);
+    }
+    .ctask > svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--icon); }
+    .ctask__name {
+      padding: 0 var(--spacing-4);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+      white-space: nowrap;
+    }
+    .ctask__chip {
+      display: inline-flex; align-items: center; gap: 3px;
+      height: 20px; padding: 0 6px; border-radius: 4px;
+      color: var(--text-weak); font-size: var(--type-s-size); letter-spacing: 0;
+    }
+    .ctask__chip svg { width: 12px; height: 12px; }
+    .ctask__right {
+      margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-8);
+      flex-shrink: 0;
+    }
+    .ctask__date { font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; white-space: nowrap; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       PORTFOLIO EXPERIENCE — the "Transitions" portfolio (Figma 40:30162)
+       Customizing a portfolio adds a whole new VIEW (tab), rather than
+       rearranging a detail pane.
+       ══════════════════════════════════════════════════════════════════ */
+    .pf-head {
+      padding: var(--spacing-16) var(--spacing-24) 0;
+      flex-shrink: 0;
+    }
+    .pf-head__top { display: flex; align-items: center; gap: var(--spacing-8); }
+    .pf-head__icon {
+      width: var(--sizing-24); height: var(--sizing-24); flex-shrink: 0;
+      border-radius: 5px; background: var(--cz-yellow-orange-bg);
+      color: var(--cz-yellow-orange-fg);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .pf-head__name {
+      font-family: var(--font-display);
+      font-size: var(--type-xl-size); line-height: var(--type-xl-line);
+      letter-spacing: var(--type-xl-track); font-weight: 500; color: var(--text);
+    }
+    .pf-head__actions { margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-8); }
+    .pf-head__crumb { font-size: 11.5px; color: var(--text-weak); margin-bottom: 4px; }
+    .pf-head__tabs { display: flex; align-items: center; gap: var(--spacing-4); margin-top: var(--spacing-8); }
+
+    /* Facepile in the portfolio header */
+    .facepile { display: inline-flex; }
+    .facepile > .avatar-24 { margin-left: -6px; box-shadow: 0 0 0 2px var(--background-weak); }
+    .facepile > .avatar-24:first-child { margin-left: 0; }
+
+    .pf-toolbar {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 48px; padding: 0 var(--spacing-24);
+      flex-shrink: 0; border-bottom: 1px solid var(--border);
+    }
+    .pf-toolbar__right { margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-12); }
+    .pf-toolbar__item {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: var(--type-s-size); color: var(--text-weak);
+      letter-spacing: 0; cursor: pointer;
+    }
+    .pf-toolbar__item:hover { color: var(--text); }
+
+    .pf-body { flex: 1; min-height: 0; overflow: auto; }
+
+    /* ── Hub view (the published customization) ───────────────────────── */
+    .hub { padding: var(--spacing-24); display: flex; flex-direction: column; gap: var(--spacing-24); }
+    .hub__metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--spacing-12); }
+    /* No align-items:start — the two cards stretch to a shared height so their
+       top AND bottom edges line up. */
+    .hub__split { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--spacing-16); }
+    /* Narrow canvas (or the builder's constrained preview): stack instead of clip */
+    @media (max-width: 1180px) {
+      .hub__metrics { grid-template-columns: repeat(2, 1fr); }
+      .hub__split   { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    .card {
+      background: var(--background-weak);
+      border: 1px solid var(--border);
+      border-radius: var(--spacing-8);
+      overflow: hidden;
+    }
+    .card__head {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: var(--spacing-12) var(--spacing-16);
+    }
+    .card__title {
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      font-weight: 500; color: var(--text-weak); letter-spacing: 0;
+    }
+    .card__meta { margin-left: auto; font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; }
+    .card__body { padding: 0 var(--spacing-16) var(--spacing-16); }
+
+    /* Property mini-cards inside the Hub */
+    .hub__props { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: var(--spacing-8); }
+    .hub-prop {
+      background: var(--background-strong);
+      border-radius: 6px; padding: 10px var(--spacing-12);
+      cursor: pointer;
+      transition: filter 120ms ease;
+    }
+    .hub-prop:hover { filter: brightness(0.97); }
+    .hub-prop__name {
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      font-weight: 500; color: var(--text); letter-spacing: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hub-prop__meta { font-size: 11px; color: var(--text-weak); letter-spacing: 0; margin-top: 1px; }
+
+    /* Portfolio activity panel */
+    .hub-act { display: flex; flex-direction: column; }
+    .hub-act__item { display: flex; gap: var(--spacing-8); padding: var(--spacing-8) 0; }
+    .hub-act__item + .hub-act__item { border-top: 1px solid var(--border); }
+    .hub-act__body {
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text); letter-spacing: 0; min-width: 0;
+    }
+    .hub-act__body strong { font-weight: 500; }
+    .hub-act__when { font-size: 11px; color: var(--text-weak); margin-top: 2px; }
+
+    /* Cross-portfolio task rows */
+    .hub-xtask {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: var(--row-height);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      color: var(--text);
+    }
+    .hub-xtask + .hub-xtask { border-top: 1px solid var(--border); }
+    .hub-xtask__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hub-xtask__right { display: inline-flex; align-items: center; gap: var(--spacing-12); flex-shrink: 0; }
+    .hub-xtask__prop, .hub-xtask__date {
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; white-space: nowrap;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       BUILDER — full-screen takeover (Figma frames 5:3421 / 5:25688)
+       ══════════════════════════════════════════════════════════════════ */
+    .builder {
+      position: fixed; inset: 0; z-index: 100;
+      display: none; flex-direction: column;
+      background: var(--background-weak);
+    }
+    .builder--on { display: flex; }
+
+    .builder__head {
+      display: flex; align-items: center;
+      height: 56px; padding: 0 var(--spacing-16);
+      flex-shrink: 0; border-bottom: 1px solid var(--border);
+    }
+    .builder__crumb {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      color: var(--text-weak);
+    }
+    .builder__crumb svg { width: 16px; height: 16px; color: var(--icon); }
+    .builder__crumb strong { color: var(--text); font-weight: 400; }
+
+    /* Build | Code segmented control, centred */
+    .segmented {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      display: inline-flex; gap: 2px; padding: 2px;
+      background: var(--background-medium); border-radius: 6px;
+    }
+    .segmented__btn {
+      height: 24px; padding: 0 var(--spacing-12);
+      border: none; background: none; border-radius: 5px;
+      font-family: inherit; font-size: var(--type-s-size);
+      letter-spacing: 0; color: var(--text-weak); cursor: pointer;
+    }
+    .segmented__btn--active {
+      background: var(--background-weak); color: var(--text);
+      font-weight: 500; box-shadow: var(--shadow-medium);
+    }
+    .builder__actions { display: inline-flex; align-items: center; gap: var(--spacing-8); margin-left: auto; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 28px; padding: 0 var(--spacing-12);
+      background: var(--primary-background-strong);
+      border: 1px solid var(--primary-background-strong);
+      border-radius: 6px; color: var(--primary-text-strong);
+      font-family: inherit; font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track); font-weight: 500;
+      cursor: pointer; transition: filter 120ms ease;
+    }
+    .btn-primary:hover { filter: brightness(0.95); }
+
+    .builder__body { flex: 1; min-height: 0; display: grid; grid-template-columns: 420px 1fr; }
+
+    /* Left AI panel */
+    .aip {
+      display: flex; flex-direction: column; min-height: 0;
+      border-right: 1px solid var(--border);
+      background: var(--background-weak);
+    }
+    .aip__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--spacing-24); }
+    .aip__foot { flex-shrink: 0; padding: var(--spacing-16); }
+
+    /* Empty state */
+    .aip__logo { width: 32px; height: 32px; margin-bottom: var(--spacing-16); }
+    .aip__headline {
+      font-family: var(--font-display);
+      font-size: var(--type-xl-size); line-height: var(--type-xl-line);
+      letter-spacing: var(--type-xl-track); font-weight: 500;
+      color: var(--text); margin-bottom: var(--spacing-16);
+    }
+    .aip__chips { display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-8); }
+    .aip__chip {
+      display: inline-flex; align-items: center; text-align: left;
+      padding: 7px var(--spacing-12);
+      background: var(--background-weak);
+      border: 1px solid var(--border-strong); border-radius: 500px;
+      font-family: inherit; font-size: var(--type-m-size);
+      line-height: var(--type-m-line); letter-spacing: var(--type-m-track);
+      color: var(--text); cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .aip__chip:hover { background: var(--background-medium); }
+
+    /* Conversation */
+    .aip__msgs { display: flex; flex-direction: column; gap: var(--spacing-12); }
+    .aip__user {
+      align-self: flex-start; max-width: 300px;
+      background: var(--cz-yellow-bg); color: var(--cz-yellow-fg);
+      border-radius: var(--spacing-8);
+      padding: var(--spacing-8) var(--spacing-12);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track);
+    }
+    .aip__thinking {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      color: var(--text-weak);
+    }
+    .aip__thinking svg { width: 12px; height: 12px; }
+    .aip__bullets { margin: var(--spacing-8) 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: var(--spacing-4); }
+    .aip__bullets li {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+    .aip__bullets strong { font-weight: 500; }
+    .aip__feedback { display: flex; align-items: center; gap: var(--spacing-4); margin-top: var(--spacing-8); }
+    .aip__spinner {
+      width: 12px; height: 12px; flex-shrink: 0;
+      border: 2px solid var(--border-strong);
+      border-top-color: var(--text-weak);
+      border-radius: 500px;
+      animation: aip-spin 0.8s linear infinite;
+    }
+    @keyframes aip-spin { to { transform: rotate(360deg); } }
+
+    /* Right preview canvas */
+    .builder__preview {
+      background: var(--background-medium);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: var(--spacing-24);
+      overflow-y: auto; min-height: 0;
+    }
+    .builder__preview-card {
+      width: var(--pane-width); flex-shrink: 0;
+      background: var(--background-weak);
+      border: 1px solid var(--border);
+      border-radius: var(--spacing-8);
+      box-shadow: var(--shadow-medium);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       PROTOTYPE NAV (not product UI)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <nav class="proto-nav">
+    <span class="proto-nav__brand">Builder MVP</span>
+    <span class="proto-nav__tabs">
+      <button class="proto-tab proto-tab--active" data-exp="record">Record customization</button>
+      <button class="proto-tab" data-exp="portfolio">Portfolio customization</button>
+    </span>
+    <span class="proto-nav__hint" id="proto-hint">Click the paintbrush in the pane header to customize</span>
+    <button class="proto-nav__reset" id="proto-reset">Reset</button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       EXPERIENCE 1 — RECORD CUSTOMIZATION
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="experience experience--on" id="exp-record">
+  <div class="app" id="app">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         TOPBAR
+         ═══════════════════════════════════════════════════════════════ -->
+    <!-- Topbar in this GA design is deliberately spare: Create + search only.
+         Help and the user avatar live at the bottom of the icon rail. -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="create-btn">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+          Create
+        </button>
+      </div>
+
+      <div class="search">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="7" cy="7" r="4.3"/><path d="M10.4 10.4 14 14"/></svg>
+        Search [Domain]
+      </div>
+
+      <div class="topbar__right"></div>
+    </header>
+
+    <div class="app__lower">
+
+      <!-- ═════════════════════════════════════════════════════════════
+           ICON RAIL — real Asana glyphs, exported from Figma
+           ═════════════════════════════════════════════════════════════ -->
+      <nav class="rail" aria-label="Modes">
+        <div class="rail__modes">
+          <button class="rail__mode" data-mode="work">
+            <span class="rail__mode-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12.25 0C14.3211 0 16 1.67893 16 3.75C16 5.36305 14.9817 6.73826 13.5527 7.26758C13.2393 7.38364 13.0002 7.66485 13 7.99902C13 8.33342 13.2392 8.6153 13.5527 8.73145C14.9817 9.26087 16 10.6369 16 12.25C16 14.3211 14.3211 16 12.25 16C10.6371 15.9999 9.2618 14.9816 8.73242 13.5527C8.61613 13.239 8.33464 13 8 13C7.66536 13 7.38387 13.239 7.26758 13.5527C6.7382 14.9816 5.36297 16 3.75 16C1.67899 15.9999 0 14.321 0 12.25C1.00352e-07 10.637 1.01833 9.26094 2.44727 8.73145C2.76085 8.61528 3 8.33343 3 7.99902C2.99978 7.66485 2.76068 7.38367 2.44727 7.26758C1.01844 6.73816 0 5.36292 0 3.75C1.28836e-07 1.67902 1.67906 0.000148558 3.75 0C5.36296 0 6.73819 1.01843 7.26758 2.44727C7.38387 2.76104 7.66536 3 8 3C8.33464 3 8.61612 2.76104 8.73242 2.44727C9.2618 1.01844 10.6371 5.14791e-05 12.25 0ZM8 5C7.65349 5.0001 7.35765 5.23651 7.20996 5.5498C6.86703 6.27767 6.27766 6.86603 5.5498 7.20898C5.23593 7.35669 5 7.65336 5 8C5.0001 8.34651 5.23651 8.64235 5.5498 8.79004C6.27771 9.13299 6.86701 9.72229 7.20996 10.4502C7.35765 10.7639 7.65349 10.9999 8 11C8.34664 11 8.64331 10.7641 8.79102 10.4502C9.13397 9.72234 9.72233 9.13297 10.4502 8.79004C10.7639 8.64235 10.9999 8.34651 11 8C11 7.65336 10.7641 7.35669 10.4502 7.20898C9.72237 6.86604 9.13396 6.27763 8.79102 5.5498C8.64331 5.23593 8.34664 5 8 5Z" fill="currentColor"/></svg>
+            </span>
+            <span class="rail__mode-label">Work</span>
+          </button>
+
+          <button class="rail__mode" data-mode="agents">
+            <span class="rail__mode-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.4507 9.47557C15.8024 9.09341 16 8.5751 16 8.03464V7.98517C16 7.44474 15.8024 6.92639 15.4507 6.54424L9.98227 0.600955C8.80002 -0.683941 6.77876 0.228222 6.78154 2.04535L6.7881 6.32806C6.78867 6.69625 6.51416 6.99504 6.17538 6.99497C6.01294 6.99494 5.85716 6.9248 5.7423 6.79996L3.23199 4.07168C2.03957 2.77573 -0.00147466 3.6981 7.99507e-07 5.53223L0.00409749 10.5158C0.0056496 12.3466 2.04186 13.2596 3.23396 11.9641L5.66326 9.3239C5.78744 9.18894 5.95587 9.11313 6.13149 9.11316C6.49665 9.11323 6.7928 9.43461 6.79341 9.83148L6.79975 13.9616C6.80257 15.7754 8.82036 16.6817 10.0005 15.3991L15.4507 9.47557Z" fill="currentColor"/></svg>
+            </span>
+            <span class="rail__mode-label">Agents</span>
+          </button>
+
+          <button class="rail__mode" data-mode="strategy">
+            <span class="rail__mode-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm0 2.6a5.4 5.4 0 1 1 0 10.8 5.4 5.4 0 0 1 0-10.8Zm0 2.2a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z" fill="currentColor"/></svg>
+            </span>
+            <span class="rail__mode-label">Strategy</span>
+          </button>
+
+          <button class="rail__mode rail__mode--active" data-mode="knowledge">
+            <span class="rail__mode-icon">
+              <svg width="16" height="16" viewBox="0 0 16.0003 16.0029" fill="none"><path d="M10.4995 0.489057C10.4995 0.212914 10.2745 -0.0121668 9.99862 0.000510566C6.30502 0.170259 4.09259 2.16694 0.470295 2.53611C0.207087 2.56294 0 2.78056 0 3.04513V14.274C0 14.5501 0.225117 14.7753 0.500932 14.7619C3.88481 14.5968 5.87261 12.799 8.92622 12.3069C9.21885 12.2598 9.47618 12.4921 9.47618 12.7885V15.5258C9.47618 15.8019 9.70088 16.0286 9.97559 16.0005C12.1189 15.7816 13.4021 14.1811 15.5003 13.9578C15.7749 13.9285 15.9997 13.7076 15.9997 13.4314L16.0003 4.7108C16.0003 4.43466 15.7755 4.20824 15.5006 4.23461C13.8014 4.39761 12.6012 5.38701 11.1179 5.93587C10.8103 6.04968 10.4995 5.81161 10.4995 5.48363V0.489057Z" fill="currentColor"/></svg>
+            </span>
+            <span class="rail__mode-label">Knowledge</span>
+          </button>
+
+          <button class="rail__mode" data-mode="people">
+            <span class="rail__mode-icon">
+              <svg width="15.8615" height="16" viewBox="0 0 15.8615 16" fill="none"><path d="M7.93074 0C10.4159 0.000170787 12.4307 2.01482 12.4307 4.5C12.4307 6.15894 11.5321 7.60694 10.1959 8.38713C10.0365 8.48023 9.93074 8.64701 9.93074 8.83165C9.93074 9.05911 10.089 9.25486 10.3085 9.31457C13.2149 10.1052 15.4113 12.307 15.8504 15.0041C15.9391 15.5492 15.483 16 14.9307 16H0.930744C0.37846 16 -0.0776397 15.5492 0.011094 15.0041C0.450183 12.3066 2.64657 10.1048 5.55355 9.31439C5.77272 9.2548 5.93074 9.05935 5.93074 8.83222C5.93074 8.64784 5.82514 8.48129 5.66589 8.38836C4.3291 7.60827 3.43074 6.15944 3.43074 4.5C3.43074 2.01472 5.44546 -3.25905e-07 7.93074 0Z" fill="currentColor"/></svg>
+            </span>
+            <span class="rail__mode-label">People</span>
+          </button>
+
+          <button class="rail__mode" data-mode="more">
+            <span class="rail__mode-icon">
+              <!-- More is 16x4, not 16x16 — preserving the designed geometry -->
+              <svg width="16" height="4" viewBox="0 0 16 4" fill="none"><path d="M10 2C10 3.10457 9.10457 4 8 4C6.89543 4 6 3.10457 6 2C6 0.89543 6.89543 0 8 0C9.10457 0 10 0.89543 10 2Z" fill="currentColor"/><path d="M4 2C4 3.10457 3.10457 4 2 4C0.89543 4 0 3.10457 0 2C0 0.89543 0.89543 0 2 0C3.10457 0 4 0.89543 4 2Z" fill="currentColor"/><path d="M16 2C16 3.10457 15.1046 4 14 4C12.8954 4 12 3.10457 12 2C12 0.89543 12.8954 0 14 0C15.1046 0 16 0.89543 16 2Z" fill="currentColor"/></svg>
+            </span>
+            <span class="rail__mode-label">More</span>
+          </button>
+        </div>
+
+        <div class="rail__actions">
+          <button class="icon-btn" aria-label="Help">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.7 1.7c-.5.3-.9.7-.9 1.3" stroke-linecap="round"/><circle cx="8" cy="11.4" r=".75" fill="currentColor" stroke="none"/></svg>
+          </button>
+          <span class="avatar-28">TK</span>
+        </div>
+      </nav>
+
+      <!-- ═════════════════════════════════════════════════════════════
+           SIDEBAR
+           ═════════════════════════════════════════════════════════════ -->
+      <aside class="sidebar">
+        <div class="sb__section">Knowledge</div>
+        <div class="sb__group">
+          <div class="sb__row">
+            <span class="ico ico--16"><svg width="13" height="16" viewBox="0 0 13 16" fill="none"><path d="M2.5 8.5C2.5 8.2235 2.7235 8 3 8H7C7.2765 8 7.5 8.2235 7.5 8.5C7.5 8.7765 7.2765 9 7 9H3C2.7235 9 2.5 8.7765 2.5 8.5ZM3 11H9.989C10.2655 11 10.489 10.7765 10.489 10.5C10.489 10.2235 10.2655 10 9.989 10H3C2.7235 10 2.5 10.2235 2.5 10.5C2.5 10.7765 2.7235 11 3 11ZM10 12H3.011C2.7345 12 2.511 12.2235 2.511 12.5C2.511 12.7765 2.7345 13 3.011 13H10C10.2765 13 10.5 12.7765 10.5 12.5C10.5 12.2235 10.2765 12 10 12ZM13 6.8285V13C13 14.6545 11.6545 16 10 16H3C1.3455 16 0 14.6545 0 13V3C0 1.3455 1.3455 0 3 0H6.379C6.406 0 6.4325 0.007 6.46 0.008C6.474 0.007 6.486 0 6.5005 0C6.543 0 6.581 0.014 6.6205 0.024C7.0605 0.0785 7.479 0.2705 7.7935 0.586L12.268 5.0605C12.74 5.5325 13 6.1605 13 6.8285ZM7.086 1.293C7.0595 1.2665 7.029 1.246 7 1.2225V5C7 5.5515 7.4485 6 8 6H11.7505C11.6955 5.9175 11.632 5.8395 11.5605 5.7675L7.086 1.293ZM12 13V7H8C6.897 7 6 6.103 6 5V1H3C1.897 1 1 1.897 1 3V13C1 14.103 1.897 15 3 15H10C11.103 15 12 14.103 12 13Z" fill="currentColor"/></svg></span>
+            <span class="sb__row-label">Pages</span>
+          </div>
+          <div class="sb__row">
+            <span class="ico ico--16"><svg width="14" height="15" viewBox="0 0 14 15" fill="none"><path d="M3.5 0C3.36739 0 3.24021 0.0526784 3.14645 0.146447C3.05268 0.240215 3 0.367392 3 0.5V1C1.345 1 0 2.3455 0 4V12C0 13.6545 1.345 15 3 15H11C12.6545 15 14 13.6545 14 12V4C14 2.3455 12.6545 1 11 1V0.5C11 0.367392 10.9473 0.240215 10.8536 0.146447C10.7598 0.0526784 10.6326 0 10.5 0C10.3674 0 10.2402 0.0526784 10.1464 0.146447C10.0527 0.240215 10 0.367392 10 0.5V1H4V0.5C4 0.367392 3.94732 0.240215 3.85355 0.146447C3.75979 0.0526784 3.63261 0 3.5 0ZM13 12C13 13.103 12.103 14 11 14H3C1.897 14 1 13.103 1 12V6H13V12ZM10 2V2.5C10 2.63261 10.0527 2.75979 10.1464 2.85355C10.2402 2.94732 10.3674 3 10.5 3C10.6326 3 10.7598 2.94732 10.8536 2.85355C10.9473 2.75979 11 2.63261 11 2.5V2C12.103 2 13 2.897 13 4V5H1V4C1 2.897 1.897 2 3 2V2.5C3 2.63261 3.05268 2.75979 3.14645 2.85355C3.24021 2.94732 3.36739 3 3.5 3C3.63261 3 3.75979 2.94732 3.85355 2.85355C3.94732 2.75979 4 2.63261 4 2.5V2H10Z" fill="currentColor"/></svg></span>
+            <span class="sb__row-label">Meetings</span>
+          </div>
+          <div class="sb__row sb__row--active">
+            <span class="ico ico--16"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 14H11C12.6545 14 14 12.6545 14 11V3C14 1.345 12.6545 0 11 0H3C1.3455 0 0 1.345 0 3V11C0 12.6545 1.3455 14 3 14ZM9 13H5V6H9V13ZM13 11C13 12.103 12.103 13 11 13H10V6H13V11ZM1 3C1 1.897 1.897 1 3 1H11C12.103 1 13 1.897 13 3V5H1V3ZM1 6H4V13H3C1.897 13 1 12.103 1 11V6Z" fill="currentColor"/></svg></span>
+            <span class="sb__row-label">Tables</span>
+          </div>
+        </div>
+
+        <div class="sb__group sb__group--recents">
+          <div class="sb__recents-head">
+            <button class="icon-btn icon-btn--sm" aria-label="Collapse">
+              <span class="ico ico--12"><svg width="9.5" height="5.25" viewBox="0 0 9.49979 5.25052" fill="none"><path d="M8.99989 0H0.499893C0.401018 2.11122e-05 0.304369 0.0293569 0.222164 0.0842991C0.139959 0.139241 0.0758895 0.217323 0.0380545 0.308673C0.000219475 0.400023 -0.00968204 0.500539 0.00960174 0.597516C0.0288855 0.694492 0.0764887 0.783574 0.146393 0.8535L4.39639 5.1035C4.44272 5.15009 4.4978 5.18707 4.55847 5.2123C4.61913 5.23753 4.68419 5.25052 4.74989 5.25052C4.8156 5.25052 4.88065 5.23753 4.94132 5.2123C5.00199 5.18707 5.05707 5.15009 5.10339 5.1035L9.35339 0.8535C9.4233 0.783574 9.4709 0.694492 9.49019 0.597516C9.50947 0.500539 9.49957 0.400023 9.46173 0.308673C9.4239 0.217323 9.35983 0.139241 9.27762 0.0842991C9.19542 0.0293569 9.09877 2.11122e-05 8.99989 0Z" fill="currentColor"/></svg></span>
+            </button>
+            <span class="sb__recents-head-label">Recents</span>
+            <button class="icon-btn icon-btn--sm" aria-label="Add">
+              <span class="ico ico--12"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M9 4H6V1C6 0.734784 5.89464 0.48043 5.70711 0.292893C5.51957 0.105357 5.26522 0 5 0C4.73478 0 4.48043 0.105357 4.29289 0.292893C4.10536 0.48043 4 0.734784 4 1V4H1C0.734783 4 0.48043 4.10536 0.292893 4.29289C0.105357 4.48043 0 4.73478 0 5C0 5.26522 0.105357 5.51957 0.292893 5.70711C0.48043 5.89464 0.734783 6 1 6H4V9C4 9.26522 4.10536 9.51957 4.29289 9.70711C4.48043 9.89464 4.73478 10 5 10C5.26522 10 5.51957 9.89464 5.70711 9.70711C5.89464 9.51957 6 9.26522 6 9V6H9C9.26522 6 9.51957 5.89464 9.70711 5.70711C9.89464 5.51957 10 5.26522 10 5C10 4.73478 9.89464 4.48043 9.70711 4.29289C9.51957 4.10536 9.26522 4 9 4Z" fill="currentColor"/></svg></span>
+            </button>
+          </div>
+
+          <div class="sb__row sb__row--recent">
+            <span class="squircle-20"><span class="ico ico--12"><svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M2 6.5C2 6.2235 2.2235 6 2.5 6H5.5C5.7765 6 6 6.2235 6 6.5C6 6.7765 5.7765 7 5.5 7H2.5C2.2235 7 2 6.7765 2 6.5ZM2 8.5C2 8.7765 2.2235 9 2.5 9H7.5C7.7765 9 8 8.7765 8 8.5C8 8.2235 7.7765 8 7.5 8H2.5C2.2235 8 2 8.2235 2 8.5ZM10 4.8415V10C10 11.103 9.103 12 8 12H2C0.897 12 0 11.103 0 10V2C0 0.897 0.897 0 2 0H5.348C5.382 0 5.4145 0.00849995 5.448 0.0104999C5.466 0.00849995 5.4815 0 5.4995 0C5.557 0 5.61 0.0150001 5.661 0.0325001C6.0975 0.1025 6.505 0.309 6.81 0.6355L9.462 3.4765C9.8085 3.848 9.9995 4.333 9.9995 4.841L10 4.8415ZM6.079 1.318C6.055 1.292 6.0265 1.272 6 1.249V3.278C6 3.6765 6.3305 4 6.7375 4H8.5825L6.079 1.318ZM9 5H6.7375C5.7795 5 5 4.2275 5 3.278V1H2C1.4485 1 1 1.4485 1 2V10C1 10.5515 1.4485 11 2 11H8C8.5515 11 9 10.5515 9 10V5Z" fill="currentColor"/></svg></span></span>
+            <span class="sb__row-label">Website launch</span>
+          </div>
+          <div class="sb__row sb__row--recent">
+            <span class="squircle-20"><span class="ico ico--12"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9.5 1H9V0.5C9 0.367392 8.94732 0.240215 8.85355 0.146447C8.75979 0.0526784 8.63261 0 8.5 0C8.36739 0 8.24022 0.0526784 8.14645 0.146447C8.05268 0.240215 8 0.367392 8 0.5V1H4V0.5C4 0.367392 3.94732 0.240215 3.85355 0.146447C3.75979 0.0526784 3.63261 0 3.5 0C3.36739 0 3.24021 0.0526784 3.14645 0.146447C3.05268 0.240215 3 0.367392 3 0.5V1H2.5C1.1215 1 0 2.1215 0 3.5V9.5C0 10.8785 1.1215 12 2.5 12H9.5C10.8785 12 12 10.8785 12 9.5V3.5C12 2.1215 10.8785 1 9.5 1ZM11 9.5C11 10.327 10.327 11 9.5 11H2.5C1.673 11 1 10.327 1 9.5V5H11V9.5ZM11 4H1V3.5C1 2.673 1.673 2 2.5 2H3V2.5C3 2.63261 3.05268 2.75979 3.14645 2.85355C3.24021 2.94732 3.36739 3 3.5 3C3.63261 3 3.75979 2.94732 3.85355 2.85355C3.94732 2.75979 4 2.63261 4 2.5V2H8V2.5C8 2.63261 8.05268 2.75979 8.14645 2.85355C8.24022 2.94732 8.36739 3 8.5 3C8.63261 3 8.75979 2.94732 8.85355 2.85355C8.94732 2.75979 9 2.63261 9 2.5V2H9.5C10.327 2 11 2.673 11 3.5V4Z" fill="currentColor"/></svg></span></span>
+            <span class="sb__row-label">Campaign Retro - Summer</span>
+          </div>
+          <div class="sb__row sb__row--recent">
+            <span class="squircle-20"><span class="ico ico--12"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9.5 1H9V0.5C9 0.367392 8.94732 0.240215 8.85355 0.146447C8.75979 0.0526784 8.63261 0 8.5 0C8.36739 0 8.24022 0.0526784 8.14645 0.146447C8.05268 0.240215 8 0.367392 8 0.5V1H4V0.5C4 0.367392 3.94732 0.240215 3.85355 0.146447C3.75979 0.0526784 3.63261 0 3.5 0C3.36739 0 3.24021 0.0526784 3.14645 0.146447C3.05268 0.240215 3 0.367392 3 0.5V1H2.5C1.1215 1 0 2.1215 0 3.5V9.5C0 10.8785 1.1215 12 2.5 12H9.5C10.8785 12 12 10.8785 12 9.5V3.5C12 2.1215 10.8785 1 9.5 1ZM11 9.5C11 10.327 10.327 11 9.5 11H2.5C1.673 11 1 10.327 1 9.5V5H11V9.5ZM11 4H1V3.5C1 2.673 1.673 2 2.5 2H3V2.5C3 2.63261 3.05268 2.75979 3.14645 2.85355C3.24021 2.94732 3.36739 3 3.5 3C3.63261 3 3.75979 2.94732 3.85355 2.85355C3.94732 2.75979 4 2.63261 4 2.5V2H8V2.5C8 2.63261 8.05268 2.75979 8.14645 2.85355C8.24022 2.94732 8.36739 3 8.5 3C8.63261 3 8.75979 2.94732 8.85355 2.85355C8.94732 2.75979 9 2.63261 9 2.5V2H9.5C10.327 2 11 2.673 11 3.5V4Z" fill="currentColor"/></svg></span></span>
+            <span class="sb__row-label">Brand design leadership</span>
+          </div>
+          <div class="sb__row sb__row--recent">
+            <span class="squircle-20"><span class="ico ico--12"><svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M2 6.5C2 6.2235 2.2235 6 2.5 6H5.5C5.7765 6 6 6.2235 6 6.5C6 6.7765 5.7765 7 5.5 7H2.5C2.2235 7 2 6.7765 2 6.5ZM2 8.5C2 8.7765 2.2235 9 2.5 9H7.5C7.7765 9 8 8.7765 8 8.5C8 8.2235 7.7765 8 7.5 8H2.5C2.2235 8 2 8.2235 2 8.5ZM10 4.8415V10C10 11.103 9.103 12 8 12H2C0.897 12 0 11.103 0 10V2C0 0.897 0.897 0 2 0H5.348C5.382 0 5.4145 0.00849995 5.448 0.0104999C5.466 0.00849995 5.4815 0 5.4995 0C5.557 0 5.61 0.0150001 5.661 0.0325001C6.0975 0.1025 6.505 0.309 6.81 0.6355L9.462 3.4765C9.8085 3.848 9.9995 4.333 9.9995 4.841L10 4.8415ZM6.079 1.318C6.055 1.292 6.0265 1.272 6 1.249V3.278C6 3.6765 6.3305 4 6.7375 4H8.5825L6.079 1.318ZM9 5H6.7375C5.7795 5 5 4.2275 5 3.278V1H2C1.4485 1 1 1.4485 1 2V10C1 10.5515 1.4485 11 2 11H8C8.5515 11 9 10.5515 9 10V5Z" fill="currentColor"/></svg></span></span>
+            <span class="sb__row-label">Spring Campaign Brief</span>
+          </div>
+        </div>
+
+        <div class="sb__footer">
+          <button class="btn-secondary">
+            <span class="ico ico--16"><svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M13 0H3C1.3455 0 0 1.3455 0 3V9C0 10.6545 1.3455 12 3 12H13C14.655 12 16 10.6545 16 9V3C16 1.3455 14.655 0 13 0ZM3 1H13C13.37 1 13.712 1.1075 14.01 1.2835L8.353 6.9395C8.25924 7.03324 8.13208 7.08589 7.9995 7.08589C7.86692 7.08589 7.73976 7.03324 7.646 6.9395L1.991 1.2835C2.29605 1.09991 2.64497 1.00197 3.001 1H3ZM15 9C15 10.103 14.103 11 13 11H3C1.897 11 1 10.103 1 9V3C1 2.63 1.1075 2.288 1.2835 1.9905L6.9395 7.647C7.07876 7.78618 7.24412 7.89651 7.42611 7.97167C7.60809 8.04684 7.80311 8.08535 8 8.085C8.19694 8.08536 8.39201 8.04681 8.574 7.97156C8.75599 7.89631 8.92133 7.78584 9.0605 7.6465L14.7165 1.9905C14.9 2.29541 14.9979 2.64414 15 3V9Z" fill="currentColor"/></svg></span>
+            Invite teammates
+          </button>
+        </div>
+      </aside>
+
+      <!-- ═════════════════════════════════════════════════════════════
+           CANVAS — Properties table + record pane
+           ═════════════════════════════════════════════════════════════ -->
+      <main class="canvas" id="canvas">
+        <div class="db-head">
+          <div class="db-head__title-row">
+            <span class="db-head__title">Properties</span>
+            <button class="icon-btn icon-btn--sm" aria-label="Options">
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.6 6 7.6 9 4.6"/></svg>
+            </button>
+            <button class="icon-btn icon-btn--sm" aria-label="Star">
+              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M6 1.3l1.45 3.02 3.3.44-2.42 2.3.6 3.28L6 8.77l-2.93 1.57.6-3.28L1.25 4.76l3.3-.44z"/></svg>
+            </button>
+          </div>
+          <div class="db-head__tabs">
+            <button class="db-tab db-tab--active">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12M2 8h12M2 12h7"/></svg>
+              Properties
+            </button>
+            <button class="db-tab" aria-label="Add view">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="db-toolbar">
+          <button class="btn-secondary btn-secondary--sm">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+            Add
+          </button>
+        </div>
+
+        <div class="grid-wrap">
+          <table class="grid">
+            <thead>
+              <tr>
+                <th style="width:360px">Name</th>
+                <th style="width:180px">Location</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="grid-body">
+              <tr data-record="marlow">
+                <td class="grid__name">The Marlow</td>
+                <td><span class="pill pill--purple">Oakland, CA</span></td>
+                <td></td>
+              </tr>
+              <tr data-record="beacon">
+                <td class="grid__name">Beacon Hill Apartments</td>
+                <td><span class="pill pill--blue">Sacramento, CA</span></td>
+                <td></td>
+              </tr>
+              <tr data-record="sunset">
+                <td class="grid__name">Sunset Commons</td>
+                <td><span class="pill pill--aqua">San Jose, CA</span></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="grid__add">Add property…</div>
+        </div>
+
+        <!-- ── Record pane ─────────────────────────────────────────── -->
+        <aside class="pane" id="pane">
+          <div class="pane__topbar">
+            <span class="pane__crumb">
+              <span class="ico ico--16"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 14H11C12.6545 14 14 12.6545 14 11V3C14 1.345 12.6545 0 11 0H3C1.3455 0 0 1.345 0 3V11C0 12.6545 1.3455 14 3 14ZM9 13H5V6H9V13ZM13 11C13 12.103 12.103 13 11 13H10V6H13V11ZM1 3C1 1.897 1.897 1 3 1H11C12.103 1 13 1.897 13 3V5H1V3ZM1 6H4V13H3C1.897 13 1 12.103 1 11V6Z" fill="currentColor"/></svg></span>
+              Properties
+            </span>
+            <div class="pane__actions">
+              <span class="avatar-28" style="background:var(--cz-magenta-bg);color:var(--cz-magenta-fg)">HM</span>
+              <button class="icon-btn" aria-label="Add collaborator">
+                <span class="ico ico--16"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 0C5.73478 0 5.48043 0.105357 5.29289 0.292893C5.10536 0.48043 5 0.734784 5 1V5H1C0.734784 5 0.48043 5.10536 0.292893 5.29289C0.105357 5.48043 0 5.73478 0 6C0 6.26522 0.105357 6.51957 0.292893 6.70711C0.48043 6.89464 0.734784 7 1 7H5V11C5 11.2652 5.10536 11.5196 5.29289 11.7071C5.48043 11.8946 5.73478 12 6 12C6.26522 12 6.51957 11.8946 6.70711 11.7071C6.89464 11.5196 7 11.2652 7 11V7H11C11.2652 7 11.5196 6.89464 11.7071 6.70711C11.8946 6.51957 12 6.26522 12 6C12 5.73478 11.8946 5.48043 11.7071 5.29289C11.5196 5.10536 11.2652 5 11 5H7V1C7 0.734784 6.89464 0.48043 6.70711 0.292893C6.51957 0.105357 6.26522 0 6 0Z" fill="currentColor"/></svg></span>
+              </button>
+              <button class="btn-secondary btn-secondary--sm">Share</button>
+              <div class="pane__sep"></div>
+
+              <button class="icon-btn" aria-label="Copy link">
+                <span class="ico ico--16"><svg width="16" height="16" viewBox="0 0 16 16.0008" fill="none"><path d="M9.68275 6.31775C10.1021 6.73475 10.4345 7.2308 10.6607 7.77717C10.887 8.32355 11.0025 8.90939 11.0007 9.50075C11.0024 10.0921 10.8868 10.6779 10.6605 11.2242C10.4343 11.7706 10.102 12.2667 9.68275 12.6838L7.68225 14.6838C7.26458 15.1021 6.76837 15.4338 6.22214 15.6598C5.6759 15.8858 5.0904 16.0017 4.49925 16.0007C3.9081 16.0017 3.3226 15.8858 2.77636 15.6598C2.23013 15.4338 1.73392 15.1021 1.31625 14.6838C-0.43875 12.9288 -0.43875 10.0738 1.31625 8.31875L3.14525 6.48925C3.19171 6.44283 3.24685 6.40601 3.30753 6.3809C3.36822 6.35579 3.43325 6.34288 3.49893 6.3429C3.5646 6.34292 3.62963 6.35588 3.69029 6.38103C3.75096 6.40619 3.80608 6.44304 3.8525 6.4895C3.89892 6.53596 3.93574 6.5911 3.96085 6.65178C3.98596 6.71247 3.99887 6.7775 3.99885 6.84318C3.99883 6.90885 3.98587 6.97388 3.96072 7.03454C3.93556 7.09521 3.89871 7.15033 3.85225 7.19675L2.02325 9.02575C1.36787 9.68281 0.999815 10.573 0.999815 11.501C0.999815 12.429 1.36787 13.3192 2.02325 13.9762C3.38825 15.3412 5.60975 15.3422 6.97475 13.9762L8.97525 11.9762C9.63079 11.3192 9.99893 10.4289 9.99893 9.50075C9.99893 8.57259 9.63079 7.68233 8.97525 7.02525C8.57445 6.62166 8.08039 6.32303 7.53675 6.15575C7.41241 6.11461 7.30918 6.02633 7.24924 5.90989C7.1893 5.79344 7.17744 5.65812 7.21621 5.53303C7.25499 5.40793 7.3413 5.30304 7.45658 5.24091C7.57187 5.17877 7.70694 5.16435 7.83275 5.20075C8.53071 5.41785 9.16543 5.80136 9.68225 6.31825L9.68275 6.31775ZM14.6842 1.31625C12.9287 -0.43875 10.0737 -0.43875 8.31825 1.31625L6.31775 3.31625C5.89837 3.7333 5.56593 4.22944 5.33969 4.77591C5.11345 5.32237 4.9979 5.9083 4.99975 6.49975C4.99975 7.70225 5.46775 8.83225 6.31775 9.68325C6.83457 10.2001 7.46929 10.5836 8.16725 10.8007C8.29229 10.8344 8.42552 10.8183 8.53893 10.7558C8.65234 10.6933 8.73712 10.5893 8.77543 10.4656C8.81375 10.3419 8.80264 10.2081 8.74442 10.0925C8.68621 9.97678 8.58542 9.88817 8.46325 9.84525C7.91966 9.67811 7.42561 9.37966 7.02475 8.97625C6.36906 8.31915 6.00082 7.42878 6.00082 6.5005C6.00082 5.57222 6.36906 4.68185 7.02475 4.02475L9.02525 2.02475C10.3907 0.65975 12.6122 0.65975 13.9767 2.02475C15.3412 3.38875 15.3417 5.61025 13.9767 6.97575L12.1477 8.80425C12.1013 8.85067 12.0644 8.90579 12.0393 8.96646C12.0141 9.02712 12.0012 9.09215 12.0011 9.15782C12.0011 9.2235 12.014 9.28853 12.0391 9.34922C12.0643 9.4099 12.1011 9.46505 12.1475 9.5115C12.1939 9.55796 12.249 9.59481 12.3097 9.61997C12.3704 9.64512 12.4354 9.65808 12.5011 9.6581C12.5667 9.65812 12.6318 9.64521 12.6925 9.6201C12.7532 9.59499 12.8083 9.55817 12.8547 9.51175L14.6837 7.68225C16.4387 5.92725 16.4387 3.07225 14.6837 1.31725L14.6842 1.31625Z" fill="currentColor"/></svg></span>
+              </button>
+              <button class="icon-btn" aria-label="Expand">
+                <span class="ico ico--16"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.1465 5.1465L12.293 1H8.5C8.36739 1 8.24022 0.947322 8.14645 0.853553C8.05268 0.759785 8 0.632608 8 0.5C8 0.367392 8.05268 0.240215 8.14645 0.146447C8.24022 0.0526784 8.36739 0 8.5 0H13.5C13.6326 0 13.7598 0.0526784 13.8536 0.146447C13.9473 0.240215 14 0.367392 14 0.5V5.5C14 5.63261 13.9473 5.75979 13.8536 5.85355C13.7598 5.94732 13.6326 6 13.5 6C13.3674 6 13.2402 5.94732 13.1464 5.85355C13.0527 5.75979 13 5.63261 13 5.5V1.707L8.8535 5.8535C8.80717 5.90009 8.75209 5.93707 8.69143 5.9623C8.63076 5.98753 8.5657 6.00052 8.5 6.00052C8.4343 6.00052 8.36924 5.98753 8.30857 5.9623C8.24791 5.93707 8.19283 5.90009 8.1465 5.8535C8.10003 5.80711 8.06316 5.752 8.038 5.69135C8.01285 5.63069 7.9999 5.56567 7.9999 5.5C7.9999 5.43433 8.01285 5.36931 8.038 5.30865C8.06316 5.248 8.10003 5.19289 8.1465 5.1465ZM0.5 8C0.367392 8 0.240215 8.05268 0.146447 8.14645C0.0526785 8.24021 0 8.36739 0 8.5V13.5C0 13.6326 0.0526785 13.7598 0.146447 13.8536C0.240215 13.9473 0.367392 14 0.5 14H5.5C5.63261 14 5.75979 13.9473 5.85355 13.8536C5.94732 13.7598 6 13.6326 6 13.5C6 13.3674 5.94732 13.2402 5.85355 13.1464C5.75979 13.0527 5.63261 13 5.5 13H1.707L5.8535 8.8535C5.89992 8.80708 5.93675 8.75197 5.96187 8.69131C5.98699 8.63066 5.99992 8.56565 5.99992 8.5C5.99992 8.43435 5.98699 8.36934 5.96187 8.30869C5.93675 8.24803 5.89992 8.19292 5.8535 8.1465C5.80708 8.10008 5.75197 8.06325 5.69131 8.03813C5.63066 8.01301 5.56565 8.00008 5.5 8.00008C5.43435 8.00008 5.36934 8.01301 5.30869 8.03813C5.24803 8.06325 5.19292 8.10008 5.1465 8.1465L1 12.293V8.5C1 8.36739 0.947322 8.24021 0.853553 8.14645C0.759785 8.05268 0.632608 8 0.5 8Z" fill="currentColor"/></svg></span>
+              </button>
+
+              <!-- The Customize affordance — real Asana PaintbrushIcon (node 5:25319) -->
+              <span class="customize-wrap">
+                <button class="icon-btn" id="customize-btn" aria-label="Customize">
+                  <span class="ico ico--16"><svg width="15.5" height="16" viewBox="0 0 15.501 15.9998" fill="none"><path d="M1.99701 15.9998C2.25928 16.0001 2.51903 15.9486 2.76128 15.8481C3.00354 15.7476 3.2235 15.6002 3.40851 15.4143L5.91401 12.9003L7.08051 14.0708C7.78551 14.7773 8.99251 14.7193 9.77151 13.9383L10.834 12.8723C12.165 11.5373 13.5125 10.4063 14.838 9.51126C15.0113 9.39388 15.1583 9.24175 15.2697 9.06452C15.3811 8.88729 15.4544 8.68884 15.485 8.48176C15.5152 8.27763 15.5025 8.06946 15.448 7.87046C15.3934 7.67145 15.2981 7.48597 15.168 7.32576C12.9875 4.65062 10.5137 2.22863 7.79301 0.105264C7.73531 0.0603374 7.66843 0.0286434 7.59712 0.0124253C7.52581 -0.00379283 7.45181 -0.00413858 7.38035 0.0114125C7.30889 0.0269636 7.24173 0.0580314 7.1836 0.102417C7.12548 0.146802 7.07783 0.203421 7.04401 0.268264C6.28601 1.71976 4.99751 3.31576 3.09701 5.15376L2.05601 6.19726C1.68751 6.56676 1.46601 7.04376 1.43301 7.54126C1.39851 8.06326 1.57301 8.54526 1.92401 8.89676L3.09051 10.0668L0.585011 12.5808C0.398852 12.7666 0.251318 12.9874 0.150914 13.2305C0.0505108 13.4737 -0.000775888 13.7342 1.13035e-05 13.9973C-0.000875003 14.2602 0.0503684 14.5208 0.15078 14.7638C0.251191 15.0069 0.398778 15.2276 0.585011 15.4133C0.769935 15.5993 0.989889 15.7468 1.23216 15.8473C1.47443 15.9478 1.73422 15.9993 1.99651 15.9988V15.9998H1.99701ZM7.63701 1.25726C8.10051 1.62826 8.54751 2.01726 8.99551 2.40626C8.45751 3.07026 8.04201 3.55826 7.70851 3.91226C7.64201 3.98352 7.59768 4.0726 7.58096 4.16863C7.56423 4.26465 7.57582 4.36347 7.61431 4.45302C7.6528 4.54257 7.71653 4.61898 7.79772 4.67292C7.87891 4.72685 7.97404 4.75599 8.07151 4.75676C8.13948 4.75688 8.20674 4.743 8.2691 4.71599C8.33147 4.68898 8.3876 4.64942 8.43401 4.59976C8.77901 4.23326 9.20401 3.73626 9.74501 3.06826C10.11 3.39976 10.4685 3.73826 10.822 4.08126C10.4545 4.59526 9.98201 5.11576 9.40051 5.63426C9.19451 5.81826 9.17551 6.13426 9.35901 6.34126C9.40243 6.39042 9.45514 6.43051 9.51412 6.45922C9.57309 6.48793 9.63715 6.5047 9.70263 6.50855C9.7681 6.51241 9.8337 6.50328 9.89563 6.48169C9.95756 6.46011 10.0146 6.42648 10.0635 6.38276C10.6505 5.85876 11.1465 5.32676 11.542 4.79576C12.5417 5.80484 13.4933 6.86051 14.3935 7.95926C14.4362 8.01112 14.4675 8.07143 14.4853 8.13624C14.503 8.20104 14.5069 8.26887 14.4965 8.33526C14.4867 8.40473 14.4622 8.47133 14.4248 8.5307C14.3874 8.59007 14.3379 8.64087 14.2795 8.67976C12.9915 9.54976 11.6875 10.6383 10.399 11.9028L4.09151 5.57526C5.68701 3.99926 6.85701 2.57726 7.63551 1.25676L7.63701 1.25726ZM1.29101 13.2898L4.14951 10.4218C4.34451 10.2263 4.34451 9.90926 4.14951 9.71376L2.63051 8.18976C2.48551 8.04526 2.41501 7.83826 2.43001 7.60826C2.44701 7.35326 2.56501 7.10376 2.76251 6.90576L3.38501 6.28176L9.68851 12.6058L9.06601 13.2303C8.67701 13.6198 8.10351 13.6803 7.78601 13.3628L6.26751 11.8388C6.22127 11.7922 6.16627 11.7552 6.10569 11.73C6.04511 11.7048 5.98013 11.6918 5.91451 11.6918C5.84889 11.6918 5.78392 11.7048 5.72333 11.73C5.66275 11.7552 5.60775 11.7922 5.56151 11.8388L2.70251 14.7068C2.56291 14.8468 2.38483 14.9422 2.19088 14.9809C1.99694 15.0195 1.79589 14.9996 1.61327 14.9237C1.43065 14.8479 1.27471 14.7194 1.16525 14.5547C1.05579 14.39 0.997752 14.1965 0.998511 13.9988C0.998511 13.7313 1.10251 13.4793 1.29101 13.2898Z" fill="currentColor"/></svg></span>
+                </button>
+                <span class="tooltip">Customize</span>
+              </span>
+
+              <button class="icon-btn" aria-label="More">
+                <span class="ico ico--16"><svg width="16" height="3" viewBox="0 0 16 3" fill="none"><path d="M9.5 1.5C9.5 1.89782 9.34196 2.27936 9.06066 2.56066C8.77936 2.84196 8.39782 3 8 3C7.60218 3 7.22064 2.84196 6.93934 2.56066C6.65804 2.27936 6.5 1.89782 6.5 1.5C6.5 1.10218 6.65804 0.720644 6.93934 0.43934C7.22064 0.158035 7.60218 0 8 0C8.39782 0 8.77936 0.158035 9.06066 0.43934C9.34196 0.720644 9.5 1.10218 9.5 1.5ZM14.5 0C14.1022 0 13.7206 0.158035 13.4393 0.43934C13.158 0.720644 13 1.10218 13 1.5C13 1.89782 13.158 2.27936 13.4393 2.56066C13.7206 2.84196 14.1022 3 14.5 3C14.8978 3 15.2794 2.84196 15.5607 2.56066C15.842 2.27936 16 1.89782 16 1.5C16 1.10218 15.842 0.720644 15.5607 0.43934C15.2794 0.158035 14.8978 0 14.5 0ZM1.5 3C1.89782 3 2.27936 2.84196 2.56066 2.56066C2.84196 2.27936 3 1.89782 3 1.5C3 1.10218 2.84196 0.720644 2.56066 0.43934C2.27936 0.158035 1.89782 0 1.5 0C1.10218 0 0.720644 0.158035 0.43934 0.43934C0.158035 0.720644 0 1.10218 0 1.5C0 1.89782 0.158035 2.27936 0.43934 2.56066C0.720644 2.84196 1.10218 3 1.5 3Z" fill="currentColor"/></svg></span>
+              </button>
+              <button class="icon-btn" aria-label="Close">
+                <span class="ico ico--16"><svg width="15.25" height="14" viewBox="0 0 15.25 14" fill="none"><path d="M0.75 6.25H9.939L6.22 2.5305C6.14715 2.46163 6.08886 2.37886 6.04855 2.28707C6.00824 2.19528 5.98674 2.09635 5.98532 1.99611C5.98391 1.89588 6.0026 1.79637 6.04029 1.70348C6.07799 1.61059 6.13393 1.5262 6.20479 1.4553C6.27566 1.3844 6.36003 1.32842 6.4529 1.29068C6.54577 1.25295 6.64526 1.23421 6.7455 1.23558C6.84574 1.23695 6.94468 1.2584 7.03649 1.29866C7.12829 1.33893 7.2111 1.39719 7.28 1.47L12.28 6.47C12.4206 6.61065 12.4996 6.80138 12.4996 7.00025C12.4996 7.19912 12.4206 7.38985 12.28 7.5305L7.28 12.5305C7.21046 12.6002 7.12785 12.6554 7.03689 12.6931C6.94594 12.7308 6.84844 12.7501 6.75 12.75C6.60172 12.75 6.45677 12.706 6.33348 12.6236C6.21019 12.5412 6.11408 12.4241 6.05731 12.2872C6.00054 12.1502 5.98564 11.9994 6.01451 11.854C6.04338 11.7085 6.11471 11.5749 6.2195 11.47L9.9385 7.7505H0.75C0.551088 7.7505 0.360322 7.67148 0.21967 7.53083C0.0790177 7.39018 0 7.19941 0 7.0005C0 6.80159 0.0790177 6.61082 0.21967 6.47017C0.360322 6.32952 0.551088 6.2505 0.75 6.2505V6.25ZM14.5 0C14.3011 0 14.1103 0.0790177 13.9697 0.21967C13.829 0.360322 13.75 0.551088 13.75 0.75V13.25C13.75 13.4489 13.829 13.6397 13.9697 13.7803C14.1103 13.921 14.3011 14 14.5 14C14.6989 14 14.8897 13.921 15.0303 13.7803C15.171 13.6397 15.25 13.4489 15.25 13.25V0.75C15.25 0.551088 15.171 0.360322 15.0303 0.21967C14.8897 0.0790177 14.6989 0 14.5 0Z" fill="currentColor"/></svg></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="pane__body" id="pane-body">
+            <!-- rendered by JS -->
+          </div>
+
+          <div class="composer">
+            <div class="composer__box">
+              <textarea class="composer__input" rows="1" placeholder="Ask a question or leave a comment"></textarea>
+              <div class="composer__tools">
+                <button class="icon-btn" aria-label="Add"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg></button>
+                <button class="icon-btn" aria-label="Format"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 13h8M5.8 3.2 8 10.6l2.2-7.4M6.7 8.2h2.6"/></svg></button>
+                <button class="icon-btn" aria-label="Emoji"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><circle cx="6" cy="6.8" r=".7" fill="currentColor" stroke="none"/><circle cx="10" cy="6.8" r=".7" fill="currentColor" stroke="none"/><path d="M5.6 9.8c.7.9 1.5 1.3 2.4 1.3s1.7-.4 2.4-1.3" stroke-linecap="round"/></svg></button>
+                <button class="icon-btn" aria-label="Mention"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.9"/><path d="M10.9 8v1.5a2 2 0 0 0 3 0V8a6 6 0 1 0-3 5.2" stroke-linecap="round"/></svg></button>
+                <button class="icon-btn" aria-label="AI assist"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6l.95 2.05L11 7.6l-1.6 1.5.4 2.2L8 10.2l-1.8 1.1.4-2.2L5 7.6l2.05-.95z"/></svg></button>
+                <button class="icon-btn composer__send" aria-label="Send"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M4 7.2 8 3.2l4 4"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+  </div>
+  </div><!-- /exp-record -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       EXPERIENCE 2 — PORTFOLIO CUSTOMIZATION
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="experience" id="exp-portfolio">
+    <div class="app">
+      <header class="topbar">
+        <div class="topbar__left">
+          <button class="create-btn">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+            Create
+          </button>
+        </div>
+        <div class="search">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="7" cy="7" r="4.3"/><path d="M10.4 10.4 14 14"/></svg>
+          Search [Domain]
+        </div>
+        <div class="topbar__right"></div>
+      </header>
+
+      <div class="app__lower">
+        <!-- Same rail, Work mode active for portfolios -->
+        <nav class="rail" aria-label="Modes" id="pf-rail"></nav>
+
+        <aside class="sidebar">
+          <div class="sb__section">Work</div>
+          <div class="sb__group">
+            <div class="sb__row"><span class="ico ico--16"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 14H11C12.6545 14 14 12.6545 14 11V3C14 1.345 12.6545 0 11 0H3C1.3455 0 0 1.345 0 3V11C0 12.6545 1.3455 14 3 14ZM9 13H5V6H9V13ZM13 11C13 12.103 12.103 13 11 13H10V6H13V11ZM1 3C1 1.897 1.897 1 3 1H11C12.103 1 13 1.897 13 3V5H1V3ZM1 6H4V13H3C1.897 13 1 12.103 1 11V6Z" fill="currentColor"/></svg></span><span class="sb__row-label">My tasks</span></div>
+            <div class="sb__row"><span class="ico ico--16"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm0 2.6a5.4 5.4 0 1 1 0 10.8 5.4 5.4 0 0 1 0-10.8Zm0 2.2a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z" fill="currentColor"/></svg></span><span class="sb__row-label">Goals</span></div>
+            <div class="sb__row"><span class="ico ico--16"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M0 13.25C0 13.6642 0.335786 14 0.75 14H13.25C13.6642 14 14 13.6642 14 13.25C14 12.8358 13.6642 12.5 13.25 12.5H1.5V0.75C1.5 0.335786 1.16421 0 0.75 0C0.335786 0 0 0.335786 0 0.75V13.25ZM4 11H6V6H4V11ZM7.5 11H9.5V3H7.5V11ZM11 11H13V8H11V11Z" fill="currentColor"/></svg></span><span class="sb__row-label">Dashboards</span></div>
+            <div class="sb__row"><span class="ico ico--16"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 14H11C12.6545 14 14 12.6545 14 11V3C14 1.345 12.6545 0 11 0H3C1.3455 0 0 1.345 0 3V11C0 12.6545 1.3455 14 3 14ZM1 3C1 1.897 1.897 1 3 1H11C12.103 1 13 1.897 13 3V4H1V3ZM1 5H13V11C13 12.103 12.103 13 11 13H3C1.897 13 1 12.103 1 11V5Z" fill="currentColor"/></svg></span><span class="sb__row-label">Projects</span></div>
+            <div class="sb__row sb__row--active"><span class="ico ico--16"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M12.5 3H7.62L6.4 1.17A1.5 1.5 0 0 0 5.15.5H1.5A1.5 1.5 0 0 0 0 2v10A1.5 1.5 0 0 0 1.5 13.5h11A1.5 1.5 0 0 0 14 12V4.5A1.5 1.5 0 0 0 12.5 3ZM1 2a.5.5 0 0 1 .5-.5h3.65a.5.5 0 0 1 .42.22L6.42 3H1V2Zm12 10a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 1 12V4h11.5a.5.5 0 0 1 .5.5V12Z" fill="currentColor"/></svg></span><span class="sb__row-label">Portfolios</span></div>
+          </div>
+
+          <div class="sb__group sb__group--recents">
+            <div class="sb__recents-head">
+              <button class="icon-btn icon-btn--sm" aria-label="Collapse">
+                <span class="ico ico--12"><svg width="9.5" height="5.25" viewBox="0 0 9.49979 5.25052" fill="none"><path d="M8.99989 0H0.499893C0.401018 2.11122e-05 0.304369 0.0293569 0.222164 0.0842991C0.139959 0.139241 0.0758895 0.217323 0.0380545 0.308673C0.000219475 0.400023 -0.00968204 0.500539 0.00960174 0.597516C0.0288855 0.694492 0.0764887 0.783574 0.146393 0.8535L4.39639 5.1035C4.44272 5.15009 4.4978 5.18707 4.55847 5.2123C4.61913 5.23753 4.68419 5.25052 4.74989 5.25052C4.8156 5.25052 4.88065 5.23753 4.94132 5.2123C5.00199 5.18707 5.05707 5.15009 5.10339 5.1035L9.35339 0.8535C9.4233 0.783574 9.4709 0.694492 9.49019 0.597516C9.50947 0.500539 9.49957 0.400023 9.46173 0.308673C9.4239 0.217323 9.35983 0.139241 9.27762 0.0842991C9.19542 0.0293569 9.09877 2.11122e-05 8.99989 0Z" fill="currentColor"/></svg></span>
+              </button>
+              <span class="sb__recents-head-label">Work</span>
+            </div>
+            <div class="sb__row sb__row--recent"><span class="squircle-20"><span class="ico ico--12"><svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M2 6.5C2 6.2235 2.2235 6 2.5 6H5.5C5.7765 6 6 6.2235 6 6.5C6 6.7765 5.7765 7 5.5 7H2.5C2.2235 7 2 6.7765 2 6.5ZM2 8.5C2 8.7765 2.2235 9 2.5 9H7.5C7.7765 9 8 8.7765 8 8.5C8 8.2235 7.7765 8 7.5 8H2.5C2.2235 8 2 8.2235 2 8.5ZM10 4.8415V10C10 11.103 9.103 12 8 12H2C0.897 12 0 11.103 0 10V2C0 0.897 0.897 0 2 0H5.348C5.382 0 5.4145 0.00849995 5.448 0.0104999C5.466 0.00849995 5.4815 0 5.4995 0C5.557 0 5.61 0.0150001 5.661 0.0325001C6.0975 0.1025 6.505 0.309 6.81 0.6355L9.462 3.4765C9.8085 3.848 9.9995 4.333 9.9995 4.841L10 4.8415ZM6.079 1.318C6.055 1.292 6.0265 1.272 6 1.249V3.278C6 3.6765 6.3305 4 6.7375 4H8.5825L6.079 1.318ZM9 5H6.7375C5.7795 5 5 4.2275 5 3.278V1H2C1.4485 1 1 1.4485 1 2V10C1 10.5515 1.4485 11 2 11H8C8.5515 11 9 10.5515 9 10V5Z" fill="currentColor"/></svg></span></span><span class="sb__row-label">Website launch</span></div>
+            <div class="sb__row sb__row--recent"><span class="squircle-20"><span class="ico ico--12"><svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M2 6.5C2 6.2235 2.2235 6 2.5 6H5.5C5.7765 6 6 6.2235 6 6.5C6 6.7765 5.7765 7 5.5 7H2.5C2.2235 7 2 6.7765 2 6.5ZM2 8.5C2 8.7765 2.2235 9 2.5 9H7.5C7.7765 9 8 8.7765 8 8.5C8 8.2235 7.7765 8 7.5 8H2.5C2.2235 8 2 8.2235 2 8.5ZM10 4.8415V10C10 11.103 9.103 12 8 12H2C0.897 12 0 11.103 0 10V2C0 0.897 0.897 0 2 0H5.348C5.382 0 5.4145 0.00849995 5.448 0.0104999C5.466 0.00849995 5.4815 0 5.4995 0C5.557 0 5.61 0.0150001 5.661 0.0325001C6.0975 0.1025 6.505 0.309 6.81 0.6355L9.462 3.4765C9.8085 3.848 9.9995 4.333 9.9995 4.841L10 4.8415ZM6.079 1.318C6.055 1.292 6.0265 1.272 6 1.249V3.278C6 3.6765 6.3305 4 6.7375 4H8.5825L6.079 1.318ZM9 5H6.7375C5.7795 5 5 4.2275 5 3.278V1H2C1.4485 1 1 1.4485 1 2V10C1 10.5515 1.4485 11 2 11H8C8.5515 11 9 10.5515 9 10V5Z" fill="currentColor"/></svg></span></span><span class="sb__row-label">Design Feedback</span></div>
+            <div class="sb__row sb__row--recent"><span class="squircle-20"><span class="ico ico--12"><svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M2 6.5C2 6.2235 2.2235 6 2.5 6H5.5C5.7765 6 6 6.2235 6 6.5C6 6.7765 5.7765 7 5.5 7H2.5C2.2235 7 2 6.7765 2 6.5ZM2 8.5C2 8.7765 2.2235 9 2.5 9H7.5C7.7765 9 8 8.7765 8 8.5C8 8.2235 7.7765 8 7.5 8H2.5C2.2235 8 2 8.2235 2 8.5ZM10 4.8415V10C10 11.103 9.103 12 8 12H2C0.897 12 0 11.103 0 10V2C0 0.897 0.897 0 2 0H5.348C5.382 0 5.4145 0.00849995 5.448 0.0104999C5.466 0.00849995 5.4815 0 5.4995 0C5.557 0 5.61 0.0150001 5.661 0.0325001C6.0975 0.1025 6.505 0.309 6.81 0.6355L9.462 3.4765C9.8085 3.848 9.9995 4.333 9.9995 4.841L10 4.8415ZM6.079 1.318C6.055 1.292 6.0265 1.272 6 1.249V3.278C6 3.6765 6.3305 4 6.7375 4H8.5825L6.079 1.318ZM9 5H6.7375C5.7795 5 5 4.2275 5 3.278V1H2C1.4485 1 1 1.4485 1 2V10C1 10.5515 1.4485 11 2 11H8C8.5515 11 9 10.5515 9 10V5Z" fill="currentColor"/></svg></span></span><span class="sb__row-label">User Testing Results</span></div>
+            <div class="sb__row sb__row--recent"><span class="squircle-20"><span class="ico ico--12"><svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M2 6.5C2 6.2235 2.2235 6 2.5 6H5.5C5.7765 6 6 6.2235 6 6.5C6 6.7765 5.7765 7 5.5 7H2.5C2.2235 7 2 6.7765 2 6.5ZM2 8.5C2 8.7765 2.2235 9 2.5 9H7.5C7.7765 9 8 8.7765 8 8.5C8 8.2235 7.7765 8 7.5 8H2.5C2.2235 8 2 8.2235 2 8.5ZM10 4.8415V10C10 11.103 9.103 12 8 12H2C0.897 12 0 11.103 0 10V2C0 0.897 0.897 0 2 0H5.348C5.382 0 5.4145 0.00849995 5.448 0.0104999C5.466 0.00849995 5.4815 0 5.4995 0C5.557 0 5.61 0.0150001 5.661 0.0325001C6.0975 0.1025 6.505 0.309 6.81 0.6355L9.462 3.4765C9.8085 3.848 9.9995 4.333 9.9995 4.841L10 4.8415ZM6.079 1.318C6.055 1.292 6.0265 1.272 6 1.249V3.278C6 3.6765 6.3305 4 6.7375 4H8.5825L6.079 1.318ZM9 5H6.7375C5.7795 5 5 4.2275 5 3.278V1H2C1.4485 1 1 1.4485 1 2V10C1 10.5515 1.4485 11 2 11H8C8.5515 11 9 10.5515 9 10V5Z" fill="currentColor"/></svg></span></span><span class="sb__row-label">Project Milestones</span></div>
+            <div class="sb__row sb__row--recent"><span class="squircle-20"><span class="ico ico--12"><svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M2 6.5C2 6.2235 2.2235 6 2.5 6H5.5C5.7765 6 6 6.2235 6 6.5C6 6.7765 5.7765 7 5.5 7H2.5C2.2235 7 2 6.7765 2 6.5ZM2 8.5C2 8.7765 2.2235 9 2.5 9H7.5C7.7765 9 8 8.7765 8 8.5C8 8.2235 7.7765 8 7.5 8H2.5C2.2235 8 2 8.2235 2 8.5ZM10 4.8415V10C10 11.103 9.103 12 8 12H2C0.897 12 0 11.103 0 10V2C0 0.897 0.897 0 2 0H5.348C5.382 0 5.4145 0.00849995 5.448 0.0104999C5.466 0.00849995 5.4815 0 5.4995 0C5.557 0 5.61 0.0150001 5.661 0.0325001C6.0975 0.1025 6.505 0.309 6.81 0.6355L9.462 3.4765C9.8085 3.848 9.9995 4.333 9.9995 4.841L10 4.8415ZM6.079 1.318C6.055 1.292 6.0265 1.272 6 1.249V3.278C6 3.6765 6.3305 4 6.7375 4H8.5825L6.079 1.318ZM9 5H6.7375C5.7795 5 5 4.2275 5 3.278V1H2C1.4485 1 1 1.4485 1 2V10C1 10.5515 1.4485 11 2 11H8C8.5515 11 9 10.5515 9 10V5Z" fill="currentColor"/></svg></span></span><span class="sb__row-label">Market Research Plan</span></div>
+            <div class="sb__row sb__row--recent"><span class="squircle-20"><span class="ico ico--12"><svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M2 6.5C2 6.2235 2.2235 6 2.5 6H5.5C5.7765 6 6 6.2235 6 6.5C6 6.7765 5.7765 7 5.5 7H2.5C2.2235 7 2 6.7765 2 6.5ZM2 8.5C2 8.7765 2.2235 9 2.5 9H7.5C7.7765 9 8 8.7765 8 8.5C8 8.2235 7.7765 8 7.5 8H2.5C2.2235 8 2 8.2235 2 8.5ZM10 4.8415V10C10 11.103 9.103 12 8 12H2C0.897 12 0 11.103 0 10V2C0 0.897 0.897 0 2 0H5.348C5.382 0 5.4145 0.00849995 5.448 0.0104999C5.466 0.00849995 5.4815 0 5.4995 0C5.557 0 5.61 0.0150001 5.661 0.0325001C6.0975 0.1025 6.505 0.309 6.81 0.6355L9.462 3.4765C9.8085 3.848 9.9995 4.333 9.9995 4.841L10 4.8415ZM6.079 1.318C6.055 1.292 6.0265 1.272 6 1.249V3.278C6 3.6765 6.3305 4 6.7375 4H8.5825L6.079 1.318ZM9 5H6.7375C5.7795 5 5 4.2275 5 3.278V1H2C1.4485 1 1 1.4485 1 2V10C1 10.5515 1.4485 11 2 11H8C8.5515 11 9 10.5515 9 10V5Z" fill="currentColor"/></svg></span></span><span class="sb__row-label">Competitor Analysis</span></div>
+          </div>
+
+          <div class="sb__footer">
+            <button class="btn-secondary">
+              <span class="ico ico--16"><svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M13 0H3C1.3455 0 0 1.3455 0 3V9C0 10.6545 1.3455 12 3 12H13C14.655 12 16 10.6545 16 9V3C16 1.3455 14.655 0 13 0ZM3 1H13C13.37 1 13.712 1.1075 14.01 1.2835L8.353 6.9395C8.25924 7.03324 8.13208 7.08589 7.9995 7.08589C7.86692 7.08589 7.73976 7.03324 7.646 6.9395L1.991 1.2835C2.29605 1.09991 2.64497 1.00197 3.001 1H3ZM15 9C15 10.103 14.103 11 13 11H3C1.897 11 1 10.103 1 9V3C1 2.63 1.1075 2.288 1.2835 1.9905L6.9395 7.647C7.07876 7.78618 7.24412 7.89651 7.42611 7.97167C7.60809 8.04684 7.80311 8.08535 8 8.085C8.19694 8.08536 8.39201 8.04681 8.574 7.97156C8.75599 7.89631 8.92133 7.78584 9.0605 7.6465L14.7165 1.9905C14.9 2.29541 14.9979 2.64414 15 3V9Z" fill="currentColor"/></svg></span>
+              Invite teammates
+            </button>
+          </div>
+        </aside>
+
+        <main class="canvas" id="pf-canvas"><!-- rendered by JS --></main>
+      </div>
+    </div>
+  </div><!-- /exp-portfolio -->
+
+</div><!-- /page -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       BUILDER — full-screen takeover
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="builder" id="builder">
+    <div class="builder__head">
+      <span class="builder__crumb">
+        <span class="ico ico--16"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 14H11C12.6545 14 14 12.6545 14 11V3C14 1.345 12.6545 0 11 0H3C1.3455 0 0 1.345 0 3V11C0 12.6545 1.3455 14 3 14ZM9 13H5V6H9V13ZM13 11C13 12.103 12.103 13 11 13H10V6H13V11ZM1 3C1 1.897 1.897 1 3 1H11C12.103 1 13 1.897 13 3V5H1V3ZM1 6H4V13H3C1.897 13 1 12.103 1 11V6Z" fill="currentColor"/></svg></span>
+        <span id="builder-crumb">Properties&nbsp;&nbsp;/&nbsp;&nbsp;<strong>The Marlow</strong></span>
+      </span>
+
+      <div class="segmented">
+        <button class="segmented__btn segmented__btn--active">Build</button>
+        <button class="segmented__btn">Code</button>
+      </div>
+
+      <div class="builder__actions">
+        <button class="btn-secondary btn-secondary--sm" id="builder-cancel">Cancel</button>
+        <button class="btn-primary" id="builder-publish">Publish</button>
+      </div>
+    </div>
+
+    <div class="builder__body">
+      <div class="aip">
+        <div class="aip__scroll" id="aip-scroll"><!-- JS --></div>
+        <div class="aip__foot">
+          <div class="composer__box">
+            <textarea class="composer__input" id="aip-input" rows="1" placeholder="Describe what you want to customize"></textarea>
+            <div class="composer__tools">
+              <button class="icon-btn" aria-label="Add"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg></button>
+              <button class="icon-btn composer__send" id="aip-send" aria-label="Send"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M4 7.2 8 3.2l4 4"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="builder__preview">
+        <div class="builder__preview-card" id="builder-preview"><!-- JS --></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════════
+       DATA — The Marlow, matching the Figma frames
+       ═══════════════════════════════════════════════════════════════════ */
+
+    // Field-type glyphs, keyed the way Asana labels custom-field types.
+    const FT = {
+      number:    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6.2 2.6 4.8 13.4M11.2 2.6 9.8 13.4M2.6 6.2h11M2 9.8h11"/></svg>',
+      text:      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3.4 4.2V3h9.2v1.2M8 3.2v9.6M6.2 12.8h3.6"/></svg>',
+      select:    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="5.4"/><path d="M5.8 8.1 7.4 9.7l3-3.4"/></svg>',
+      reference: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 5.2 8 2.4l5.6 2.8-5.6 2.8z"/><path d="m2.4 8.6 5.6 2.8 5.6-2.8"/><path d="m2.4 11.6 5.6 2.8 5.6-2.8"/></svg>',
+      date:      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.3" y="3.4" width="11.4" height="10.3" rx="1.4"/><path d="M2.3 6.6h11.4M5.6 2.2v2.4M10.4 2.2v2.4"/></svg>',
+      multi:     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 4.6l1.6 1.6 2.6-2.8M2.4 11.2l1.6 1.6 2.6-2.8M8.6 4.8h5M8.6 11.4h5"/></svg>',
+    };
+
+    // Shared mention markup, reused across records
+    const M_IAN   = '<span class="mention"><span class="mention__dot" style="background:var(--cz-indigo-bg);color:var(--cz-indigo-fg)">IB</span>Ian Bryson</span>';
+    const M_JOSEF = '<span class="mention"><span class="mention__dot" style="background:var(--cz-purple-bg);color:var(--cz-purple-fg)">JH</span>Josef Hoyos</span>';
+
+    /* Three records in the Properties table. The customization is applied to
+       the OBJECT, so every record renders the same sections — but each fills
+       them with its own content, and not every record has every field set
+       (see Beacon Hill / Sunset Commons: no branding asset yet). */
+    const RECORDS = {
+      marlow: {
+        name: 'The Marlow',
+        meta: [
+          { label: 'Location', text: 'Oakland, CA', hue: 'none' },
+          { label: 'Status',   text: 'Takeover',    hue: 'yellow-orange' },
+          { label: 'Units',    text: '84',          hue: 'none' },
+        ],
+        metrics: [
+          { label: 'Occupancy',      value: '68%', sub: 'Current' },
+          { label: 'Units',          value: '84',  sub: 'Managed' },
+          { label: 'Project status', value: '68%', sub: '505/742 tasks' },
+        ],
+        branding: 'marlow-branding.png',
+        fields: [
+          { type: 'number',    label: 'Occupancy',   value: '68%' },
+          { type: 'text',      label: 'Address',     value: '1725 Broadway, Oakland, CA 94612' },
+          { type: 'number',    label: 'Units',       value: '84' },
+          { type: 'number',    label: 'Year built',  value: '2024' },
+          { type: 'select',    label: 'Market',      pills: [{ text: 'Bay Area', hue: 'green' }] },
+          { type: 'reference', label: 'Owner group', ref: 'Greystar Capital' },
+          { type: 'date',      label: 'Go live date', value: 'July 15, 2026' },
+          { type: 'multi',     label: 'Values',      pills: [{ text: 'Mixed use', hue: 'none' }, { text: 'Transit oriented', hue: 'none' }] },
+        ],
+        project: { name: 'Takeover: The Marlow', done: 505, total: 723, pct: 68, due: 'Due Sep 15, 2026' },
+        team: [
+          { name: 'James Wu',  role: 'Regional Manager',  region: 'West', initials: 'JW', hue: 'aqua' },
+          { name: 'Devon Kim', role: 'Marketing Manager', region: 'West', initials: 'DK', hue: 'pink' },
+        ],
+        connections: {
+          projects: 4,
+          label: 'Marketing tasks',
+          tasks: [
+            { name: 'Launch landing page', chips: [{ icon: 'comment', n: 1 }], date: 'July 1', who: { initials: 'JW', hue: 'aqua' } },
+            { name: 'Finalize Instagram creator partnerships', chips: [{ icon: 'like', n: 1 }, { icon: 'comment', n: 1 }, { icon: 'sub', n: 1 }], date: 'July 1', who: { initials: 'DK', hue: 'pink' } },
+            { name: 'Google Local Services setup', chips: [], date: 'July 1', who: { initials: 'GH', hue: 'yellow' } },
+            { name: 'Broker open-house series', chips: [], date: 'July 1', who: { initials: 'GH', hue: 'yellow' } },
+          ],
+        },
+        activity: [
+          { who: 'Hailey Moreson', initials: 'HM', hue: 'pink', kind: 'meta', text: 'created this record', when: '2 days ago' },
+          { who: 'Kai Nani', initials: 'KN', hue: 'yellow', kind: 'comment', when: '4 days ago',
+            html: `Be sure to check out the final presentation to reference ${M_IAN} so we're good. ${M_JOSEF} Also curious if we should have a sync too.` },
+          { who: 'Hailey Moreson', initials: 'HM', hue: 'pink', kind: 'meta', text: 'showed their appreciation', when: '55 minutes ago' },
+        ],
+      },
+
+      beacon: {
+        name: 'Beacon Hill Apartments',
+        meta: [
+          { label: 'Location', text: 'Sacramento, CA', hue: 'blue' },
+          { label: 'Status',   text: 'Stabilized',    hue: 'green' },
+          { label: 'Units',    text: '156',           hue: 'none' },
+        ],
+        metrics: [
+          { label: 'Occupancy',      value: '96%', sub: 'Current' },
+          { label: 'Units',          value: '156', sub: 'Managed' },
+          { label: 'Project status', value: '92%', sub: '412/448 tasks' },
+        ],
+        branding: null,   // field exists on the object but isn't set on this record
+        fields: [
+          { type: 'number',    label: 'Occupancy',   value: '96%' },
+          { type: 'text',      label: 'Address',     value: '88 Cambridge Street, Sacramento, CA 95814' },
+          { type: 'number',    label: 'Units',       value: '156' },
+          { type: 'number',    label: 'Year built',  value: '2019' },
+          { type: 'select',    label: 'Market',      pills: [{ text: 'Greater Sacramento', hue: 'aqua' }] },
+          { type: 'reference', label: 'Owner group', ref: 'Federal Realty' },
+          { type: 'date',      label: 'Go live date', value: 'September 1, 2020' },
+          { type: 'multi',     label: 'Values',      pills: [{ text: 'Historic district', hue: 'none' }, { text: 'Luxury', hue: 'none' }] },
+        ],
+        project: { name: 'Stabilized Ops: Beacon Hill', done: 412, total: 448, pct: 92, due: 'Ongoing' },
+        team: [
+          { name: 'Sarah Chen', role: 'Regional Manager', region: 'Northeast', initials: 'SC', hue: 'magenta' },
+          { name: 'Nadia Osei', role: 'Compliance Lead',  region: 'Northeast', initials: 'NO', hue: 'blue-green' },
+        ],
+        connections: {
+          projects: 3,
+          label: 'Marketing tasks',
+          tasks: [
+            { name: 'Refresh photography — model unit', chips: [{ icon: 'comment', n: 2 }], date: 'Sep 20', who: { initials: 'SC', hue: 'magenta' } },
+            { name: 'Renewal offer campaign', chips: [], date: 'Oct 15', who: { initials: 'DK', hue: 'pink' } },
+          ],
+        },
+        activity: [
+          { who: 'Sarah Chen', initials: 'SC', hue: 'magenta', kind: 'meta', text: 'created this record', when: '3 weeks ago' },
+          { who: 'Devon Kim', initials: 'DK', hue: 'pink', kind: 'comment', when: '6 days ago',
+            html: `Occupancy held at 96% for the third month running. ${M_IAN} worth featuring this one in the Q4 review.` },
+        ],
+      },
+
+      sunset: {
+        name: 'Sunset Commons',
+        meta: [
+          { label: 'Location', text: 'San Jose, CA', hue: 'aqua' },
+          { label: 'Status',   text: 'Takeover',     hue: 'yellow-orange' },
+          { label: 'Units',    text: '42',           hue: 'none' },
+        ],
+        metrics: [
+          { label: 'Occupancy',      value: '52%', sub: 'Current' },
+          { label: 'Units',          value: '42',  sub: 'Managed' },
+          { label: 'Project status', value: '35%', sub: '74/210 tasks' },
+        ],
+        branding: null,
+        fields: [
+          { type: 'number',    label: 'Occupancy',   value: '52%' },
+          { type: 'text',      label: 'Address',     value: '240 Willow Glen Way, San Jose, CA 95125' },
+          { type: 'number',    label: 'Units',       value: '42' },
+          { type: 'number',    label: 'Year built',  value: '2021' },
+          { type: 'select',    label: 'Market',      pills: [{ text: 'South Bay', hue: 'indigo' }] },
+          { type: 'reference', label: 'Owner group', ref: 'Coastal Holdings' },
+          { type: 'date',      label: 'Go live date', value: 'October 30, 2026' },
+          { type: 'multi',     label: 'Values',      pills: [{ text: 'Value-add', hue: 'none' }, { text: 'Workforce housing', hue: 'none' }] },
+        ],
+        project: { name: 'Takeover: Sunset Commons', done: 74, total: 210, pct: 35, due: 'Due Nov 30, 2026' },
+        team: [
+          { name: 'James Wu',    role: 'Regional Manager', region: 'West', initials: 'JW', hue: 'aqua' },
+          { name: 'Priya Patel', role: 'Leasing Manager',  region: 'West', initials: 'PP', hue: 'yellow-orange' },
+        ],
+        connections: {
+          projects: 4,
+          label: 'Marketing tasks',
+          tasks: [
+            { name: 'Zillow / Apartments.com premium slots', chips: [{ icon: 'comment', n: 1 }], date: 'Sep 10', who: { initials: 'JW', hue: 'aqua' } },
+            { name: 'Bilingual Spanish creative refresh', chips: [{ icon: 'like', n: 2 }], date: 'Oct 5', who: { initials: 'PP', hue: 'yellow-orange' } },
+            { name: 'Community org referral program', chips: [], date: 'TBD', who: { initials: 'GH', hue: 'yellow' } },
+          ],
+        },
+        activity: [
+          { who: 'James Wu', initials: 'JW', hue: 'aqua', kind: 'meta', text: 'created this record', when: '5 days ago' },
+          { who: 'Priya Patel', initials: 'PP', hue: 'yellow-orange', kind: 'comment', when: '2 days ago',
+            html: `Lease-up is behind plan — 52% against a 65% target. ${M_JOSEF} can we pull the paid budget forward?` },
+        ],
+      },
+    };
+
+    let currentRecordId = 'marlow';
+    const rec = () => RECORDS[currentRecordId];
+
+    /* ═══════════════════════════════════════════════════════════════════
+       RENDER — uncustomized pane (flat field list + comments)
+       ═══════════════════════════════════════════════════════════════════ */
+
+    function pillHtml(p) {
+      return `<span class="pill pill--${p.hue}">${p.text}</span>`;
+    }
+
+    function cfValueHtml(f) {
+      if (f.pills) return f.pills.map(pillHtml).join('');
+      if (f.ref) {
+        return `<span class="pill pill--none" style="gap:6px">
+                  <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 5.2 8 2.4l5.6 2.8-5.6 2.8z"/><path d="m2.4 9 5.6 2.8L13.6 9"/></svg>
+                  ${f.ref}
+                </span>`;
+      }
+      return `<span>${f.value}</span>`;
+    }
+
+    // Each row carries a hover-revealed reaction button on the right, as in Figma
+    const REACT_BTN = `<button class="icon-btn activity__react" aria-label="Add reaction">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><circle cx="6" cy="6.8" r=".7" fill="currentColor" stroke="none"/><circle cx="10" cy="6.8" r=".7" fill="currentColor" stroke="none"/><path d="M5.6 9.8c.7.9 1.5 1.3 2.4 1.3s1.7-.4 2.4-1.3" stroke-linecap="round"/></svg>
+    </button>`;
+
+    function activityHtml(a) {
+      const avatar = `<span class="avatar-24" style="background:var(--cz-${a.hue}-bg);color:var(--cz-${a.hue}-fg)">${a.initials}</span>`;
+      if (a.kind === 'meta') {
+        return `<div class="activity__item">${avatar}
+          <div class="activity__body">
+            <span class="activity__name">${a.who}</span>
+            <span class="activity__meta">${a.text} · ${a.when}</span>
+          </div>
+          ${REACT_BTN}
+        </div>`;
+      }
+      return `<div class="activity__item">${avatar}
+        <div class="activity__body">
+          <div><span class="activity__name">${a.who}</span> <span class="activity__meta">· ${a.when}</span></div>
+          <div>${a.html}</div>
+        </div>
+        ${REACT_BTN}
+      </div>`;
+    }
+
+    function renderPlainPane(target, r) {
+      const rec = r || RECORDS[currentRecordId];
+      const rows = rec.fields.map(f => `
+        <div class="cf__row">
+          <div class="cf__label">${FT[f.type]}<span>${f.label}</span></div>
+          <div class="cf__divider"></div>
+          <div class="cf__value">${cfValueHtml(f)}</div>
+        </div>`).join('');
+
+      target.innerHTML = `
+        <div class="pane__title-wrap"><h1 class="pane__title">${rec.name}</h1></div>
+
+        <div class="pane__section-head">
+          <span class="pane__section-label">Fields</span>
+          <span class="count-pill">${rec.fields.length}</span>
+          <button class="icon-btn icon-btn--sm" aria-label="Add field">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 2.6v6.8M2.6 6h6.8"/></svg>
+          </button>
+        </div>
+
+        <div class="cf">${rows}</div>
+
+        <div class="pane__tabs">
+          <button class="pane__tab pane__tab--active">Comments</button>
+          <button class="pane__tab">All activity</button>
+          <span class="pane__tabs-right">
+            <button class="btn-secondary btn-secondary--sm" style="border:none;background:none;color:var(--text-weak)">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 3v10M4 3 2.4 4.6M4 3l1.6 1.6M12 13V3M12 13l-1.6-1.6M12 13l1.6-1.6"/></svg>
+              Newest
+            </button>
+          </span>
+        </div>
+
+        <div class="activity">${rec.activity.map(activityHtml).join('')}</div>
+      `;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       RENDER — customized pane (the published result)
+       Structure + geometry from Figma frame 5:27215.
+       ═══════════════════════════════════════════════════════════════════ */
+
+    // 12px section-header glyphs
+    const SEC_ICON = {
+      metrics:  '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="4" height="4"/><rect x="7" y="1" width="4" height="4"/><rect x="1" y="7" width="4" height="4"/><rect x="7" y="7" width="4" height="4"/></svg>',
+      image:    '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2.6 3.2V2.2h6.8v1M6 2.4v7.2M4.6 9.8h2.8"/></svg>',
+      details:  '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="4" height="4"/><rect x="7" y="1" width="4" height="4"/><rect x="1" y="7" width="4" height="4"/><rect x="7" y="7" width="4" height="4"/></svg>',
+      project:  '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1.2" y="1.6" width="9.6" height="8.8" rx="1"/><path d="M1.2 4.2h9.6M4.2 4.2v6.2"/></svg>',
+      team:     '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.6" cy="4.2" r="1.9"/><path d="M1.4 10.4v-.5a3 3 0 0 1 3-3h.4M8.6 5a1.5 1.5 0 1 0 0-3M10.6 10.4v-.5a2.4 2.4 0 0 0-1.8-2.3"/></svg>',
+      link:     '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M4.9 7.1a2.2 2.2 0 0 0 3.1 0l1.6-1.6a2.2 2.2 0 0 0-3.1-3.1l-.6.6"/><path d="M7.1 4.9a2.2 2.2 0 0 0-3.1 0L2.4 6.5a2.2 2.2 0 0 0 3.1 3.1l.6-.6"/></svg>',
+    };
+
+    const PLUS_BTN = `<button class="icon-btn icon-btn--sm" aria-label="Add">
+      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 2.6v6.8M2.6 6h6.8"/></svg>
+    </button>`;
+
+    function sec(iconKey, label, body, withPlus) {
+      return `<section class="sec">
+        <div class="sec__title">${SEC_ICON[iconKey]}<span class="sec__title-label">${label}</span>${withPlus ? PLUS_BTN : ''}</div>
+        <div class="sec__body">${body}</div>
+      </section>`;
+    }
+
+    const CHIP_ICON = {
+      comment: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.6 3a1 1 0 0 1 1-1h6.8a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H4.4L2 10.2V8h.6a1 1 0 0 1-1-1z"/></svg>',
+      like:    '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 10.4V5.2l2-3.6a1 1 0 0 1 1.8.8l-.5 2h2.5a1 1 0 0 1 1 1.2l-.7 3.4a1 1 0 0 1-1 .8z"/><path d="M3.4 5.4H1.8v5h1.6z"/></svg>',
+      sub:     '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 2v4.6a1.4 1.4 0 0 0 1.4 1.4h5.8"/><path d="M7.6 6l2 2-2 2"/></svg>',
+    };
+
+    function renderCustomPane(target, r) {
+      const c = r || RECORDS[currentRecordId];
+
+      const metaHtml = c.meta.map(m => `
+        <span class="meta-field">
+          <span class="meta-field__label">${m.label}</span>
+          <span class="meta-field__pill" style="background:var(--cz-${m.hue}-bg);color:var(--cz-${m.hue}-fg)">${m.text}</span>
+        </span>`).join('');
+
+      const metricsHtml = `<div class="metrics">${c.metrics.map(m => `
+        <div class="metric">
+          <div class="metric__label">${m.label}</div>
+          <div class="metric__value">${m.value}</div>
+          <div class="metric__sub">${m.sub}</div>
+        </div>`).join('')}</div>`;
+
+      // The branding field exists on the object for every record, but only
+      // some records have an asset uploaded — show a real empty state rather
+      // than hiding the section, since the section is part of the object now.
+      const brandingHtml = c.branding
+        ? `<img class="branding-img" src="${c.branding}" alt="${c.name} exterior signage">`
+        : `<div class="branding-empty">
+             <span class="ico ico--16"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 14H11C12.6545 14 14 12.6545 14 11V3C14 1.345 12.6545 0 11 0H3C1.3455 0 0 1.345 0 3V11C0 12.6545 1.3455 14 3 14ZM1 11V8.5L3.3 6.2a1 1 0 0 1 1.4 0l3 3-1.6 1.6a.5.5 0 0 0 .7.7l4.3-4.3a1 1 0 0 1 1.4 0L13 9.1V11c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2ZM3 1h8c1.1 0 2 .9 2 2v4.7l-.8-.8a2 2 0 0 0-2.8 0L8.4 8.9 5.4 5.5a2 2 0 0 0-2.8 0L1 7.1V3c0-1.1.9-2 2-2Zm7 4.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Z" fill="currentColor"/></svg></span>
+             <span>No branding asset yet</span>
+             <button class="btn-secondary btn-secondary--sm" style="margin-left:auto">Upload</button>
+           </div>`;
+
+      // Property details = the object's field list minus the pinned Occupancy
+      const detailFields = c.fields.filter(f => f.label !== 'Occupancy');
+
+      const detailsHtml = `<div class="cf" style="padding:0">${detailFields.map(f => `
+        <div class="cf__row">
+          <div class="cf__label">${FT[f.type]}<span>${f.label}</span></div>
+          <div class="cf__divider"></div>
+          <div class="cf__value">${cfValueHtml(f)}</div>
+        </div>`).join('')}</div>`;
+
+      const p = c.project;
+      const projectHtml = `<div class="proj">
+        <span class="proj__avatar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.6" width="12" height="10.8" rx="1.4"/><path d="M2 6.2h12M5.6 6.2v7.2"/></svg></span>
+        <div class="proj__body">
+          <div class="proj__name">${p.name}</div>
+          <div class="proj__meta">
+            <span>${p.done} of ${p.total} tasks</span><span class="dot-sep"></span>
+            <span>${p.pct}%</span><span class="dot-sep"></span>
+            <span>${p.due}</span>
+          </div>
+          <div class="proj__bar"><div class="proj__bar-fill" style="width:${Math.round(p.done / p.total * 100)}%"></div></div>
+        </div>
+      </div>`;
+
+      const teamHtml = c.team.map(t => `
+        <div class="person">
+          <span class="avatar-36" style="background:var(--cz-${t.hue}-bg);color:var(--cz-${t.hue}-fg)">${t.initials}</span>
+          <div>
+            <div class="person__name">${t.name}</div>
+            <div class="person__meta"><span>${t.role}</span><span class="dot-sep"></span><span>${t.region}</span></div>
+          </div>
+        </div>`).join('');
+
+      const chevron = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6.2 8 10.2 12 6.2"/></svg>';
+      const taskRows = c.connections.tasks.map(t => `
+        <div class="ctask">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><polyline points="5.5 8.1 7.3 9.9 10.6 6.3"/></svg>
+          <span class="ctask__name">${t.name}</span>
+          ${t.chips.map(ch => `<span class="ctask__chip">${ch.n}${CHIP_ICON[ch.icon]}</span>`).join('')}
+          <span class="ctask__right">
+            <span class="ctask__date">${t.date}</span>
+            <span class="avatar-24" style="background:var(--cz-${t.who.hue}-bg);color:var(--cz-${t.who.hue}-fg)">${t.who.initials}</span>
+          </span>
+        </div>`).join('');
+
+      const connHtml = `<div class="conn">
+        <div class="conn__group">
+          <div class="conn__count" data-conn-toggle>
+            <span class="conn__count-num">${c.connections.projects}</span>
+            <span class="conn__count-label">Projects</span>
+            ${chevron}
+          </div>
+        </div>
+        <div class="conn__divider"></div>
+        <div class="conn__group conn__group--open">
+          <div class="conn__count" data-conn-toggle>
+            <span class="conn__count-num">${c.connections.tasks.length}</span>
+            <span class="conn__count-label">${c.connections.label}</span>
+            ${chevron}
+          </div>
+          <div class="conn__rows">${taskRows}</div>
+        </div>
+      </div>`;
+
+      target.innerHTML = `
+        <div class="pane__title-wrap"><h1 class="pane__title">${c.name}</h1></div>
+        <div class="pane__meta">${metaHtml}</div>
+        <div style="height:16px"></div>
+
+        ${sec('metrics', 'Key metrics', metricsHtml, false)}
+        ${sec('image',   'Branding asset', brandingHtml, false)}
+        ${sec('details', 'Property details', detailsHtml, true)}
+        ${sec('project', 'Primary project', projectHtml, true)}
+        ${sec('team',    'Team', teamHtml, true)}
+        ${sec('link',    'Connections', connHtml, true)}
+
+        <div class="pane__tabs">
+          <button class="pane__tab pane__tab--active">Comments</button>
+          <button class="pane__tab">All activity</button>
+          <span class="pane__tabs-right">
+            <button class="btn-secondary btn-secondary--sm" style="border:none;background:none;color:var(--text-weak)">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 3v10M4 3 2.4 4.6M4 3l1.6 1.6M12 13V3M12 13l-1.6-1.6M12 13l1.6-1.6"/></svg>
+              Newest
+            </button>
+          </span>
+        </div>
+        <div class="activity">${c.activity.map(activityHtml).join('')}</div>
+        <div style="height:16px"></div>
+      `;
+
+      // Collapsible connection groups
+      target.querySelectorAll('[data-conn-toggle]').forEach(el => {
+        el.addEventListener('click', () => el.closest('.conn__group').classList.toggle('conn__group--open'));
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       FLOW — paintbrush → builder → prompt → publish → customized
+       ═══════════════════════════════════════════════════════════════════ */
+
+    const ASANA_MARK = `<svg class="aip__logo" viewBox="0 0 32 32" fill="none">
+      <ellipse cx="16" cy="21.6" rx="6.6" ry="6.4" fill="#ff584a"/>
+      <ellipse cx="8.2" cy="9.4" rx="6.6" ry="6.4" fill="#ff584a"/>
+      <ellipse cx="23.8" cy="9.4" rx="6.6" ry="6.4" fill="#ff584a"/>
+    </svg>`;
+
+    /* ═══════════════════════════════════════════════════════════════════
+       PORTFOLIO DATA — the "Transitions" portfolio (Figma 40:30162)
+       ═══════════════════════════════════════════════════════════════════ */
+    const PORTFOLIO = {
+      name: 'Transitions',
+      crumb: 'Portfolios / Real Estate',
+      rows: [
+        { name: 'The Marlow',             loc: 'Oakland, CA',    hue: 'purple', budget: '$690,000.00', launch: '6 weeks', who: { i: 'SA', hue: 'yellow-orange' } },
+        { name: 'Beacon Hill Apartments', loc: 'Sacramento, CA', hue: 'blue',   budget: '$890,000.00', launch: '6 weeks', who: { i: 'SA', hue: 'yellow-orange' } },
+        { name: 'Sunset Commons',         loc: 'San Jose, CA',   hue: 'aqua',   budget: '$860,000.00', launch: '6 weeks', who: { i: 'SA', hue: 'yellow-orange' } },
+      ],
+      metrics: [
+        { label: 'Active work', value: '5',   sub: 'Transitions' },
+        { label: 'Open tasks',  value: '122', sub: 'Across ops team' },
+        { label: 'Vendors',     value: '8',   sub: 'Contracted' },
+        { label: 'Overdue',     value: '3',   sub: 'Urgent tasks' },
+      ],
+      props: [
+        { name: 'The Marlow',      meta: '84 units · 68%' },
+        { name: 'Beacon Hill',     meta: '156 units · 96%' },
+        { name: 'Sunset Commons',  meta: '42 units · 84%' },
+        { name: 'Riverside Lofts', meta: '98 units · 94%' },
+        { name: 'Ivy & Vine',      meta: '54 units · 61%' },
+        { name: 'Riverbend Flats', meta: '76 units · 63%' },
+      ],
+      activity: [
+        { i: 'HM', hue: 'pink',  html: 'Approved <strong>Q3 marketing budget</strong>', when: '2h ago' },
+        { i: 'DK', hue: 'aqua',  html: 'Signed 4 new leases at <strong>Beacon Hill</strong>', when: 'Yesterday' },
+        { i: 'MR', hue: 'indigo', html: 'Occupancy target moved from Aug 30 to <strong>Oct 15</strong>', when: '3 days ago' },
+      ],
+      xtasks: [
+        { name: 'Refresh photography',          prop: 'Beacon Hill',    date: 'Jun 3', who: { i: 'SC', hue: 'magenta' } },
+        { name: 'Vendor RFP for Sunset Commons', prop: 'Sunset Commons', date: 'Jun 3', who: { i: 'JW', hue: 'aqua' } },
+        { name: 'Cert of occupancy filing',     prop: 'Beacon Hill',    date: 'Jun 3', who: { i: 'NO', hue: 'blue-green' } },
+        { name: 'Q3 rent-roll reconciliation',  prop: 'The Marlow',     date: 'Jun 3', who: { i: 'HM', hue: 'pink' } },
+      ],
+    };
+
+    const PF_TABS = ['List', 'Timeline', 'Dashboard', 'Progress', 'Workload', 'Messages'];
+
+    let pfPublished = false;   // has the Hub view been added to the portfolio?
+    let pfTab = 'List';
+
+    const av = (i, hue, cls) => `<span class="${cls || 'avatar-24'}" style="background:var(--cz-${hue}-bg);color:var(--cz-${hue}-fg)">${i}</span>`;
+
+    function pfListHtml() {
+      const rows = PORTFOLIO.rows.map(r => `
+        <tr>
+          <td class="grid__name">${r.name}</td>
+          <td><span class="pill pill--${r.hue}">${r.loc}</span></td>
+          <td>${r.budget}</td>
+          <td><span class="pill pill--green">On track</span></td>
+          <td>${av(r.who.i, r.who.hue)}</td>
+          <td>${r.launch}</td>
+          <td></td>
+        </tr>`).join('');
+      return `
+        <div class="grid-wrap">
+          <table class="grid">
+            <thead><tr>
+              <th style="width:300px">Task Name</th><th style="width:150px">Location</th>
+              <th style="width:130px">Budget</th><th style="width:110px">Status</th>
+              <th style="width:90px">Assignee</th><th style="width:110px">Launch date</th><th></th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="grid__add">Create new project</div>
+        </div>`;
+    }
+
+    function pfHubHtml() {
+      const p = PORTFOLIO;
+      return `
+        <div class="hub">
+          <div class="hub__metrics">
+            ${p.metrics.map(m => `
+              <div class="metric">
+                <div class="metric__label">${m.label}</div>
+                <div class="metric__value">${m.value}</div>
+                <div class="metric__sub">${m.sub}</div>
+              </div>`).join('')}
+          </div>
+
+          <div class="hub__split">
+            <div class="card">
+              <div class="card__head"><span class="card__title">Properties</span><span class="card__meta">${p.props.length} in portfolio</span></div>
+              <div class="card__body"><div class="hub__props">
+                ${p.props.map(x => `<div class="hub-prop"><div class="hub-prop__name">${x.name}</div><div class="hub-prop__meta">${x.meta}</div></div>`).join('')}
+              </div></div>
+            </div>
+
+            <div class="card">
+              <div class="card__head"><span class="card__title">Portfolio activity</span></div>
+              <div class="card__body"><div class="hub-act">
+                ${p.activity.map(a => `
+                  <div class="hub-act__item">
+                    ${av(a.i, a.hue)}
+                    <div class="hub-act__body">${a.html}<div class="hub-act__when">${a.when}</div></div>
+                  </div>`).join('')}
+              </div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><span class="card__title">Cross-portfolio tasks</span><span class="card__meta">${p.xtasks.length} open</span></div>
+            <div class="card__body">
+              ${p.xtasks.map(t => `
+                <div class="hub-xtask">
+                  <span class="ico ico--16"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><polyline points="5.5 8.1 7.3 9.9 10.6 6.3"/></svg></span>
+                  <span class="hub-xtask__name">${t.name}</span>
+                  <span class="hub-xtask__right">
+                    <span class="hub-xtask__prop">${t.prop}</span>
+                    <span class="hub-xtask__date">${t.date}</span>
+                    ${av(t.who.i, t.who.hue)}
+                  </span>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // Renders the whole portfolio surface. `opts.preview` omits the paintbrush
+    // and forces a tab, for use inside the builder's live preview.
+    function renderPortfolio(target, opts = {}) {
+      const showHub = opts.hubPublished !== undefined ? opts.hubPublished : pfPublished;
+      const tab     = opts.tab || pfTab;
+      const tabs    = (showHub ? ['Hub'] : []).concat(PF_TABS);
+
+      const tabsHtml = tabs.map(t => `
+        <button class="db-tab ${t === tab ? 'db-tab--active' : ''}" data-pf-tab="${t}">${t}</button>`).join('') + `
+        <button class="db-tab" aria-label="Add view"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg></button>`;
+
+      target.innerHTML = `
+        <div class="pf-head">
+          <div class="pf-head__crumb">${PORTFOLIO.crumb}</div>
+          <div class="pf-head__top">
+            <span class="pf-head__icon"><svg viewBox="0 0 16 16" width="13" height="13" fill="none"><path d="M14 3.5H8.7L7.4 1.6a1.5 1.5 0 0 0-1.2-.6H2A1.5 1.5 0 0 0 .5 2.5v11A1.5 1.5 0 0 0 2 15h12a1.5 1.5 0 0 0 1.5-1.5V5A1.5 1.5 0 0 0 14 3.5Z" fill="currentColor"/></svg></span>
+            <span class="pf-head__name">${PORTFOLIO.name}</span>
+            <button class="icon-btn icon-btn--sm" aria-label="Options"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.6 6 7.6 9 4.6"/></svg></button>
+            <button class="icon-btn icon-btn--sm" aria-label="Star"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M6 1.3l1.45 3.02 3.3.44-2.42 2.3.6 3.28L6 8.77l-2.93 1.57.6-3.28L1.25 4.76l3.3-.44z"/></svg></button>
+
+            <div class="pf-head__actions">
+              <span class="facepile">
+                ${av('HM', 'pink')}${av('JW', 'aqua')}${av('DK', 'indigo')}${av('SC', 'magenta')}
+              </span>
+              <button class="btn-secondary btn-secondary--sm">Share</button>
+              <div class="pane__sep"></div>
+              ${opts.preview ? '' : `
+                <span class="customize-wrap">
+                  <button class="icon-btn" id="pf-customize-btn" aria-label="Customize">
+                    <span class="ico ico--16"><svg width="15.5" height="16" viewBox="0 0 15.501 15.9998" fill="none"><path d="M1.99701 15.9998C2.25928 16.0001 2.51903 15.9486 2.76128 15.8481C3.00354 15.7476 3.2235 15.6002 3.40851 15.4143L5.91401 12.9003L7.08051 14.0708C7.78551 14.7773 8.99251 14.7193 9.77151 13.9383L10.834 12.8723C12.165 11.5373 13.5125 10.4063 14.838 9.51126C15.0113 9.39388 15.1583 9.24175 15.2697 9.06452C15.3811 8.88729 15.4544 8.68884 15.485 8.48176C15.5152 8.27763 15.5025 8.06946 15.448 7.87046C15.3934 7.67145 15.2981 7.48597 15.168 7.32576C12.9875 4.65062 10.5137 2.22863 7.79301 0.105264C7.73531 0.0603374 7.66843 0.0286434 7.59712 0.0124253C7.52581 -0.00379283 7.45181 -0.00413858 7.38035 0.0114125C7.30889 0.0269636 7.24173 0.0580314 7.1836 0.102417C7.12548 0.146802 7.07783 0.203421 7.04401 0.268264C6.28601 1.71976 4.99751 3.31576 3.09701 5.15376L2.05601 6.19726C1.68751 6.56676 1.46601 7.04376 1.43301 7.54126C1.39851 8.06326 1.57301 8.54526 1.92401 8.89676L3.09051 10.0668L0.585011 12.5808C0.398852 12.7666 0.251318 12.9874 0.150914 13.2305C0.0505108 13.4737 -0.000775888 13.7342 1.13035e-05 13.9973C-0.000875003 14.2602 0.0503684 14.5208 0.15078 14.7638C0.251191 15.0069 0.398778 15.2276 0.585011 15.4133C0.769935 15.5993 0.989889 15.7468 1.23216 15.8473C1.47443 15.9478 1.73422 15.9993 1.99651 15.9988V15.9998H1.99701ZM7.63701 1.25726C8.10051 1.62826 8.54751 2.01726 8.99551 2.40626C8.45751 3.07026 8.04201 3.55826 7.70851 3.91226C7.64201 3.98352 7.59768 4.0726 7.58096 4.16863C7.56423 4.26465 7.57582 4.36347 7.61431 4.45302C7.6528 4.54257 7.71653 4.61898 7.79772 4.67292C7.87891 4.72685 7.97404 4.75599 8.07151 4.75676C8.13948 4.75688 8.20674 4.743 8.2691 4.71599C8.33147 4.68898 8.3876 4.64942 8.43401 4.59976C8.77901 4.23326 9.20401 3.73626 9.74501 3.06826C10.11 3.39976 10.4685 3.73826 10.822 4.08126C10.4545 4.59526 9.98201 5.11576 9.40051 5.63426C9.19451 5.81826 9.17551 6.13426 9.35901 6.34126C9.40243 6.39042 9.45514 6.43051 9.51412 6.45922C9.57309 6.48793 9.63715 6.5047 9.70263 6.50855C9.7681 6.51241 9.8337 6.50328 9.89563 6.48169C9.95756 6.46011 10.0146 6.42648 10.0635 6.38276C10.6505 5.85876 11.1465 5.32676 11.542 4.79576C12.5417 5.80484 13.4933 6.86051 14.3935 7.95926C14.4362 8.01112 14.4675 8.07143 14.4853 8.13624C14.503 8.20104 14.5069 8.26887 14.4965 8.33526C14.4867 8.40473 14.4622 8.47133 14.4248 8.5307C14.3874 8.59007 14.3379 8.64087 14.2795 8.67976C12.9915 9.54976 11.6875 10.6383 10.399 11.9028L4.09151 5.57526C5.68701 3.99926 6.85701 2.57726 7.63551 1.25676L7.63701 1.25726ZM1.29101 13.2898L4.14951 10.4218C4.34451 10.2263 4.34451 9.90926 4.14951 9.71376L2.63051 8.18976C2.48551 8.04526 2.41501 7.83826 2.43001 7.60826C2.44701 7.35326 2.56501 7.10376 2.76251 6.90576L3.38501 6.28176L9.68851 12.6058L9.06601 13.2303C8.67701 13.6198 8.10351 13.6803 7.78601 13.3628L6.26751 11.8388C6.22127 11.7922 6.16627 11.7552 6.10569 11.73C6.04511 11.7048 5.98013 11.6918 5.91451 11.6918C5.84889 11.6918 5.78392 11.7048 5.72333 11.73C5.66275 11.7552 5.60775 11.7922 5.56151 11.8388L2.70251 14.7068C2.56291 14.8468 2.38483 14.9422 2.19088 14.9809C1.99694 15.0195 1.79589 14.9996 1.61327 14.9237C1.43065 14.8479 1.27471 14.7194 1.16525 14.5547C1.05579 14.39 0.997752 14.1965 0.998511 13.9988C0.998511 13.7313 1.10251 13.4793 1.29101 13.2898Z" fill="currentColor"/></svg></span>
+                  </button>
+                  <span class="tooltip">Customize</span>
+                </span>`}
+            </div>
+          </div>
+          <div class="pf-head__tabs">${tabsHtml}</div>
+        </div>
+
+        <div class="pf-toolbar">
+          <button class="btn-secondary btn-secondary--sm">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+            Add work
+          </button>
+          <div class="pf-toolbar__right">
+            <span class="pf-toolbar__item">Filter</span>
+            <span class="pf-toolbar__item">Sort</span>
+            <span class="pf-toolbar__item">Group</span>
+            <span class="pf-toolbar__item">Options</span>
+          </div>
+        </div>
+
+        <div class="pf-body">${tab === 'Hub' ? pfHubHtml() : pfListHtml()}</div>`;
+
+      if (!opts.preview) {
+        target.querySelector('#pf-customize-btn')?.addEventListener('click', () => openBuilder('portfolio'));
+        target.querySelectorAll('[data-pf-tab]').forEach(b => {
+          b.addEventListener('click', () => { pfTab = b.dataset.pfTab; renderPortfolio(target); });
+        });
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       BUILDER — one shell, two configurations
+       ═══════════════════════════════════════════════════════════════════ */
+    const builder   = document.getElementById('builder');
+    const aipScroll = document.getElementById('aip-scroll');
+    const previewEl = document.getElementById('builder-preview');
+    const paneBody  = document.getElementById('pane-body');
+    const pfCanvas  = document.getElementById('pf-canvas');
+
+    let published = false;   // record-level customization applied?
+
+    const BUILD_CFG = {
+      record: {
+        crumb: 'Properties&nbsp;&nbsp;/&nbsp;&nbsp;<strong>The Marlow</strong>',
+        previewWidth: '680px',
+        chips: ['Group similar fields', 'Show items referencing this record', 'Add a section for team members'],
+        prompts: ['Pin location, units and project status to the top.', 'Add a branding asset for the property'],
+        bullets: ['Added <strong>pinned fields</strong> to the top', 'Added the <strong>branding image</strong> to its own section'],
+        drawPreview: (el, done) => { done ? renderCustomPane(el) : renderPlainPane(el); },
+        apply: () => { published = true; renderPane(); },
+      },
+      portfolio: {
+        crumb: 'Portfolios&nbsp;&nbsp;/&nbsp;&nbsp;<strong>Transitions</strong>',
+        previewWidth: '100%',
+        chips: ['Add a view with portfolio metrics', 'Group projects by status', 'Surface cross-portfolio tasks'],
+        prompts: ['Add a new view to this page that adds:<br>· active work<br>· open tasks<br>· vendors<br>· overdue tasks'],
+        bullets: ['Added <strong>4 widgets</strong> to a new view'],
+        drawPreview: (el, done) => { renderPortfolio(el, { preview: true, hubPublished: done, tab: done ? 'Hub' : 'List' }); },
+        apply: () => { pfPublished = true; pfTab = 'Hub'; renderPortfolio(pfCanvas); },
+      },
+    };
+
+    let buildMode = 'record';
+    const cfg = () => BUILD_CFG[buildMode];
+
+    function paintPreview(done) {
+      previewEl.style.width = cfg().previewWidth;
+      previewEl.innerHTML = '';
+      const inner = document.createElement('div');
+      cfg().drawPreview(inner, done);
+      previewEl.appendChild(inner);
+    }
+
+    function openBuilder(mode) {
+      buildMode = mode;
+      document.getElementById('builder-crumb').innerHTML = cfg().crumb;
+      builder.classList.add('builder--on');
+      aipScroll.innerHTML = `
+        ${ASANA_MARK}
+        <div class="aip__headline">What do you want to build?</div>
+        <div class="aip__chips">
+          ${cfg().chips.map(s => `<button class="aip__chip" data-suggestion>${s}</button>`).join('')}
+        </div>`;
+      // Preview mirrors the object's CURRENT published state
+      paintPreview(mode === 'record' ? published : pfPublished);
+      aipScroll.querySelectorAll('[data-suggestion]').forEach(b => b.addEventListener('click', runCustomization));
+    }
+
+    function runCustomization() {
+      const c = cfg();
+      aipScroll.innerHTML = `
+        <div class="aip__msgs">
+          ${c.prompts.map(p => `<div class="aip__user">${p}</div>`).join('')}
+          <div id="aip-result"><div class="aip__thinking"><span class="aip__spinner"></span>Thinking…</div></div>
+        </div>`;
+      aipScroll.scrollTop = aipScroll.scrollHeight;
+
+      setTimeout(() => {
+        const r = document.getElementById('aip-result');
+        if (!r) return;
+        r.innerHTML = `
+          <div class="aip__thinking">
+            Thinking Complete
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="4.4 3 7.4 6 4.4 9"/></svg>
+          </div>
+          <ul class="aip__bullets">${c.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+          <div class="aip__feedback">
+            <button class="icon-btn icon-btn--sm" aria-label="Copy"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="3.4" y="3.4" width="6.2" height="6.2" rx="1"/><path d="M8.2 3.4V2.4a1 1 0 0 0-1-1H2.4a1 1 0 0 0-1 1v4.8a1 1 0 0 0 1 1h1"/></svg></button>
+            <button class="icon-btn icon-btn--sm" aria-label="Good response"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 10.4V5.2l2-3.6a1 1 0 0 1 1.8.8l-.5 2h2.5a1 1 0 0 1 1 1.2l-.7 3.4a1 1 0 0 1-1 .8z"/><path d="M3.4 5.4H1.8v5h1.6z"/></svg></button>
+            <button class="icon-btn icon-btn--sm" aria-label="Bad response"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><path d="M3.4 10.4V5.2l2-3.6a1 1 0 0 1 1.8.8l-.5 2h2.5a1 1 0 0 1 1 1.2l-.7 3.4a1 1 0 0 1-1 .8z"/><path d="M3.4 5.4H1.8v5h1.6z"/></svg></button>
+            <button class="icon-btn icon-btn--sm" aria-label="Retry"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.2V2M2 4.2h2.2"/><path d="M2.2 4.3A4.2 4.2 0 1 1 1.9 7"/></svg></button>
+          </div>`;
+        paintPreview(true);
+      }, 1400);
+    }
+
+    document.getElementById('customize-btn').addEventListener('click', () => openBuilder('record'));
+    document.getElementById('aip-send').addEventListener('click', runCustomization);
+    document.getElementById('aip-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runCustomization(); }
+    });
+    document.getElementById('builder-cancel').addEventListener('click', () => builder.classList.remove('builder--on'));
+    document.getElementById('builder-publish').addEventListener('click', () => {
+      builder.classList.remove('builder--on');
+      cfg().apply();
+    });
+
+    /* ═══════════════════════════════════════════════════════════════════
+       PROTOTYPE NAV
+       ═══════════════════════════════════════════════════════════════════ */
+    const HINTS = {
+      record:    'Click the paintbrush in the pane header to customize',
+      portfolio: 'Click the paintbrush in the portfolio header to add a view',
+    };
+
+    document.querySelectorAll('[data-exp]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const exp = btn.dataset.exp;
+        document.querySelectorAll('[data-exp]').forEach(b => b.classList.toggle('proto-tab--active', b === btn));
+        document.getElementById('exp-record').classList.toggle('experience--on', exp === 'record');
+        document.getElementById('exp-portfolio').classList.toggle('experience--on', exp === 'portfolio');
+        document.getElementById('proto-hint').textContent = HINTS[exp];
+      });
+    });
+
+    // Reset both experiences to their un-customized state
+    document.getElementById('proto-reset').addEventListener('click', () => {
+      published = false; currentRecordId = 'marlow';
+      pfPublished = false; pfTab = 'List';
+      document.querySelectorAll('#grid-body tr').forEach(r => r.classList.remove('is-selected'));
+      renderPane();
+      renderPortfolio(pfCanvas);
+    });
+
+    /* ═══════════════════════════════════════════════════════════════════
+       INIT
+       ═══════════════════════════════════════════════════════════════════ */
+    // Renders the pane for the current record in whichever mode the object is in
+    function renderPane() {
+      published ? renderCustomPane(paneBody) : renderPlainPane(paneBody);
+      paneBody.scrollTop = 0;
+    }
+
+    // The portfolio experience reuses the record rail markup, with Work active
+    (function cloneRail() {
+      const src = document.querySelector('#exp-record .rail');
+      const dst = document.getElementById('pf-rail');
+      dst.innerHTML = src.innerHTML;
+      dst.querySelectorAll('.rail__mode').forEach(m => {
+        m.classList.toggle('rail__mode--active', m.dataset.mode === 'work');
+      });
+    })();
+
+    renderPane();
+    renderPortfolio(pfCanvas);
+
+    // Clicking a row switches records. The layout is a property of the OBJECT,
+    // so a customized object keeps its sections across every record.
+    document.getElementById('grid-body').addEventListener('click', (e) => {
+      const tr = e.target.closest('tr[data-record]');
+      if (!tr) return;
+      document.querySelectorAll('#grid-body tr').forEach(r => r.classList.remove('is-selected'));
+      tr.classList.add('is-selected');
+      currentRecordId = tr.dataset.record;
+      renderPane();
+    });
+  </script>
+</body>
+</html>
