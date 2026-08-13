@@ -1896,9 +1896,13 @@
       },
     };
 
-    let pfViews = [];          // view names added to the portfolio, in order
+    let pfViews = [];          // views PUBLISHED to the portfolio, in order
+    let pfPending = [];        // views staged in the open builder session, not yet published
     let pfTab = 'List';
     let pfRecipe = 'metrics';  // which recipe the builder is currently running
+
+    // Everything the preview should show: published + staged
+    const pfStaged = () => pfViews.concat(pfPending);
 
     const av = (i, hue, cls) => `<span class="${cls || 'avatar-24'}" style="background:var(--cz-${hue}-bg);color:var(--cz-${hue}-fg)">${i}</span>`;
 
@@ -2096,22 +2100,24 @@
       portfolio: {
         crumb: 'Portfolios&nbsp;&nbsp;/&nbsp;&nbsp;<strong>Transitions</strong>',
         previewWidth: '100%',
-        // Only offer recipes whose view hasn't been added yet
+        // Offer recipes that are neither published nor already staged this session
         chips: () => Object.entries(PF_RECIPES)
-          .filter(([k, r]) => !pfViews.includes(r.view))
+          .filter(([k, r]) => !pfStaged().includes(r.view))
           .map(([k, r]) => ({ key: k, text: r.chip })),
         prompts: () => [PF_RECIPES[pfRecipe].prompt],
         bullets: () => PF_RECIPES[pfRecipe].bullets,
         drawPreview: (el, done) => {
-          const view = PF_RECIPES[pfRecipe].view;
-          // While building, preview the portfolio as it WILL be once published
-          const views = done && !pfViews.includes(view) ? pfViews.concat(view) : pfViews;
-          renderPortfolio(el, { preview: true, views, tab: done ? view : (pfViews[0] || 'List') });
+          // `done` = at least one request has run, so preview everything staged
+          const views = done ? pfStaged() : pfViews;
+          const tab = done
+            ? (pfPending[pfPending.length - 1] || views[0] || 'List')
+            : (pfViews[0] || 'List');
+          renderPortfolio(el, { preview: true, views, tab });
         },
         apply: () => {
-          const view = PF_RECIPES[pfRecipe].view;
-          if (!pfViews.includes(view)) pfViews.push(view);
-          pfTab = view;
+          pfPending.forEach(v => { if (!pfViews.includes(v)) pfViews.push(v); });
+          pfTab = pfPending[pfPending.length - 1] || pfViews[0] || 'List';
+          pfPending = [];
           renderPortfolio(pfCanvas);
         },
       },
@@ -2133,29 +2139,39 @@
     // Chips may be strings or { key, text }
     const asChip = (c) => (typeof c === 'string' ? { key: null, text: c } : c);
 
+    // Markup for the still-available suggestions (recomputed after each turn)
+    function chipsHtml() {
+      const chips = val(cfg().chips).map(asChip);
+      if (!chips.length) {
+        return `<div class="aip__done">Every suggested view has been added. Describe something else below.</div>`;
+      }
+      return `<div class="aip__chips">${chips
+        .map(c => `<button class="aip__chip" data-suggestion data-recipe="${c.key || ''}">${c.text}</button>`)
+        .join('')}</div>`;
+    }
+
+    // Delegated so chips keep working after they're re-rendered mid-conversation
+    aipScroll.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-suggestion]');
+      if (!b) return;
+      if (b.dataset.recipe) pfRecipe = b.dataset.recipe;
+      b.closest('.aip__chips')?.remove();   // consume the chip block
+      runCustomization();
+    });
+
     function openBuilder(mode) {
       buildMode = mode;
+      pfPending = [];   // fresh session
       document.getElementById('builder-crumb').innerHTML = cfg().crumb;
       builder.classList.add('builder--on');
 
-      const chips = val(cfg().chips).map(asChip);
       aipScroll.innerHTML = `
         ${ASANA_MARK}
         <div class="aip__headline">What do you want to build?</div>
-        <div class="aip__chips">
-          ${chips.length
-            ? chips.map(c => `<button class="aip__chip" data-suggestion data-recipe="${c.key || ''}">${c.text}</button>`).join('')
-            : `<div class="aip__done">Every suggested view has been added. Describe something else below.</div>`}
-        </div>`;
+        ${chipsHtml()}`;
 
       // Preview mirrors the object's CURRENT state, before any new request
       paintPreview(mode === 'record' ? published : false);
-      aipScroll.querySelectorAll('[data-suggestion]').forEach(b => {
-        b.addEventListener('click', () => {
-          if (b.dataset.recipe) pfRecipe = b.dataset.recipe;
-          runCustomization();
-        });
-      });
     }
 
     // Route a free-text prompt to the recipe it best matches (keyword scoring).
@@ -2171,18 +2187,37 @@
     }
 
     // `typed` overrides the canned prompt so the user's own words show in the bubble
+    let turn = 0;
+
     function runCustomization(typed) {
       const c = cfg();
       const bubbles = typed ? [typed] : val(c.prompts);
-      aipScroll.innerHTML = `
-        <div class="aip__msgs">
-          ${bubbles.map(p => `<div class="aip__user">${p}</div>`).join('')}
-          <div id="aip-result"><div class="aip__thinking"><span class="aip__spinner"></span>Thinking…</div></div>
-        </div>`;
+      const rid = 'aip-result-' + (++turn);
+
+      // Stage this recipe's view so a follow-up request ADDS to it
+      // rather than replacing what the previous request built.
+      if (buildMode === 'portfolio') {
+        const v = PF_RECIPES[pfRecipe].view;
+        if (!pfStaged().includes(v)) pfPending.push(v);
+      }
+
+      // Retire any suggestion block — a fresh one is offered after the reply
+      aipScroll.querySelectorAll('.aip__chips, .aip__done').forEach(n => n.remove());
+
+      // Append to the transcript — never wipe it. The conversation is
+      // cumulative, and so is the preview.
+      let msgs = aipScroll.querySelector('.aip__msgs');
+      if (!msgs) {
+        aipScroll.insertAdjacentHTML('beforeend', '<div class="aip__msgs"></div>');
+        msgs = aipScroll.querySelector('.aip__msgs');
+      }
+      msgs.insertAdjacentHTML('beforeend',
+        bubbles.map(p => `<div class="aip__user">${p}</div>`).join('') +
+        `<div id="${rid}"><div class="aip__thinking"><span class="aip__spinner"></span>Thinking…</div></div>`);
       aipScroll.scrollTop = aipScroll.scrollHeight;
 
       setTimeout(() => {
-        const r = document.getElementById('aip-result');
+        const r = document.getElementById(rid);
         if (!r) return;
         r.innerHTML = `
           <div class="aip__thinking">
@@ -2197,6 +2232,9 @@
             <button class="icon-btn icon-btn--sm" aria-label="Retry"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.2V2M2 4.2h2.2"/><path d="M2.2 4.3A4.2 4.2 0 1 1 1.9 7"/></svg></button>
           </div>`;
         paintPreview(true);
+        // Keep offering what's still unbuilt, so a second request is one click
+        aipScroll.insertAdjacentHTML('beforeend', chipsHtml());
+        aipScroll.scrollTop = aipScroll.scrollHeight;
       }, 1400);
     }
 
@@ -2213,7 +2251,7 @@
           pfRecipe = hit;
         } else {
           // Nothing matched — default to the first recipe still unbuilt
-          const remaining = Object.keys(PF_RECIPES).find(k => !pfViews.includes(PF_RECIPES[k].view));
+          const remaining = Object.keys(PF_RECIPES).find(k => !pfStaged().includes(PF_RECIPES[k].view));
           if (remaining) pfRecipe = remaining;
         }
       }
@@ -2224,7 +2262,11 @@
     aipInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitTyped(); }
     });
-    document.getElementById('builder-cancel').addEventListener('click', () => builder.classList.remove('builder--on'));
+    // Cancel discards everything staged this session
+    document.getElementById('builder-cancel').addEventListener('click', () => {
+      builder.classList.remove('builder--on');
+      pfPending = [];
+    });
     document.getElementById('builder-publish').addEventListener('click', () => {
       builder.classList.remove('builder--on');
       cfg().apply();
@@ -2251,7 +2293,7 @@
     // Reset both experiences to their un-customized state
     document.getElementById('proto-reset').addEventListener('click', () => {
       published = false; currentRecordId = 'marlow';
-      pfViews = []; pfTab = 'List'; pfRecipe = 'metrics';
+      pfViews = []; pfPending = []; pfTab = 'List'; pfRecipe = 'metrics';
       document.querySelectorAll('#grid-body tr').forEach(r => r.classList.remove('is-selected'));
       renderPane();
       renderPortfolio(pfCanvas);
