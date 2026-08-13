@@ -1881,6 +1881,8 @@
         chip: 'Add a view with portfolio metrics',
         prompt: 'Add a new view to this page that adds:<br>· active work<br>· open tasks<br>· vendors<br>· overdue tasks',
         bullets: ['Added <strong>4 widgets</strong> to a new view'],
+        // keywords used to route free-text prompts to this recipe
+        match: ['metric', 'kpi', 'widget', 'active work', 'open task', 'vendor', 'overdue', 'hub', 'dashboard', 'number'],
       },
       records: {
         view: 'Property records',
@@ -1890,6 +1892,7 @@
           'Found <strong>Properties</strong> in your connected tables',
           'Added a <strong>Property records</strong> view with 8 columns',
         ],
+        match: ['record', 'table', 'connected', 'propert', 'row', 'field'],
       },
     };
 
@@ -2155,11 +2158,25 @@
       });
     }
 
-    function runCustomization() {
+    // Route a free-text prompt to the recipe it best matches (keyword scoring).
+    // Returns null when nothing scores, so the caller can fall back.
+    function resolveRecipe(text) {
+      const t = text.toLowerCase();
+      let best = null, bestScore = 0;
+      for (const [key, r] of Object.entries(PF_RECIPES)) {
+        const score = (r.match || []).reduce((n, kw) => n + (t.includes(kw) ? 1 : 0), 0);
+        if (score > bestScore) { best = key; bestScore = score; }
+      }
+      return best;
+    }
+
+    // `typed` overrides the canned prompt so the user's own words show in the bubble
+    function runCustomization(typed) {
       const c = cfg();
+      const bubbles = typed ? [typed] : val(c.prompts);
       aipScroll.innerHTML = `
         <div class="aip__msgs">
-          ${val(c.prompts).map(p => `<div class="aip__user">${p}</div>`).join('')}
+          ${bubbles.map(p => `<div class="aip__user">${p}</div>`).join('')}
           <div id="aip-result"><div class="aip__thinking"><span class="aip__spinner"></span>Thinking…</div></div>
         </div>`;
       aipScroll.scrollTop = aipScroll.scrollHeight;
@@ -2184,9 +2201,28 @@
     }
 
     document.getElementById('customize-btn').addEventListener('click', () => openBuilder('record'));
-    document.getElementById('aip-send').addEventListener('click', runCustomization);
-    document.getElementById('aip-input').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runCustomization(); }
+
+    // Free-text submit: read what was typed, route it to the matching recipe,
+    // and echo the user's own wording back in the bubble.
+    const aipInput = document.getElementById('aip-input');
+    function submitTyped() {
+      const text = aipInput.value.trim();
+      if (buildMode === 'portfolio') {
+        const hit = resolveRecipe(text);
+        if (hit) {
+          pfRecipe = hit;
+        } else {
+          // Nothing matched — default to the first recipe still unbuilt
+          const remaining = Object.keys(PF_RECIPES).find(k => !pfViews.includes(PF_RECIPES[k].view));
+          if (remaining) pfRecipe = remaining;
+        }
+      }
+      aipInput.value = '';
+      runCustomization(text || undefined);
+    }
+    document.getElementById('aip-send').addEventListener('click', submitTyped);
+    aipInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitTyped(); }
     });
     document.getElementById('builder-cancel').addEventListener('click', () => builder.classList.remove('builder--on'));
     document.getElementById('builder-publish').addEventListener('click', () => {
