@@ -239,6 +239,13 @@
       background: none; border: 1px solid transparent; color: var(--text-weak);
     }
     .btn--subtle:hover { background: var(--background-hover); color: var(--text); }
+    /* Destructive-but-recoverable: unpublish takes the app away from people,
+       so it reads red, but nothing is deleted. */
+    .btn--danger {
+      background: var(--button-background-secondary);
+      border: 1px solid var(--button-border-secondary); color: #b4382e;
+    }
+    .btn--danger:hover { background: #fdf3f2; border-color: #e8b4ae; }
     .btn--sm { height: 28px; padding: 0 10px; font-size: var(--type-s-size); letter-spacing: 0; }
 
     .icon-btn {
@@ -255,12 +262,15 @@
     .icon-btn--sm > svg { width: 12px; height: 12px; }
 
     /* ── Canvas ──────────────────────────────────────────────────────── */
+    /* Square top-left: the canvas butts directly against the sidebar's right
+       edge, so a radius here curves away from that edge and leaves a notch.
+       The sidebar keeps its radius — that corner is a genuine outer corner
+       against the rail. */
     .canvas {
       display: flex; flex-direction: column; min-width: 0; min-height: 0;
       background: var(--background-weak);
       border-top: 1px solid var(--border-strong);
       border-left: 1px solid var(--border-strong);
-      border-top-left-radius: var(--spacing-8);
       overflow: hidden; position: relative;
     }
     .cv__head {
@@ -485,7 +495,6 @@
     }
     /* Inside the preview the composed sidebar is editable */
     .preview .sidebar { border-top-left-radius: var(--spacing-8); }
-    .preview .canvas  { border-top-left-radius: var(--spacing-8); }
 
     /* ── Editable sections in the preview sidebar ────────────────────── */
     .sec { display: flex; flex-direction: column; }
@@ -1266,13 +1275,16 @@ function renderApps() {
   $('#sidebar').innerHTML = `
     <div class="sb__section">Build</div>
     <div class="sb__group">
-      <div class="sb__row sb__row--active"><span class="ico ico--16">${IC.build}</span><span class="sb__row-label">Apps</span><span class="sb__row-count">${EXISTING_APPS.length + (S.published ? 1 : 0)}</span></div>
+      <div class="sb__row sb__row--active"><span class="ico ico--16">${IC.build}</span><span class="sb__row-label">Apps</span><span class="sb__row-count">${EXISTING_APPS.length + (CFG && CFG.name ? 1 : 0)}</span></div>
     </div>`;
 
-  const mine = S.published ? [{
-    name: CFG.name, glyph: CFG.glyph, color: CFG.color, status: 'live',
+  // The app appears here once created — as a Draft until published, and it
+  // stays listed after unpublishing rather than vanishing.
+  const mine = (CFG && CFG.name) ? [{
+    name: CFG.name, glyph: CFG.glyph, color: CFG.color,
+    status: S.published ? 'live' : 'draft',
     meta: `${CFG.sections.length} section${CFG.sections.length === 1 ? '' : 's'} · ${CFG.sections.reduce((n,s)=>n+s.items.length,0)} objects`,
-    by: 'You', isNew: true,
+    by: 'You', isMine: true,
   }] : [];
 
   $('#canvas').innerHTML = `
@@ -1291,7 +1303,7 @@ function renderApps() {
           <span class="app-card__meta">Start from a blank app</span>
         </button>
         ${mine.concat(EXISTING_APPS).map(a => `
-          <div class="app-card" ${a.isNew ? 'data-open-app="1"' : ''}>
+          <div class="app-card" ${a.isMine ? 'data-edit-app="1" title="Open in the editor"' : `data-sample="${esc(a.name)}"`}>
             <div class="app-card__top">
               ${avatarHtml(a.glyph, a.color)}
               <span class="app-card__name">${esc(a.name)}</span>
@@ -1299,7 +1311,6 @@ function renderApps() {
             <span class="app-card__meta">${esc(a.meta)}</span>
             <div class="app-card__foot">
               <span class="pill pill--${a.status === 'live' ? 'live' : 'draft'}">${a.status === 'live' ? 'Live' : 'Draft'}</span>
-              ${a.isNew ? '<span class="pill pill--new">Just published</span>' : ''}
               <span class="app-card__meta">${esc(a.by)}</span>
             </div>
           </div>`).join('')}
@@ -1352,6 +1363,8 @@ function paintBuilder() {
 
   const count = CFG.sections.reduce((n, s) => n + s.items.length, 0);
   $('#bld-publish').disabled = count === 0;
+  // Re-editing a live app isn't a first publish
+  $('#bld-publish').textContent = S.published ? 'Publish changes' : 'Publish app';
   $('#bld-hint').textContent = CFG.sections.length === 0
     ? 'Add a section to begin'
     : count === 0
@@ -1470,6 +1483,26 @@ function renderSettings() {
       ${IC.lock}
       <span>Objects keep their own permissions. Adding a table to this app does
       <strong>not</strong> grant access to it — people who lack access simply won't see that row.</span>
+    </div>
+
+    <div>
+      <div class="set__card">
+        <div class="set__cardhead">
+          <div class="set__cardtitle">App status</div>
+          <div class="set__cardsub">${S.published
+            ? 'This app is live. People with access can find it and open it from their sidebar.'
+            : 'This app is a draft. Only you can see it until you publish.'}</div>
+        </div>
+        <div class="acc-row">
+          <span class="pill pill--${S.published ? 'live' : 'draft'}">${S.published ? 'Live' : 'Draft'}</span>
+          <span class="acc-row__body">
+            <div class="acc-row__meta">${S.published
+              ? 'Unpublishing removes it from everyone\'s sidebar. Nothing you built is deleted — you can publish again any time.'
+              : 'Use Publish app in the top right when you\'re ready.'}</div>
+          </span>
+          ${S.published ? '<button class="btn btn--danger btn--sm" id="unpublish">Unpublish</button>' : ''}
+        </div>
+      </div>
     </div>`;
 }
 
@@ -1727,7 +1760,11 @@ document.addEventListener('click', (e) => {
 
   // apps index
   if (t.closest('#new-app') || t.closest('#new-app-card')) { openModal(); return; }
-  if (t.closest('[data-open-app]')) { S.sel = null; go('app'); return; }
+  // The apps index lives under Build, so it's a management surface: clicking
+  // your app opens the EDITOR. The rail icon is how you enter it as a user.
+  if (t.closest('[data-edit-app]')) { S.bldTab = 'build'; S.sel = null; go('builder'); return; }
+  const sample = t.closest('[data-sample]');
+  if (sample) { toast(`${sample.dataset.sample} is sample data — create your own app to edit one`); return; }
 
   // modal
   if (t.closest('[data-glyph]')) { CFG.glyph = t.closest('[data-glyph]').dataset.glyph; paintModal(); return; }
@@ -1785,6 +1822,14 @@ document.addEventListener('click', (e) => {
   // settings
   const gen = t.closest('[data-gen]');
   if (gen) { CFG.access.general = gen.dataset.gen; renderSettings(); return; }
+  if (t.closest('#unpublish')) {
+    S.published = false;
+    S.sel = null;
+    paintBuilder();   // re-renders the badge, publish label and settings card
+    renderSteps();    // "End user" is no longer reachable
+    toast(`${CFG.name} unpublished — it's a draft again`);
+    return;
+  }
 
   // builder actions
   if (t.closest('#bld-cancel')) {
