@@ -1,0 +1,1854 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>App Builder — Compose an App from Existing Objects</title>
+  <link rel="stylesheet" href="falcon-tokens.css">
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════
+       APP BUILDER
+       Flow: Build entry (rail, bottom-left) -> apps index -> name the app
+             -> builder (Build | Settings) -> publish -> end-user app.
+
+       The builder is STRUCTURAL, not conversational: there is no AI chat
+       panel. The user composes a nav out of objects that already exist in
+       the workspace. Sections are groups; objects are rows.
+
+       Chrome + tokens lifted from builder-mvp.html so the two prototypes
+       are visually the same product. Geometry off Figma frame 5:12893.
+       ═══════════════════════════════════════════════════════════════════ */
+
+    body { overflow: hidden; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       PROTOTYPE NAV — deliberately NOT Asana chrome, so nobody mistakes
+       it for product UI in a review.
+       ══════════════════════════════════════════════════════════════════ */
+    .proto-nav {
+      height: 44px; flex-shrink: 0;
+      display: flex; align-items: center; gap: var(--spacing-16);
+      padding: 0 var(--spacing-16);
+      background: var(--inverse-background-strong);
+      color: var(--inverse-text);
+    }
+    .proto-nav__brand {
+      display: inline-flex; align-items: center; gap: var(--spacing-8);
+      font-size: var(--type-s-size); letter-spacing: 0.04em;
+      text-transform: uppercase; font-weight: 700;
+      color: rgba(242,243,244,0.6); white-space: nowrap;
+    }
+    /* Step trail — shows where you are in the flow */
+    .proto-steps { display: inline-flex; align-items: center; gap: 2px; }
+    .proto-step {
+      height: 26px; padding: 0 10px;
+      display: inline-flex; align-items: center; gap: 6px;
+      border: none; border-radius: 6px; background: none;
+      color: rgba(242,243,244,0.5);
+      font-family: inherit; font-size: var(--type-s-size);
+      letter-spacing: 0; cursor: pointer; white-space: nowrap;
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .proto-step:hover:not(:disabled) { background: rgba(255,255,255,0.12); color: #fff; }
+    .proto-step:disabled { cursor: default; opacity: 0.45; }
+    .proto-step--done { color: rgba(242,243,244,0.8); }
+    .proto-step--active { background: var(--background-weak); color: var(--text); font-weight: 500; }
+    .proto-step__n {
+      width: 16px; height: 16px; border-radius: 500px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700;
+      background: rgba(255,255,255,0.18); color: inherit;
+    }
+    .proto-step--active .proto-step__n { background: var(--text); color: #fff; }
+    .proto-nav__sep { color: rgba(242,243,244,0.25); font-size: 11px; }
+    .proto-nav__reset {
+      margin-left: auto;
+      height: 26px; padding: 0 10px;
+      background: none; border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 6px; color: rgba(242,243,244,0.85);
+      font-family: inherit; font-size: var(--type-s-size);
+      letter-spacing: 0; cursor: pointer; white-space: nowrap;
+    }
+    .proto-nav__reset:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+    .page { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    /* ── Asana shell ─────────────────────────────────────────────────── */
+    .app {
+      flex: 1; min-height: 0;
+      display: grid; grid-template-rows: var(--topbar-height) 1fr;
+      background: var(--background-medium);
+      overflow: hidden;
+    }
+    .app__lower {
+      display: grid;
+      grid-template-columns: var(--rail-width) var(--sidebar-width) 1fr;
+      min-height: 0;
+    }
+
+    /* ── Topbar ──────────────────────────────────────────────────────── */
+    .topbar {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: 0 var(--spacing-12);
+      background: var(--background-medium);
+    }
+    .topbar__left  { flex: 1; display: flex; align-items: center; gap: var(--spacing-8); }
+    .topbar__right { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-4); }
+    .create-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 28px; padding: 0 12px 0 8px;
+      background: var(--button-creation-background);
+      color: var(--button-creation-icon);
+      border: none; border-radius: 500px;
+      font-family: inherit; font-size: var(--type-m-size);
+      line-height: var(--type-m-line); letter-spacing: var(--type-m-track);
+      font-weight: 500; cursor: pointer; transition: filter 120ms ease;
+    }
+    .create-btn:hover { filter: brightness(0.95); }
+    .create-btn svg { width: 14px; height: 14px; }
+    .search {
+      width: 540px; flex-shrink: 0;
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 28px; padding: 0 12px;
+      background: var(--background-weak);
+      border: 1px solid var(--border-strong);
+      border-radius: 500px; color: var(--text-weak);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+    }
+    .search svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--icon); }
+
+    /* ── Icon rail ───────────────────────────────────────────────────── */
+    .rail {
+      display: flex; flex-direction: column;
+      justify-content: space-between; align-items: stretch;
+      background: var(--background-medium); overflow: hidden;
+    }
+    .rail__modes { display: flex; flex-direction: column; gap: var(--spacing-4); }
+    .rail__mode {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: var(--spacing-4); padding: 6px var(--spacing-4) 2px;
+      border-radius: 6px; cursor: pointer;
+      background: none; border: none; width: 100%; font-family: inherit;
+    }
+    .rail__mode-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: var(--spacing-8); border-radius: 6px;
+      color: var(--icon); transition: background 120ms ease;
+    }
+    .rail__mode:hover .rail__mode-icon { background: var(--background-hover); }
+    .rail__mode-label {
+      font-family: var(--font-text);
+      font-size: var(--type-rail-size); font-weight: 500;
+      color: var(--text-weak); text-align: center; line-height: normal;
+    }
+    .rail__mode--active .rail__mode-icon { background: var(--background-active); color: var(--icon-active); }
+    .rail__mode--active .rail__mode-label { color: var(--text); }
+
+    .rail__actions {
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+      gap: var(--spacing-12); padding: 10px 0 18px;
+    }
+    /* THE BUILD ENTRY — bottom-left corner of the navigation. Divider above
+       separates it from the workspace modes: it is a tool, not a place. */
+    .rail__build {
+      width: 100%; padding-top: var(--spacing-12);
+      border-top: 1px solid var(--border-strong);
+      display: flex; justify-content: center;
+    }
+    .rail__mode--build .rail__mode-icon { color: var(--icon); }
+    .rail__mode--build:hover .rail__mode-icon { background: var(--background-active); color: var(--icon-active); }
+    /* Nudge — a soft pulse so reviewers find the entry point unaided */
+    .rail__mode--nudge .rail__mode-icon {
+      animation: buildPulse 2.4s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(69,115,210,0.5);
+    }
+    @keyframes buildPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(69,115,210,0.42); }
+      50%      { box-shadow: 0 0 0 6px rgba(69,115,210,0); }
+    }
+
+    .avatar-28 {
+      width: var(--sizing-28); height: var(--sizing-28); border-radius: 500px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--cz-yellow-bg); color: var(--cz-yellow-fg);
+      border: 1px solid var(--avatar-hairline);
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      flex-shrink: 0;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────────────── */
+    .sidebar {
+      position: relative;
+      display: flex; flex-direction: column; align-items: stretch;
+      padding: var(--spacing-4) 0;
+      background: var(--background-medium);
+      border: 1px solid var(--border-strong); border-bottom: none;
+      border-top-left-radius: var(--spacing-8);
+      overflow: hidden;
+    }
+    .sb__section {
+      display: flex; align-items: flex-end;
+      height: 30px; padding: 0 var(--spacing-12) var(--spacing-8);
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      font-weight: 500; color: var(--text-weak);
+    }
+    .sb__group { display: flex; flex-direction: column; padding: 0 var(--spacing-4); }
+    .sb__row {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 32px; padding: 1px var(--spacing-8);
+      border-radius: var(--spacing-8); cursor: pointer; color: var(--text);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track);
+      transition: background 120ms ease;
+    }
+    .sb__row:hover { background: var(--background-hover); }
+    .sb__row--active { background: var(--background-active); }
+    .sb__row-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sb__row-count { font-size: var(--type-s-size); color: var(--text-weak); }
+
+    /* ── Icon boxes — real Asana glyphs are filled paths, often smaller
+       than their nominal box. Wrapper holds the box; svg keeps its leaf. */
+    .ico { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--icon); }
+    .ico--16 { width: 16px; height: 16px; }
+    .ico--14 { width: 14px; height: 14px; }
+    .ico--12 { width: 12px; height: 12px; }
+    .ico > svg { display: block; }
+
+    /* ── Buttons ─────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 32px; padding: 0 14px;
+      border-radius: 6px; cursor: pointer; font-family: inherit;
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); font-weight: 500;
+      transition: background 120ms ease, filter 120ms ease;
+      white-space: nowrap;
+    }
+    .btn > svg { width: 14px; height: 14px; }
+    .btn--primary {
+      background: var(--primary-background-strong); color: var(--primary-text-strong);
+      border: 1px solid var(--primary-background-strong);
+    }
+    .btn--primary:hover { filter: brightness(0.94); }
+    .btn--primary:disabled { background: var(--background-strong); border-color: var(--border-strong); color: var(--text-disabled); cursor: default; filter: none; }
+    .btn--secondary {
+      background: var(--button-background-secondary); color: var(--text);
+      border: 1px solid var(--button-border-secondary);
+    }
+    .btn--secondary:hover { background: var(--background-medium); }
+    .btn--subtle {
+      background: none; border: 1px solid transparent; color: var(--text-weak);
+    }
+    .btn--subtle:hover { background: var(--background-hover); color: var(--text); }
+    .btn--sm { height: 28px; padding: 0 10px; font-size: var(--type-s-size); letter-spacing: 0; }
+
+    .icon-btn {
+      width: var(--sizing-28); height: var(--sizing-28);
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--button-background-subtle);
+      border: 1px solid var(--button-border-subtle);
+      border-radius: 6px; color: var(--icon); cursor: pointer;
+      transition: background 120ms ease, color 120ms ease; flex-shrink: 0;
+    }
+    .icon-btn:hover { background: var(--background-hover); color: var(--icon-active); }
+    .icon-btn > svg { width: 16px; height: 16px; }
+    .icon-btn--sm { width: 20px; height: 20px; border-radius: 4px; }
+    .icon-btn--sm > svg { width: 12px; height: 12px; }
+
+    /* ── Canvas ──────────────────────────────────────────────────────── */
+    .canvas {
+      display: flex; flex-direction: column; min-width: 0; min-height: 0;
+      background: var(--background-weak);
+      border-top: 1px solid var(--border-strong);
+      border-left: 1px solid var(--border-strong);
+      border-top-left-radius: var(--spacing-8);
+      overflow: hidden; position: relative;
+    }
+    .cv__head {
+      display: flex; flex-direction: column; justify-content: center; gap: 2px;
+      padding: var(--spacing-24) var(--spacing-24) var(--spacing-12);
+      flex-shrink: 0;
+    }
+    .cv__title-row { display: flex; align-items: center; gap: var(--spacing-8); }
+    .cv__title {
+      font-family: var(--font-display);
+      font-size: var(--type-h3-size); line-height: var(--type-h3-line);
+      letter-spacing: var(--type-h3-track); font-weight: 500; color: var(--text);
+    }
+    .cv__sub { font-size: var(--type-m-size); color: var(--text-weak); letter-spacing: var(--type-m-track); }
+    .cv__head-actions { margin-left: auto; display: flex; align-items: center; gap: var(--spacing-8); }
+    .cv__body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--spacing-24) var(--spacing-24); }
+
+    /* Object-type squircle avatar, colored per type */
+    .obj-av {
+      width: var(--sizing-24); height: var(--sizing-24); flex-shrink: 0;
+      border-radius: 6px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .obj-av--sm { width: 20px; height: 20px; border-radius: 5px; }
+    .obj-av--lg { width: var(--sizing-36); height: var(--sizing-36); border-radius: 8px; }
+    .obj-av svg { display: block; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       APPS INDEX
+       ══════════════════════════════════════════════════════════════════ */
+    .apps-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+      gap: var(--spacing-12);
+    }
+    .app-card {
+      display: flex; flex-direction: column; gap: var(--spacing-8);
+      padding: var(--spacing-16);
+      border: 1px solid var(--border); border-radius: var(--spacing-8);
+      background: var(--background-weak); cursor: pointer;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .app-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-medium); }
+    .app-card__top { display: flex; align-items: center; gap: var(--spacing-8); }
+    .app-card__name { font-weight: 500; color: var(--text); }
+    .app-card__meta { font-size: var(--type-s-size); color: var(--text-weak); }
+    .app-card__foot { display: flex; align-items: center; gap: 6px; margin-top: var(--spacing-4); }
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 20px; padding: 0 8px; border-radius: 500px;
+      font-size: var(--type-s-size); letter-spacing: 0; white-space: nowrap;
+    }
+    .pill--live  { background: var(--cz-green-bg);  color: var(--cz-green-fg); }
+    .pill--draft { background: var(--cz-none-bg);   color: var(--cz-none-fg); }
+    .pill--new   { background: var(--cz-blue-bg);   color: var(--cz-blue-fg); }
+
+    .app-card--new {
+      align-items: center; justify-content: center; text-align: center;
+      border-style: dashed; border-color: var(--border-strong);
+      background: var(--background-weak); min-height: 128px; gap: var(--spacing-4);
+    }
+    .app-card--new:hover { border-color: var(--primary-background-strong); background: var(--selected-background); }
+    .app-card--new .obj-av { background: var(--selected-background); color: var(--primary-background-strong); }
+    .app-card--new__label { font-weight: 500; color: var(--text); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       MODAL — name the app
+       ══════════════════════════════════════════════════════════════════ */
+    .scrim {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(29,31,33,0.32);
+      display: none; align-items: center; justify-content: center;
+    }
+    .scrim--on { display: flex; }
+    .modal {
+      width: 468px; background: var(--background-weak);
+      border-radius: var(--spacing-12); box-shadow: var(--shadow-large);
+      overflow: hidden;
+    }
+    .modal__head {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: var(--spacing-16) var(--spacing-24);
+      border-bottom: 1px solid var(--border);
+    }
+    .modal__title {
+      font-family: var(--font-display); font-size: var(--type-xl-size);
+      line-height: var(--type-xl-line); letter-spacing: var(--type-xl-track);
+      font-weight: 500;
+    }
+    .modal__body { padding: var(--spacing-24); display: flex; flex-direction: column; gap: var(--spacing-16); }
+    .modal__foot {
+      display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-8);
+      padding: var(--spacing-12) var(--spacing-24); border-top: 1px solid var(--border);
+      background: var(--background-weak);
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field__label { font-size: var(--type-s-size); font-weight: 500; color: var(--text); }
+    .field__hint  { font-size: var(--type-s-size); color: var(--text-weak); }
+    .input {
+      height: 36px; padding: 0 12px;
+      border: 1px solid var(--border-strong); border-radius: 6px;
+      background: var(--background-weak); color: var(--text);
+      font-family: inherit; font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track); width: 100%;
+    }
+    .input:focus { outline: none; border-color: var(--selected-border); box-shadow: 0 0 0 2px var(--selected-background); }
+    .input::placeholder { color: var(--text-disabled); }
+
+    /* Icon + color picker */
+    .swatches { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .swatch {
+      width: var(--sizing-28); height: var(--sizing-28); border-radius: 6px;
+      border: 2px solid transparent; cursor: pointer; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: transform 100ms ease;
+    }
+    .swatch:hover { transform: scale(1.08); }
+    .swatch--on { border-color: var(--text); }
+    .glyphs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .glyph {
+      width: var(--sizing-28); height: var(--sizing-28); border-radius: 6px;
+      border: 1px solid var(--border-strong); background: var(--background-weak);
+      cursor: pointer; color: var(--icon);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .glyph:hover { background: var(--background-medium); }
+    .glyph--on { border-color: var(--selected-border); background: var(--selected-background); color: var(--selected-text); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       BUILDER — full-screen overlay. Build | Settings.
+       ══════════════════════════════════════════════════════════════════ */
+    .builder {
+      position: fixed; inset: 0; z-index: 50;
+      background: var(--background-medium);
+      display: none; flex-direction: column;
+    }
+    .builder--on { display: flex; }
+    .bld__topbar {
+      height: var(--topbar-height); flex-shrink: 0;
+      display: flex; align-items: center; gap: var(--spacing-12);
+      padding: 0 var(--spacing-16);
+      background: var(--background-medium);
+      border-bottom: 1px solid var(--border);
+    }
+    .bld__id { display: flex; align-items: center; gap: var(--spacing-8); min-width: 0; }
+    .bld__name {
+      font-weight: 500; color: var(--text); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; max-width: 260px;
+    }
+    .bld__badge {
+      font-size: var(--type-s-size); letter-spacing: 0;
+      color: var(--text-weak); padding: 0 6px; height: 18px;
+      display: inline-flex; align-items: center;
+      background: var(--background-strong); border-radius: 4px;
+    }
+    /* Segmented Build|Settings, centred */
+    .bld__tabs {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      display: inline-flex; gap: 2px; padding: 2px;
+      background: var(--background-strong); border-radius: 8px;
+    }
+    .bld__tab {
+      height: 28px; padding: 0 16px; border: none; border-radius: 6px;
+      background: none; color: var(--text-weak); cursor: pointer;
+      font-family: inherit; font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .bld__tab svg { width: 14px; height: 14px; }
+    .bld__tab:hover { color: var(--text); }
+    .bld__tab--on { background: var(--background-weak); color: var(--text); font-weight: 500; box-shadow: var(--shadow-medium); }
+    .bld__actions { margin-left: auto; display: flex; align-items: center; gap: var(--spacing-8); }
+
+    .bld__panes { flex: 1; min-height: 0; position: relative; }
+    .bld__pane { position: absolute; inset: 0; display: none; }
+    .bld__pane--on { display: flex; }
+
+    /* Build pane = a live preview of the app shell the user is composing */
+    .bld__stage {
+      flex: 1; min-width: 0; min-height: 0;
+      padding: var(--spacing-24);
+      display: flex; flex-direction: column; gap: var(--spacing-12);
+      overflow: hidden;
+    }
+    .bld__stage-bar {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      flex-shrink: 0;
+    }
+    .bld__stage-label { font-size: var(--type-s-size); font-weight: 500; color: var(--text-weak); }
+    .bld__stage-hint { font-size: var(--type-s-size); color: var(--text-weak); margin-left: auto; }
+
+    /* The framed preview — a real Asana shell, scaled to fit the stage */
+    .preview {
+      flex: 1; min-height: 0;
+      display: grid; grid-template-rows: var(--topbar-height) 1fr;
+      background: var(--background-medium);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--spacing-12);
+      overflow: hidden;
+      box-shadow: var(--shadow-large);
+    }
+    .preview__lower {
+      display: grid; grid-template-columns: var(--rail-width) 208px 1fr;
+      min-height: 0;
+    }
+    /* Inside the preview the composed sidebar is editable */
+    .preview .sidebar { border-top-left-radius: var(--spacing-8); }
+    .preview .canvas  { border-top-left-radius: var(--spacing-8); }
+
+    /* ── Editable sections in the preview sidebar ────────────────────── */
+    .sec { display: flex; flex-direction: column; }
+    .sec__head {
+      display: flex; align-items: center; gap: 4px;
+      height: 28px; padding: 0 var(--spacing-8) 0 var(--spacing-12);
+      margin-top: var(--spacing-8);
+    }
+    .sec__name {
+      flex: 1; min-width: 0;
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      font-weight: 500; color: var(--text-weak);
+      border: 1px solid transparent; border-radius: 4px;
+      background: none; font-family: inherit; padding: 0 2px;
+      letter-spacing: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .sec__name:hover { border-color: var(--border-strong); }
+    .sec__name:focus { outline: none; border-color: var(--selected-border); background: var(--background-weak); color: var(--text); }
+    .sec__tools { display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity 120ms ease; }
+    .sec:hover .sec__tools { opacity: 1; }
+    .sec__items { display: flex; flex-direction: column; padding: 0 var(--spacing-4); gap: 1px; }
+
+    .sec__item {
+      display: flex; align-items: center; gap: 6px;
+      height: 30px; padding: 0 6px; border-radius: 6px;
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      color: var(--text); cursor: grab; position: relative;
+    }
+    .sec__item:hover { background: var(--background-hover); }
+    .sec__item--sel { background: var(--background-active); }
+    .sec__item-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sec__item-x { opacity: 0; }
+    .sec__item:hover .sec__item-x { opacity: 1; }
+    .sec__item--drag { opacity: 0.4; }
+    .sec__item--over { box-shadow: inset 0 2px 0 0 var(--primary-background-strong); }
+
+    /* Add-object row inside a section */
+    .sec__add {
+      display: flex; align-items: center; gap: 6px;
+      height: 28px; margin: 1px var(--spacing-4) 0;
+      padding: 0 6px; border-radius: 6px;
+      border: none; background: none; cursor: pointer;
+      font-family: inherit; font-size: var(--type-s-size);
+      letter-spacing: 0; color: var(--text-weak); width: calc(100% - var(--spacing-8));
+    }
+    .sec__add:hover { background: var(--background-hover); color: var(--text); }
+    .sec__add svg { width: 12px; height: 12px; }
+
+    /* Add-section button, pinned under the list */
+    .sb__addsection {
+      display: flex; align-items: center; gap: 6px;
+      height: 32px; margin: var(--spacing-8) var(--spacing-8) 0;
+      padding: 0 var(--spacing-8); border-radius: 6px;
+      border: 1px dashed var(--border-strong); background: none;
+      cursor: pointer; font-family: inherit;
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      color: var(--text-weak); width: calc(100% - var(--spacing-16));
+    }
+    .sb__addsection:hover { border-color: var(--primary-background-strong); color: var(--selected-text); background: var(--selected-background); }
+    .sb__addsection svg { width: 12px; height: 12px; }
+
+    /* Blank-state coach mark in the preview sidebar */
+    .sb__blank {
+      margin: var(--spacing-8); padding: var(--spacing-12);
+      border-radius: var(--spacing-8);
+      background: var(--background-weak);
+      border: 1px solid var(--border);
+      font-size: var(--type-s-size); color: var(--text-weak); line-height: 16px;
+    }
+    .sb__blank strong { color: var(--text); font-weight: 500; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       TYPEAHEAD — pick an existing object
+       ══════════════════════════════════════════════════════════════════ */
+    .ta {
+      position: fixed; z-index: 70; width: 328px;
+      background: var(--background-weak);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--spacing-8);
+      box-shadow: var(--shadow-large);
+      display: none; flex-direction: column; overflow: hidden;
+    }
+    .ta--on { display: flex; }
+    .ta__inputwrap {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: var(--spacing-8) var(--spacing-12);
+      border-bottom: 1px solid var(--border);
+    }
+    .ta__inputwrap svg { width: 14px; height: 14px; color: var(--icon); flex-shrink: 0; }
+    .ta__input {
+      flex: 1; border: none; outline: none; background: none;
+      font-family: inherit; font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+    .ta__input::placeholder { color: var(--text-disabled); }
+    .ta__list { max-height: 296px; overflow-y: auto; padding: var(--spacing-4); }
+    .ta__group {
+      padding: var(--spacing-8) var(--spacing-8) var(--spacing-4);
+      font-size: var(--type-s-size); font-weight: 500; color: var(--text-weak);
+      letter-spacing: 0;
+    }
+    .ta__opt {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: 6px var(--spacing-8); border-radius: 6px; cursor: pointer;
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+    }
+    .ta__opt:hover, .ta__opt--cursor { background: var(--background-hover); }
+    .ta__opt--cursor { background: var(--selected-background); }
+    .ta__opt-body { flex: 1; min-width: 0; }
+    .ta__opt-name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ta__opt-meta { font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; }
+    .ta__opt-added { font-size: var(--type-s-size); color: var(--text-disabled); letter-spacing: 0; }
+    .ta__opt--dis { opacity: 0.5; cursor: default; }
+    .ta__opt--dis:hover { background: none; }
+    .ta__empty { padding: var(--spacing-16) var(--spacing-12); font-size: var(--type-s-size); color: var(--text-weak); text-align: center; }
+    .ta__foot {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: 6px var(--spacing-12);
+      border-top: 1px solid var(--border);
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+    .kbd {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 16px; height: 16px; padding: 0 4px;
+      border: 1px solid var(--border-strong); border-bottom-width: 2px;
+      border-radius: 3px; background: var(--background-weak);
+      font-size: 9px; color: var(--text-weak);
+    }
+
+    /* Highlighted match inside typeahead */
+    .hl { background: var(--cz-yellow-bg); color: var(--cz-yellow-fg); border-radius: 2px; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       SETTINGS PANE — access control
+       ══════════════════════════════════════════════════════════════════ */
+    .set {
+      flex: 1; min-height: 0; overflow-y: auto;
+      display: flex; justify-content: center;
+      padding: var(--spacing-24);
+    }
+    .set__col { width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: var(--spacing-24); }
+    .set__card {
+      background: var(--background-weak);
+      border: 1px solid var(--border); border-radius: var(--spacing-12);
+      overflow: hidden;
+    }
+    .set__cardhead {
+      padding: var(--spacing-16) var(--spacing-16) var(--spacing-12);
+      border-bottom: 1px solid var(--border);
+    }
+    .set__cardtitle { font-weight: 500; color: var(--text); }
+    .set__cardsub { font-size: var(--type-s-size); color: var(--text-weak); margin-top: 2px; }
+
+    .acc-row {
+      display: flex; align-items: center; gap: var(--spacing-12);
+      padding: var(--spacing-12) var(--spacing-16);
+      border-bottom: 1px solid var(--border);
+    }
+    .acc-row:last-child { border-bottom: none; }
+    .acc-row__body { flex: 1; min-width: 0; }
+    .acc-row__name { color: var(--text); }
+    .acc-row__meta { font-size: var(--type-s-size); color: var(--text-weak); }
+    .avatar {
+      width: var(--sizing-28); height: var(--sizing-28); border-radius: 500px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: var(--type-s-size); flex-shrink: 0;
+      border: 1px solid var(--avatar-hairline);
+    }
+    .select {
+      height: 28px; padding: 0 24px 0 8px;
+      border: 1px solid var(--border-strong); border-radius: 6px;
+      background: var(--background-weak) ; color: var(--text);
+      font-family: inherit; font-size: var(--type-s-size); letter-spacing: 0;
+      cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M2 4l3 3 3-3' fill='none' stroke='%23757677' stroke-width='1.4' stroke-linecap='round'/></svg>");
+      background-repeat: no-repeat; background-position: right 7px center;
+    }
+    /* Radio-ish general access options */
+    .opt-row {
+      display: flex; align-items: flex-start; gap: var(--spacing-12);
+      padding: var(--spacing-12) var(--spacing-16);
+      border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .opt-row:last-child { border-bottom: none; }
+    .opt-row:hover { background: var(--background-hover); }
+    .radio {
+      width: 16px; height: 16px; border-radius: 500px; flex-shrink: 0;
+      border: 1.5px solid var(--border-active); margin-top: 3px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .opt-row--on .radio { border-color: var(--primary-background-strong); }
+    .opt-row--on .radio::after {
+      content: ''; width: 8px; height: 8px; border-radius: 500px;
+      background: var(--primary-background-strong);
+    }
+    .opt-row__title { color: var(--text); }
+    .opt-row__sub { font-size: var(--type-s-size); color: var(--text-weak); margin-top: 1px; }
+
+    .banner {
+      display: flex; align-items: flex-start; gap: var(--spacing-8);
+      padding: var(--spacing-12); border-radius: var(--spacing-8);
+      background: var(--selected-background); color: var(--selected-text);
+      font-size: var(--type-s-size); line-height: 18px;
+    }
+    .banner svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       CONTENT RENDERERS — what an object looks like once opened
+       ══════════════════════════════════════════════════════════════════ */
+    .empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: var(--spacing-8);
+      padding: var(--spacing-24); text-align: center; color: var(--text-weak);
+    }
+    .empty__art {
+      width: 56px; height: 56px; border-radius: var(--spacing-12);
+      background: var(--background-strong); color: var(--icon);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: var(--spacing-4);
+    }
+    .empty__art svg { width: 24px; height: 24px; }
+    .empty__title { font-weight: 500; color: var(--text); font-size: var(--type-m-size); }
+    .empty__sub { font-size: var(--type-s-size); max-width: 320px; line-height: 18px; }
+
+    .tabs { display: flex; align-items: center; gap: var(--spacing-4); padding: 0 var(--spacing-24); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .tab {
+      height: 36px; padding: 0 var(--spacing-8); border: none; background: none;
+      color: var(--text-weak); cursor: pointer; font-family: inherit;
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      position: relative;
+    }
+    .tab--on { color: var(--text); font-weight: 500; }
+    .tab--on::after {
+      content: ''; position: absolute; left: var(--spacing-8); right: var(--spacing-8);
+      bottom: -1px; height: 2px; background: var(--text); border-radius: 2px;
+    }
+
+    table.grid { width: 100%; border-collapse: collapse; }
+    table.grid th {
+      text-align: left; font-size: var(--type-s-size); font-weight: 500;
+      color: var(--text-weak); padding: 0 var(--spacing-12);
+      height: 32px; border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    table.grid td {
+      padding: 0 var(--spacing-12); height: var(--row-height);
+      border-bottom: 1px solid var(--border);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      white-space: nowrap;
+    }
+    table.grid tr:last-child td { border-bottom: none; }
+    table.grid td.num { font-variant-numeric: tabular-nums; }
+    .grid-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--spacing-8); }
+
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: var(--spacing-12); }
+    .metric {
+      padding: var(--spacing-16); border: 1px solid var(--border);
+      border-radius: var(--spacing-8); background: var(--background-weak);
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .metric__label { font-size: var(--type-s-size); color: var(--text-weak); text-transform: uppercase; letter-spacing: 0.04em; }
+    .metric__value {
+      font-family: var(--font-display); font-size: var(--type-h3-size);
+      line-height: var(--type-h3-line); letter-spacing: var(--type-h3-track); font-weight: 500;
+    }
+    .metric__delta { font-size: var(--type-s-size); color: var(--text-weak); }
+    .up   { color: #0e7a4a; }
+    .down { color: #b4382e; }
+
+    .tasklist { display: flex; flex-direction: column; }
+    .task {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: var(--row-height); border-bottom: 1px solid var(--border);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+    }
+    .task:last-child { border-bottom: none; }
+    .check {
+      width: 16px; height: 16px; border-radius: 500px; flex-shrink: 0;
+      border: 1.5px solid var(--border-strong);
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; color: transparent;
+    }
+    .task--done .check { background: #0e7a4a; border-color: #0e7a4a; color: #fff; }
+    .task--done .task__name { color: var(--text-weak); text-decoration: line-through; }
+    .task__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .task__meta { font-size: var(--type-s-size); color: var(--text-weak); }
+
+    .doc { max-width: 680px; display: flex; flex-direction: column; gap: var(--spacing-12); }
+    .doc h4 { font-size: var(--type-m-size); font-weight: 500; }
+    .doc p  { font-size: var(--type-m-size); color: var(--text-weak); line-height: 22px; }
+    .doc ul { padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+    .doc li { font-size: var(--type-m-size); color: var(--text-weak); }
+
+    .people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr)); gap: var(--spacing-12); }
+    .person {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: var(--spacing-12); border: 1px solid var(--border);
+      border-radius: var(--spacing-8);
+    }
+    .person__name { font-size: var(--type-m-size); }
+    .person__role { font-size: var(--type-s-size); color: var(--text-weak); }
+
+    .status {
+      display: inline-flex; align-items: center; height: 20px; padding: 0 8px;
+      border-radius: 500px; font-size: var(--type-s-size); letter-spacing: 0;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(12px);
+      z-index: 90; display: flex; align-items: center; gap: var(--spacing-8);
+      padding: 10px var(--spacing-16); border-radius: var(--spacing-8);
+      background: var(--inverse-background-strong); color: var(--inverse-text);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      box-shadow: var(--shadow-large);
+      opacity: 0; pointer-events: none; transition: opacity 180ms ease, transform 180ms ease;
+    }
+    .toast--on { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast svg { width: 14px; height: 14px; color: var(--cz-green-bg); }
+
+    @media (max-width: 1100px) {
+      .search { width: 320px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="proto-nav">
+  <span class="proto-nav__brand">App Builder</span>
+  <span class="proto-steps" id="steps"></span>
+  <button class="proto-nav__reset" id="reset">Start over</button>
+</div>
+
+<div class="page">
+  <div class="app">
+    <div class="topbar">
+      <div class="topbar__left">
+        <button class="icon-btn" aria-label="Menu">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg>
+        </button>
+        <button class="create-btn">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+          Create
+        </button>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.6"/><path d="M10.6 10.6 14 14"/></svg>
+        <span>Search</span>
+      </div>
+      <div class="topbar__right">
+        <button class="icon-btn" aria-label="Help">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.7 1.7c-.5.3-.9.7-.9 1.3" stroke-linecap="round"/><circle cx="8" cy="11.4" r=".75" fill="currentColor" stroke="none"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="app__lower">
+      <nav class="rail" id="rail" aria-label="Modes"></nav>
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="canvas" id="canvas"></main>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     BUILDER OVERLAY
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="builder" id="builder">
+  <div class="bld__topbar">
+    <div class="bld__id">
+      <span class="obj-av obj-av--sm" id="bld-av"></span>
+      <span class="bld__name" id="bld-name">Untitled app</span>
+      <span class="bld__badge" id="bld-badge">Draft</span>
+    </div>
+    <div class="bld__tabs">
+      <button class="bld__tab bld__tab--on" data-bt="build">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="11" rx="1.6"/><path d="M2 6h12M6 6v7.5"/></svg>
+        Build
+      </button>
+      <button class="bld__tab" data-bt="settings">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.1"/><path d="M8 1.8v1.6M8 12.6v1.6M3.6 3.6l1.2 1.2M11.2 11.2l1.2 1.2M1.8 8h1.6M12.6 8h1.6M3.6 12.4l1.2-1.2M11.2 4.8l1.2-1.2"/></svg>
+        Settings
+      </button>
+    </div>
+    <div class="bld__actions">
+      <button class="btn btn--subtle btn--sm" id="bld-cancel">Cancel</button>
+      <button class="btn btn--primary btn--sm" id="bld-publish" disabled>Publish app</button>
+    </div>
+  </div>
+
+  <div class="bld__panes">
+    <!-- BUILD -->
+    <section class="bld__pane bld__pane--on" data-bp="build">
+      <div class="bld__stage">
+        <div class="bld__stage-bar">
+          <span class="bld__stage-label">Preview</span>
+          <span class="bld__stage-hint" id="bld-hint">Add a section, then add objects into it</span>
+        </div>
+        <div class="preview">
+          <div class="topbar">
+            <div class="topbar__left">
+              <button class="icon-btn" aria-label="Menu">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg>
+              </button>
+              <button class="create-btn">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+                Create
+              </button>
+            </div>
+            <div class="search">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.6"/><path d="M10.6 10.6 14 14"/></svg>
+              <span>Search</span>
+            </div>
+            <div class="topbar__right"><span class="avatar-28">TK</span></div>
+          </div>
+          <div class="preview__lower">
+            <nav class="rail" id="pv-rail" aria-label="Modes"></nav>
+            <aside class="sidebar" id="pv-sidebar"></aside>
+            <main class="canvas" id="pv-canvas"></main>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="bld__pane" data-bp="settings">
+      <div class="set"><div class="set__col" id="set-col"></div></div>
+    </section>
+  </div>
+</div>
+
+<!-- Name modal -->
+<div class="scrim" id="scrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal__head">
+      <span class="obj-av" id="modal-av"></span>
+      <span class="modal__title" id="modal-title">Name your app</span>
+    </div>
+    <div class="modal__body">
+      <div class="field">
+        <label class="field__label" for="app-name">App name</label>
+        <input class="input" id="app-name" placeholder="e.g. Northline" autocomplete="off">
+        <span class="field__hint">This is what people see in the sidebar and the app switcher.</span>
+      </div>
+      <div class="field">
+        <span class="field__label">Icon</span>
+        <div class="glyphs" id="glyphs"></div>
+      </div>
+      <div class="field">
+        <span class="field__label">Color</span>
+        <div class="swatches" id="swatches"></div>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--subtle" id="modal-cancel">Cancel</button>
+      <button class="btn btn--primary" id="modal-create" disabled>Create app</button>
+    </div>
+  </div>
+</div>
+
+<!-- Typeahead -->
+<div class="ta" id="ta">
+  <div class="ta__inputwrap">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.6"/><path d="M10.6 10.6 14 14"/></svg>
+    <input class="ta__input" id="ta-input" placeholder="Search projects, tables, portfolios…" autocomplete="off">
+  </div>
+  <div class="ta__list" id="ta-list"></div>
+  <div class="ta__foot">
+    <span class="kbd">↑</span><span class="kbd">↓</span> to navigate
+    <span class="kbd">↵</span> to add
+    <span class="kbd">esc</span> to close
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 5"/></svg><span id="toast-msg"></span></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   ICONS — the rail/sidebar glyphs are real Figma exports (filled paths,
+   fill="currentColor"). Object-type glyphs are drawn in the same FILLED
+   idiom rather than strokes, so they sit consistently beside the real ones.
+   ═══════════════════════════════════════════════════════════════════════ */
+const IC = {
+  // ── real Figma exports ──
+  work: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12.25 0C14.3211 0 16 1.67893 16 3.75C16 5.36305 14.9817 6.73826 13.5527 7.26758C13.2393 7.38364 13.0002 7.66485 13 7.99902C13 8.33342 13.2392 8.6153 13.5527 8.73145C14.9817 9.26087 16 10.6369 16 12.25C16 14.3211 14.3211 16 12.25 16C10.6371 15.9999 9.2618 14.9816 8.73242 13.5527C8.61613 13.239 8.33464 13 8 13C7.66536 13 7.38387 13.239 7.26758 13.5527C6.7382 14.9816 5.36297 16 3.75 16C1.67899 15.9999 0 14.321 0 12.25C1.00352e-07 10.637 1.01833 9.26094 2.44727 8.73145C2.76085 8.61528 3 8.33343 3 7.99902C2.99978 7.66485 2.76068 7.38367 2.44727 7.26758C1.01844 6.73816 0 5.36292 0 3.75C1.28836e-07 1.67902 1.67906 0.000148558 3.75 0C5.36296 0 6.73819 1.01843 7.26758 2.44727C7.38387 2.76104 7.66536 3 8 3C8.33464 3 8.61612 2.76104 8.73242 2.44727C9.2618 1.01844 10.6371 5.14791e-05 12.25 0ZM8 5C7.65349 5.0001 7.35765 5.23651 7.20996 5.5498C6.86703 6.27767 6.27766 6.86603 5.5498 7.20898C5.23593 7.35669 5 7.65336 5 8C5.0001 8.34651 5.23651 8.64235 5.5498 8.79004C6.27771 9.13299 6.86701 9.72229 7.20996 10.4502C7.35765 10.7639 7.65349 10.9999 8 11C8.34664 11 8.64331 10.7641 8.79102 10.4502C9.13397 9.72234 9.72233 9.13297 10.4502 8.79004C10.7639 8.64235 10.9999 8.34651 11 8C11 7.65336 10.7641 7.35669 10.4502 7.20898C9.72237 6.86604 9.13396 6.27763 8.79102 5.5498C8.64331 5.23593 8.34664 5 8 5Z" fill="currentColor"/></svg>',
+  agents: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.4507 9.47557C15.8024 9.09341 16 8.5751 16 8.03464V7.98517C16 7.44474 15.8024 6.92639 15.4507 6.54424L9.98227 0.600955C8.80002 -0.683941 6.77876 0.228222 6.78154 2.04535L6.7881 6.32806C6.78867 6.69625 6.51416 6.99504 6.17538 6.99497C6.01294 6.99494 5.85716 6.9248 5.7423 6.79996L3.23199 4.07168C2.03957 2.77573 -0.00147466 3.6981 7.99507e-07 5.53223L0.00409749 10.5158C0.0056496 12.3466 2.04186 13.2596 3.23396 11.9641L5.66326 9.3239C5.78744 9.18894 5.95587 9.11313 6.13149 9.11316C6.49665 9.11323 6.7928 9.43461 6.79341 9.83148L6.79975 13.9616C6.80257 15.7754 8.82036 16.6817 10.0005 15.3991L15.4507 9.47557Z" fill="currentColor"/></svg>',
+  strategy: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm0 2.6a5.4 5.4 0 1 1 0 10.8 5.4 5.4 0 0 1 0-10.8Zm0 2.2a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z" fill="currentColor"/></svg>',
+  knowledge: '<svg width="16" height="16" viewBox="0 0 16.0003 16.0029" fill="none"><path d="M10.4995 0.489057C10.4995 0.212914 10.2745 -0.0121668 9.99862 0.000510566C6.30502 0.170259 4.09259 2.16694 0.470295 2.53611C0.207087 2.56294 0 2.78056 0 3.04513V14.274C0 14.5501 0.225117 14.7753 0.500932 14.7619C3.88481 14.5968 5.87261 12.799 8.92622 12.3069C9.21885 12.2598 9.47618 12.4921 9.47618 12.7885V15.5258C9.47618 15.8019 9.70088 16.0286 9.97559 16.0005C12.1189 15.7816 13.4021 14.1811 15.5003 13.9578C15.7749 13.9285 15.9997 13.7076 15.9997 13.4314L16.0003 4.7108C16.0003 4.43466 15.7755 4.20824 15.5006 4.23461C13.8014 4.39761 12.6012 5.38701 11.1179 5.93587C10.8103 6.04968 10.4995 5.81161 10.4995 5.48363V0.489057Z" fill="currentColor"/></svg>',
+  people: '<svg width="15.8615" height="16" viewBox="0 0 15.8615 16" fill="none"><path d="M7.93074 0C10.4159 0.000170787 12.4307 2.01482 12.4307 4.5C12.4307 6.15894 11.5321 7.60694 10.1959 8.38713C10.0365 8.48023 9.93074 8.64701 9.93074 8.83165C9.93074 9.05911 10.089 9.25486 10.3085 9.31457C13.2149 10.1052 15.4113 12.307 15.8504 15.0041C15.9391 15.5492 15.483 16 14.9307 16H0.930744C0.37846 16 -0.0776397 15.5492 0.011094 15.0041C0.450183 12.3066 2.64657 10.1048 5.55355 9.31439C5.77272 9.2548 5.93074 9.05935 5.93074 8.83222C5.93074 8.64784 5.82514 8.48129 5.66589 8.38836C4.3291 7.60827 3.43074 6.15944 3.43074 4.5C3.43074 2.01472 5.44546 -3.25905e-07 7.93074 0Z" fill="currentColor"/></svg>',
+  more: '<svg width="16" height="4" viewBox="0 0 16 4" fill="none"><path d="M10 2C10 3.10457 9.10457 4 8 4C6.89543 4 6 3.10457 6 2C6 0.89543 6.89543 0 8 0C9.10457 0 10 0.89543 10 2Z" fill="currentColor"/><path d="M4 2C4 3.10457 3.10457 4 2 4C0.89543 4 0 3.10457 0 2C0 0.89543 0.89543 0 2 0C3.10457 0 4 0.89543 4 2Z" fill="currentColor"/><path d="M16 2C16 3.10457 15.1046 4 14 4C12.8954 4 12 3.10457 12 2C12 0.89543 12.8954 0 14 0C15.1046 0 16 0.89543 16 2Z" fill="currentColor"/></svg>',
+  page: '<svg width="13" height="16" viewBox="0 0 13 16" fill="none"><path d="M2.5 8.5C2.5 8.2235 2.7235 8 3 8H7C7.2765 8 7.5 8.2235 7.5 8.5C7.5 8.7765 7.2765 9 7 9H3C2.7235 9 2.5 8.7765 2.5 8.5ZM3 11H9.989C10.2655 11 10.489 10.7765 10.489 10.5C10.489 10.2235 10.2655 10 9.989 10H3C2.7235 10 2.5 10.2235 2.5 10.5C2.5 10.7765 2.7235 11 3 11ZM10 12H3.011C2.7345 12 2.511 12.2235 2.511 12.5C2.511 12.7765 2.7345 13 3.011 13H10C10.2765 13 10.5 12.7765 10.5 12.5C10.5 12.2235 10.2765 12 10 12ZM13 6.8285V13C13 14.6545 11.6545 16 10 16H3C1.3455 16 0 14.6545 0 13V3C0 1.3455 1.3455 0 3 0H6.379C6.406 0 6.4325 0.007 6.46 0.008C6.474 0.007 6.486 0 6.5005 0C6.543 0 6.581 0.014 6.6205 0.024C7.0605 0.0785 7.479 0.2705 7.7935 0.586L12.268 5.0605C12.74 5.5325 13 6.1605 13 6.8285ZM7.086 1.293C7.0595 1.2665 7.029 1.246 7 1.2225V5C7 5.5515 7.4485 6 8 6H11.7505C11.6955 5.9175 11.632 5.8395 11.5605 5.7675L7.086 1.293ZM12 13V7H8C6.897 7 6 6.103 6 5V1H3C1.897 1 1 1.897 1 3V13C1 14.103 1.897 15 3 15H10C11.103 15 12 14.103 12 13Z" fill="currentColor"/></svg>',
+  table: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 14H11C12.6545 14 14 12.6545 14 11V3C14 1.345 12.6545 0 11 0H3C1.3455 0 0 1.345 0 3V11C0 12.6545 1.3455 14 3 14ZM9 13H5V6H9V13ZM13 11C13 12.103 12.103 13 11 13H10V6H13V11ZM1 3C1 1.897 1.897 1 3 1H11C12.103 1 13 1.897 13 3V5H1V3ZM1 6H4V13H3C1.897 13 1 12.103 1 11V6Z" fill="currentColor"/></svg>',
+  calendar: '<svg width="14" height="15" viewBox="0 0 14 15" fill="none"><path d="M3.5 0C3.36739 0 3.24021 0.0526784 3.14645 0.146447C3.05268 0.240215 3 0.367392 3 0.5V1C1.345 1 0 2.3455 0 4V12C0 13.6545 1.345 15 3 15H11C12.6545 15 14 13.6545 14 12V4C14 2.3455 12.6545 1 11 1V0.5C11 0.367392 10.9473 0.240215 10.8536 0.146447C10.7598 0.0526784 10.6326 0 10.5 0C10.3674 0 10.2402 0.0526784 10.1464 0.146447C10.0527 0.240215 10 0.367392 10 0.5V1H4V0.5C4 0.367392 3.94732 0.240215 3.85355 0.146447C3.75979 0.0526784 3.63261 0 3.5 0ZM13 12C13 13.103 12.103 14 11 14H3C1.897 14 1 13.103 1 12V6H13V12ZM10 2V2.5C10 2.63261 10.0527 2.75979 10.1464 2.85355C10.2402 2.94732 10.3674 3 10.5 3C10.6326 3 10.7598 2.94732 10.8536 2.85355C10.9473 2.75979 11 2.63261 11 2.5V2C12.103 2 13 2.897 13 4V5H1V4C1 2.897 1.897 2 3 2V2.5C3 2.63261 3.05268 2.75979 3.14645 2.85355C3.24021 2.94732 3.36739 3 3.5 3C3.63261 3 3.75979 2.94732 3.85355 2.85355C3.94732 2.75979 4 2.63261 4 2.5V2H10Z" fill="currentColor"/></svg>',
+
+  // ── drawn in the same filled idiom ──
+  build: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6.3 1.2a.6.6 0 0 1 .84-.13l1.5 1.13a.6.6 0 0 1 .12.84L7.6 4.5l1.35 1.02 1.02-1.36a2.9 2.9 0 0 1 4.06-.58 2.9 2.9 0 0 1 .58 4.06l-1.02 1.35 1.36 1.02a.6.6 0 0 1 .12.84l-1.13 1.5a.6.6 0 0 1-.84.12L2.1 5.62a.6.6 0 0 1-.12-.84L3.1 3.28a.6.6 0 0 1 .84-.12L5.3 4.18 6.3 1.2Z" fill="currentColor" opacity=".22"/><path d="M2.66 12.2 8.5 6.36l1.13 1.13-5.84 5.84a.8.8 0 0 1-1.13-1.13Z" fill="currentColor"/><path d="M10.06 1.3a.5.5 0 0 1 .88 0l.86 1.6 1.78.3a.5.5 0 0 1 .27.85l-1.27 1.28.28 1.78a.5.5 0 0 1-.73.52L10.5 6.8 8.87 7.63a.5.5 0 0 1-.72-.52l.28-1.78L7.15 4.05a.5.5 0 0 1 .28-.85l1.78-.3.85-1.6Z" fill="currentColor"/></svg>',
+  portfolio: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 1.5A1.5 1.5 0 0 0 4.5 3v.5H3A2.5 2.5 0 0 0 .5 6v6A2.5 2.5 0 0 0 3 14.5h10a2.5 2.5 0 0 0 2.5-2.5V6A2.5 2.5 0 0 0 13 3.5h-1.5V3A1.5 1.5 0 0 0 10 1.5H6Zm0 1.2h4a.3.3 0 0 1 .3.3v.5H5.7V3a.3.3 0 0 1 .3-.3ZM3 4.7h10A1.3 1.3 0 0 1 14.3 6v1.4H1.7V6A1.3 1.3 0 0 1 3 4.7Zm-1.3 3.9h4.6V10h3.4V8.6h4.6V12a1.3 1.3 0 0 1-1.3 1.3H3A1.3 1.3 0 0 1 1.7 12V8.6Z" fill="currentColor"/></svg>',
+  project: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 1.5A2.5 2.5 0 0 0 .5 4v8A2.5 2.5 0 0 0 3 14.5h10a2.5 2.5 0 0 0 2.5-2.5V4A2.5 2.5 0 0 0 13 1.5H3Zm0 1.2h10A1.3 1.3 0 0 1 14.3 4v.9H1.7V4A1.3 1.3 0 0 1 3 2.7Zm-1.3 3.4h3.1v7.2H3A1.3 1.3 0 0 1 1.7 12V6.1Zm4.3 0h8.3V12a1.3 1.3 0 0 1-1.3 1.3H6V6.1Zm1.3 1.6a.6.6 0 0 0 0 1.2h5a.6.6 0 0 0 0-1.2h-5Zm0 2.6a.6.6 0 0 0 0 1.2h3.2a.6.6 0 0 0 0-1.2H7.3Z" fill="currentColor"/></svg>',
+  dashboard: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.6 1.5A2.1 2.1 0 0 0 .5 3.6v2.2a2.1 2.1 0 0 0 2.1 2.1h2.2a2.1 2.1 0 0 0 2.1-2.1V3.6A2.1 2.1 0 0 0 4.8 1.5H2.6Zm8.6 0A2.1 2.1 0 0 0 9.1 3.6v2.2a2.1 2.1 0 0 0 2.1 2.1h2.2a2.1 2.1 0 0 0 2.1-2.1V3.6a2.1 2.1 0 0 0-2.1-2.1h-2.2ZM2.6 2.7h2.2a.9.9 0 0 1 .9.9v2.2a.9.9 0 0 1-.9.9H2.6a.9.9 0 0 1-.9-.9V3.6a.9.9 0 0 1 .9-.9Zm8.6 0h2.2a.9.9 0 0 1 .9.9v2.2a.9.9 0 0 1-.9.9h-2.2a.9.9 0 0 1-.9-.9V3.6a.9.9 0 0 1 .9-.9ZM2.6 9.2A2.1 2.1 0 0 0 .5 11.3v1.1a2.1 2.1 0 0 0 2.1 2.1h2.2A2.1 2.1 0 0 0 6.9 12.4v-1.1A2.1 2.1 0 0 0 4.8 9.2H2.6Zm8.6 0a2.1 2.1 0 0 0-2.1 2.1v1.1a2.1 2.1 0 0 0 2.1 2.1h2.2a2.1 2.1 0 0 0 2.1-2.1v-1.1a2.1 2.1 0 0 0-2.1-2.1h-2.2Z" fill="currentColor"/></svg>',
+  goal: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 .5a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15Zm0 1.3a6.2 6.2 0 1 1 0 12.4A6.2 6.2 0 0 1 8 1.8Zm0 2a4.2 4.2 0 1 0 0 8.4 4.2 4.2 0 0 0 0-8.4Zm0 1.3a2.9 2.9 0 1 1 0 5.8 2.9 2.9 0 0 1 0-5.8Zm0 1.5a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8Z" fill="currentColor"/></svg>',
+  plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>',
+  x: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg>',
+  drag: '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="6" cy="4" r="1.1"/><circle cx="10" cy="4" r="1.1"/><circle cx="6" cy="8" r="1.1"/><circle cx="10" cy="8" r="1.1"/><circle cx="6" cy="12" r="1.1"/><circle cx="10" cy="12" r="1.1"/></svg>',
+  info: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4" stroke-linecap="round"/><circle cx="8" cy="4.9" r=".8" fill="currentColor" stroke="none"/></svg>',
+  lock: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="3.2" y="7" width="9.6" height="7" rx="1.6"/><path d="M5.6 7V5.2a2.4 2.4 0 0 1 4.8 0V7"/></svg>',
+};
+
+/* Object types — colour pair + glyph + human label */
+const TYPES = {
+  portfolio: { label: 'Portfolio', icon: 'portfolio', bg: 'var(--cz-indigo-bg)',     fg: 'var(--cz-indigo-fg)' },
+  project:   { label: 'Project',   icon: 'project',   bg: 'var(--cz-blue-green-bg)', fg: 'var(--cz-blue-green-fg)' },
+  table:     { label: 'Table',     icon: 'table',     bg: 'var(--cz-purple-bg)',     fg: 'var(--cz-purple-fg)' },
+  dashboard: { label: 'Dashboard', icon: 'dashboard', bg: 'var(--cz-yellow-orange-bg)', fg: 'var(--cz-yellow-orange-fg)' },
+  page:      { label: 'Page',      icon: 'page',      bg: 'var(--cz-none-bg)',       fg: 'var(--cz-none-fg)' },
+  team:      { label: 'Team',      icon: 'people',    bg: 'var(--cz-aqua-bg)',       fg: 'var(--cz-aqua-fg)' },
+  goal:      { label: 'Goal',      icon: 'goal',      bg: 'var(--cz-green-bg)',      fg: 'var(--cz-green-fg)' },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════
+   OBJECT CATALOG — things that ALREADY EXIST in the workspace. The whole
+   point of the builder is that an app is a curated arrangement of these,
+   not a place where new content is authored.
+   ═══════════════════════════════════════════════════════════════════════ */
+const CATALOG = [
+  { id:'pf-ops',    type:'portfolio', name:'Property Ops Portfolio', meta:'12 projects · Property Ops' },
+  { id:'pf-lead',   type:'portfolio', name:'Leadership Portfolio',   meta:'6 projects · Executive' },
+  { id:'pf-trans',  type:'portfolio', name:'Transitions',            meta:'8 projects · Real Estate' },
+  { id:'pf-cap',    type:'portfolio', name:'Capital Projects',        meta:'5 projects · Facilities' },
+
+  { id:'pj-marlow', type:'project', name:'Marlow Renovation',        meta:'42 tasks · due Nov 14' },
+  { id:'pj-beacon', type:'project', name:'Beacon Hill Takeover',     meta:'67 tasks · due Sep 30' },
+  { id:'pj-sunset', type:'project', name:'Sunset Commons Lease-Up',  meta:'23 tasks · due Dec 1' },
+  { id:'pj-vendor', type:'project', name:'Vendor Onboarding',        meta:'18 tasks · ongoing' },
+
+  { id:'tb-prop',   type:'table', name:'Properties',   meta:'450 records · synced' },
+  { id:'tb-units',  type:'table', name:'Units',        meta:'698 records' },
+  { id:'tb-vend',   type:'table', name:'Vendors',      meta:'86 records' },
+  { id:'tb-work',   type:'table', name:'Work Orders',  meta:'1,204 records' },
+  { id:'tb-lease',  type:'table', name:'Leases',       meta:'612 records' },
+  { id:'tb-res',    type:'table', name:'Residents',    meta:'1,880 records' },
+
+  { id:'db-metrics', type:'dashboard', name:'Portfolio Metrics',  meta:'4 widgets' },
+  { id:'db-occ',     type:'dashboard', name:'Occupancy Trends',   meta:'3 charts' },
+  { id:'db-digest',  type:'dashboard', name:'Leadership Digest',  meta:'weekly rollup' },
+
+  { id:'pg-play',  type:'page', name:'Ops Playbook',      meta:'updated 2d ago' },
+  { id:'pg-onb',   type:'page', name:'Onboarding Guide',  meta:'updated 1w ago' },
+  { id:'pg-sop',   type:'page', name:'Turnover SOP',      meta:'updated 3w ago' },
+
+  { id:'tm-ops',   type:'team', name:'Property Ops',       meta:'34 members' },
+  { id:'tm-mkt',   type:'team', name:'Marketing',          meta:'19 members' },
+  { id:'tm-legal', type:'team', name:'Legal & Compliance', meta:'14 members' },
+  { id:'tm-fac',   type:'team', name:'Facilities',         meta:'18 members' },
+  { id:'tm-hr',    type:'team', name:'HR & People',        meta:'8 members' },
+  { id:'tm-fin',   type:'team', name:'Finance',            meta:'11 members' },
+  { id:'tm-it',    type:'team', name:'IT & Systems',       meta:'7 members' },
+
+  { id:'gl-occ',   type:'goal', name:'95% Occupancy',      meta:'Q4 · on track' },
+  { id:'gl-turn',  type:'goal', name:'Reduce Turn Time',   meta:'Q4 · at risk' },
+];
+const byId = id => CATALOG.find(o => o.id === id);
+
+/* Apps that already exist — the index the Build entry lands on */
+const EXISTING_APPS = [
+  { name:'Facilities Requests', glyph:'build',     color:'blue-green', status:'live',  meta:'Facilities · 4 sections', by:'Dana Ruiz' },
+  { name:'Vendor Compliance',   glyph:'table',     color:'purple',     status:'live',  meta:'Legal · 3 sections',      by:'Sam Cole' },
+  { name:'Capital Planning',    glyph:'dashboard', color:'yellow-orange', status:'draft', meta:'Finance · 2 sections', by:'You' },
+];
+
+const GLYPH_CHOICES = ['portfolio','table','dashboard','project','page','goal','build'];
+const COLOR_CHOICES = ['indigo','blue','blue-green','aqua','green','yellow-orange','orange','purple','magenta','hot-pink'];
+
+/* ═══════════════════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════════════════ */
+const SCREENS = ['workspace','apps','builder','app'];
+let S = {
+  screen: 'workspace',
+  railMode: 'work',
+  published: false,
+  sel: null,          // selected object id in the end-user app / preview
+  bldTab: 'build',
+};
+let CFG = null;       // APP_CONFIG under construction
+
+function freshCfg() {
+  return {
+    name: '', glyph: 'portfolio', color: 'indigo',
+    sections: [],
+    access: {
+      general: 'workspace',           // workspace | invited | public
+      people: [
+        { name:'Taylor Kim',   role:'You · Property Ops', perm:'Editor', color:'yellow',  init:'TK' },
+        { name:'Dana Ruiz',    role:'Facilities',         perm:'Editor', color:'blue',    init:'DR' },
+        { name:'Property Ops', role:'Team · 34 members',  perm:'Viewer', color:'aqua',    init:'PO', team:true },
+      ],
+    },
+  };
+}
+
+/* ── helpers ─────────────────────────────────────────────────────────── */
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cz = (name, part) => `var(--cz-${name}-${part})`;
+
+function avatarHtml(glyph, color, size) {
+  const cls = size === 'sm' ? ' obj-av--sm' : size === 'lg' ? ' obj-av--lg' : '';
+  const box = size === 'sm' ? 'ico--12' : 'ico--16';
+  return `<span class="obj-av${cls}" style="background:${cz(color,'bg')};color:${cz(color,'fg')}">
+    <span class="ico ${box}" style="color:inherit">${IC[glyph] || IC.portfolio}</span></span>`;
+}
+function typeAvatar(type, size) {
+  const t = TYPES[type];
+  const cls = size === 'sm' ? ' obj-av--sm' : '';
+  const box = size === 'sm' ? 'ico--12' : 'ico--16';
+  return `<span class="obj-av${cls}" style="background:${t.bg};color:${t.fg}">
+    <span class="ico ${box}" style="color:inherit">${IC[t.icon]}</span></span>`;
+}
+
+let toastT = null;
+function toast(msg) {
+  $('#toast-msg').textContent = msg;
+  $('#toast').classList.add('toast--on');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => $('#toast').classList.remove('toast--on'), 2600);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PROTOTYPE STEP TRAIL
+   ═══════════════════════════════════════════════════════════════════════ */
+const STEP_LABELS = { workspace:'Workspace', apps:'Apps', builder:'Build', app:'End user' };
+function renderSteps() {
+  const idx = SCREENS.indexOf(S.screen);
+  $('#steps').innerHTML = SCREENS.map((s, i) => {
+    const cls = s === S.screen ? 'proto-step--active' : (i < idx ? 'proto-step--done' : '');
+    // Only let the reviewer jump back to a screen the flow has reached
+    const reachable = i <= idx || (s === 'app' && S.published);
+    return `<button class="proto-step ${cls}" data-step="${s}" ${reachable ? '' : 'disabled'}>
+      <span class="proto-step__n">${i + 1}</span>${STEP_LABELS[s]}</button>` +
+      (i < SCREENS.length - 1 ? '<span class="proto-nav__sep">›</span>' : '');
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RAIL
+   ═══════════════════════════════════════════════════════════════════════ */
+const RAIL_MODES = [
+  { key:'work',      label:'Work',      icon:'work' },
+  { key:'agents',    label:'Agents',    icon:'agents' },
+  { key:'strategy',  label:'Strategy',  icon:'strategy' },
+  { key:'knowledge', label:'Knowledge', icon:'knowledge' },
+  { key:'people',    label:'People',    icon:'people' },
+];
+
+/* `opts.appEntry` adds the published app above the Build tool.
+   `opts.nudge` pulses the Build entry so reviewers find it. */
+function railHtml(opts) {
+  opts = opts || {};
+  const modes = RAIL_MODES.map(m => `
+    <button class="rail__mode ${S.railMode === m.key && !opts.appActive ? 'rail__mode--active' : ''}" data-rail="${m.key}">
+      <span class="rail__mode-icon">${IC[m.icon]}</span>
+      <span class="rail__mode-label">${m.label}</span>
+    </button>`).join('');
+
+  const appEntry = opts.appEntry ? `
+    <button class="rail__mode ${opts.appActive ? 'rail__mode--active' : ''}" data-rail="app">
+      <span class="rail__mode-icon" style="color:${cz(CFG.color,'fg')};background:${cz(CFG.color,'bg')}">
+        <span class="ico ico--16" style="color:inherit">${IC[CFG.glyph]}</span>
+      </span>
+      <span class="rail__mode-label">${esc(CFG.name.split(' ')[0])}</span>
+    </button>` : '';
+
+  const build = opts.hideBuild ? '' : `
+    <div class="rail__build">
+      <button class="rail__mode rail__mode--build ${opts.nudge ? 'rail__mode--nudge' : ''}" data-rail="build" title="Build an app">
+        <span class="rail__mode-icon">${IC.build}</span>
+        <span class="rail__mode-label">Build</span>
+      </button>
+    </div>`;
+
+  return `<div class="rail__modes">${modes}${appEntry}</div>
+    <div class="rail__actions">
+      ${build}
+      <button class="icon-btn" aria-label="Help">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.7 1.7c-.5.3-.9.7-.9 1.3" stroke-linecap="round"/><circle cx="8" cy="11.4" r=".75" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <span class="avatar-28">TK</span>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCREEN 1 — WORKSPACE
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderWorkspace() {
+  $('#rail').innerHTML = railHtml({ nudge: true, appEntry: S.published, appActive: false });
+  $('#sidebar').innerHTML = `
+    <div class="sb__section">Work</div>
+    <div class="sb__group">
+      <div class="sb__row sb__row--active"><span class="ico ico--16">${IC.project}</span><span class="sb__row-label">My tasks</span></div>
+      <div class="sb__row"><span class="ico ico--16">${IC.portfolio}</span><span class="sb__row-label">Portfolios</span><span class="sb__row-count">4</span></div>
+      <div class="sb__row"><span class="ico ico--16">${IC.table}</span><span class="sb__row-label">Tables</span><span class="sb__row-count">6</span></div>
+      <div class="sb__row"><span class="ico ico--16">${IC.dashboard}</span><span class="sb__row-label">Reporting</span></div>
+    </div>
+    <div class="sb__section">Projects</div>
+    <div class="sb__group">
+      ${CATALOG.filter(o => o.type === 'project').map(o => `
+        <div class="sb__row"><span class="ico ico--16">${IC.project}</span><span class="sb__row-label">${esc(o.name)}</span></div>`).join('')}
+    </div>`;
+
+  $('#canvas').innerHTML = `
+    <div class="cv__head">
+      <div class="cv__title-row"><span class="cv__title">My tasks</span></div>
+      <span class="cv__sub">Tuesday, August 19</span>
+    </div>
+    <div class="cv__body">
+      <div class="banner" style="margin-bottom:16px">
+        ${IC.info}
+        <span><strong>This prototype starts here.</strong> The <strong>Build</strong> entry is at the bottom-left of the icon rail — click it to see your apps and create a new one.</span>
+      </div>
+      <div class="tasklist">
+        ${[['Approve Marlow vendor bids','Today','done'],
+           ['Review Beacon Hill takeover checklist','Today',''],
+           ['Sign off Q4 occupancy targets','Tomorrow',''],
+           ['Walk Sunset Commons units 12–18','Thu',''],
+           ['Renew elevator service contract','Aug 26','']]
+          .map(([n,d,st]) => `
+          <div class="task ${st === 'done' ? 'task--done' : ''}">
+            <span class="check"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 8.4l3 3 5.8-6"/></svg></span>
+            <span class="task__name">${esc(n)}</span><span class="task__meta">${d}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCREEN 2 — APPS INDEX
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderApps() {
+  $('#rail').innerHTML = railHtml({ appEntry: S.published });
+  $$('#rail [data-rail="build"]').forEach(b => b.classList.add('rail__mode--active'));
+
+  $('#sidebar').innerHTML = `
+    <div class="sb__section">Build</div>
+    <div class="sb__group">
+      <div class="sb__row sb__row--active"><span class="ico ico--16">${IC.build}</span><span class="sb__row-label">Apps</span><span class="sb__row-count">${EXISTING_APPS.length + (S.published ? 1 : 0)}</span></div>
+      <div class="sb__row"><span class="ico ico--16">${IC.table}</span><span class="sb__row-label">Templates</span></div>
+      <div class="sb__row"><span class="ico ico--16">${IC.page}</span><span class="sb__row-label">Docs</span></div>
+    </div>`;
+
+  const mine = S.published ? [{
+    name: CFG.name, glyph: CFG.glyph, color: CFG.color, status: 'live',
+    meta: `${CFG.sections.length} section${CFG.sections.length === 1 ? '' : 's'} · ${CFG.sections.reduce((n,s)=>n+s.items.length,0)} objects`,
+    by: 'You', isNew: true,
+  }] : [];
+
+  $('#canvas').innerHTML = `
+    <div class="cv__head">
+      <div class="cv__title-row">
+        <span class="cv__title">Apps</span>
+        <span class="cv__head-actions"><button class="btn btn--primary btn--sm" id="new-app">${IC.plus}Create new app</button></span>
+      </div>
+      <span class="cv__sub">Apps arrange the objects you already have into a purpose-built workspace.</span>
+    </div>
+    <div class="cv__body">
+      <div class="apps-grid">
+        <button class="app-card app-card--new" id="new-app-card">
+          <span class="obj-av obj-av--lg"><span class="ico ico--16" style="color:inherit">${IC.plus}</span></span>
+          <span class="app-card--new__label">Create new app</span>
+          <span class="app-card__meta">Start from a blank app</span>
+        </button>
+        ${mine.concat(EXISTING_APPS).map(a => `
+          <div class="app-card" ${a.isNew ? 'data-open-app="1"' : ''}>
+            <div class="app-card__top">
+              ${avatarHtml(a.glyph, a.color)}
+              <span class="app-card__name">${esc(a.name)}</span>
+            </div>
+            <span class="app-card__meta">${esc(a.meta)}</span>
+            <div class="app-card__foot">
+              <span class="pill pill--${a.status === 'live' ? 'live' : 'draft'}">${a.status === 'live' ? 'Live' : 'Draft'}</span>
+              ${a.isNew ? '<span class="pill pill--new">Just published</span>' : ''}
+              <span class="app-card__meta">${esc(a.by)}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NAME MODAL
+   ═══════════════════════════════════════════════════════════════════════ */
+function openModal() {
+  CFG = freshCfg();
+  $('#app-name').value = '';
+  paintModal();
+  $('#scrim').classList.add('scrim--on');
+  setTimeout(() => $('#app-name').focus(), 40);
+}
+function paintModal() {
+  $('#modal-av').outerHTML = avatarHtml(CFG.glyph, CFG.color).replace('class="obj-av"', 'class="obj-av" id="modal-av"');
+  $('#glyphs').innerHTML = GLYPH_CHOICES.map(g => `
+    <button class="glyph ${g === CFG.glyph ? 'glyph--on' : ''}" data-glyph="${g}" aria-label="${g}">
+      <span class="ico ico--16" style="color:inherit">${IC[g]}</span></button>`).join('');
+  $('#swatches').innerHTML = COLOR_CHOICES.map(c => `
+    <button class="swatch ${c === CFG.color ? 'swatch--on' : ''}" data-color="${c}"
+      style="background:${cz(c,'bg')}" aria-label="${c}"></button>`).join('');
+  const ok = $('#app-name').value.trim().length > 0;
+  $('#modal-create').disabled = !ok;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCREEN 3 — BUILDER
+   ═══════════════════════════════════════════════════════════════════════ */
+function openBuilder() {
+  S.screen = 'builder';
+  S.bldTab = 'build';
+  S.sel = null;
+  $('#builder').classList.add('builder--on');
+  paintBuilder();
+  renderSteps();
+}
+
+function paintBuilder() {
+  $('#bld-name').textContent = CFG.name;
+  $('#bld-av').outerHTML = avatarHtml(CFG.glyph, CFG.color, 'sm').replace('class="obj-av obj-av--sm"', 'class="obj-av obj-av--sm" id="bld-av"');
+  $('#bld-badge').textContent = S.published ? 'Live' : 'Draft';
+
+  // tabs
+  $$('.bld__tab').forEach(t => t.classList.toggle('bld__tab--on', t.dataset.bt === S.bldTab));
+  $$('.bld__pane').forEach(p => p.classList.toggle('bld__pane--on', p.dataset.bp === S.bldTab));
+
+  const count = CFG.sections.reduce((n, s) => n + s.items.length, 0);
+  $('#bld-publish').disabled = count === 0;
+  $('#bld-hint').textContent = CFG.sections.length === 0
+    ? 'Add a section to begin'
+    : count === 0
+      ? 'Now add objects into your section'
+      : `${CFG.sections.length} section${CFG.sections.length === 1 ? '' : 's'} · ${count} object${count === 1 ? '' : 's'}`;
+
+  renderPreview();
+  renderSettings();
+}
+
+/* The Build tab's preview: a real app shell whose sidebar is editable */
+function renderPreview() {
+  $('#pv-rail').innerHTML = railHtml({ appEntry: true, appActive: true, hideBuild: true });
+
+  const secs = CFG.sections.map((sec, si) => `
+    <div class="sec" data-si="${si}">
+      <div class="sec__head">
+        <input class="sec__name" value="${esc(sec.name)}" data-secname="${si}"
+               aria-label="Section name" spellcheck="false">
+        <span class="sec__tools">
+          <button class="icon-btn icon-btn--sm" data-addobj="${si}" title="Add object">${IC.plus}</button>
+          <button class="icon-btn icon-btn--sm" data-delsec="${si}" title="Remove section">${IC.x}</button>
+        </span>
+      </div>
+      <div class="sec__items" data-items="${si}">
+        ${sec.items.map((it, ii) => {
+          const o = byId(it);
+          return `<div class="sec__item ${S.sel === it ? 'sec__item--sel' : ''}" draggable="true"
+                       data-si="${si}" data-ii="${ii}" data-obj="${it}">
+            ${typeAvatar(o.type, 'sm')}
+            <span class="sec__item-label">${esc(o.name)}</span>
+            <button class="icon-btn icon-btn--sm sec__item-x" data-delobj="${si}:${ii}" title="Remove">${IC.x}</button>
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="sec__add" data-addobj="${si}">${IC.plus}Add object</button>
+    </div>`).join('');
+
+  const blank = CFG.sections.length === 0 ? `
+    <div class="sb__blank">
+      <strong>This is your app's sidebar.</strong><br>
+      Add a section to group things, then pull in projects, tables and
+      portfolios that already exist in your workspace.
+    </div>` : '';
+
+  $('#pv-sidebar').innerHTML = `
+    <div class="sb__section">${esc(CFG.name)}</div>
+    ${blank}${secs}
+    <button class="sb__addsection" id="add-section">${IC.plus}Add section</button>`;
+
+  // Canvas shows whatever is selected, else an empty state
+  $('#pv-canvas').innerHTML = S.sel ? objectHtml(byId(S.sel), true) : `
+    <div class="empty">
+      <span class="empty__art">${IC.build}</span>
+      <span class="empty__title">${CFG.sections.length ? 'Select an object to preview it' : 'Nothing in this app yet'}</span>
+      <span class="empty__sub">${CFG.sections.length
+        ? 'Click any object in the sidebar to see what your users will see.'
+        : 'Objects you add to the sidebar will render here exactly as your users will see them.'}</span>
+    </div>`;
+}
+
+/* ── Settings tab — access control ───────────────────────────────────── */
+const GENERAL_OPTS = [
+  { key:'workspace', title:'Everyone at Bozzuto', sub:'Anyone in the workspace can find and open this app.' },
+  { key:'invited',   title:'Only people I invite', sub:'The app is hidden from everyone else in the workspace.' },
+  { key:'public',    title:'Anyone with the link', sub:'Includes guests outside the workspace. Use with care.' },
+];
+function renderSettings() {
+  const a = CFG.access;
+  $('#set-col').innerHTML = `
+    <div>
+      <div class="set__card">
+        <div class="set__cardhead">
+          <div class="set__cardtitle">General access</div>
+          <div class="set__cardsub">Who can find and open ${esc(CFG.name || 'this app')}.</div>
+        </div>
+        ${GENERAL_OPTS.map(o => `
+          <div class="opt-row ${a.general === o.key ? 'opt-row--on' : ''}" data-gen="${o.key}">
+            <span class="radio"></span>
+            <span>
+              <div class="opt-row__title">${o.title}</div>
+              <div class="opt-row__sub">${o.sub}</div>
+            </span>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div>
+      <div class="set__card">
+        <div class="set__cardhead">
+          <div class="set__cardtitle">People &amp; teams</div>
+          <div class="set__cardsub">Editors can change the app's structure. Viewers just use it.</div>
+        </div>
+        ${a.people.map((p, i) => `
+          <div class="acc-row">
+            <span class="avatar" style="background:${cz(p.color,'bg')};color:${cz(p.color,'fg')}">${p.team ? `<span class="ico ico--12" style="color:inherit">${IC.people}</span>` : esc(p.init)}</span>
+            <span class="acc-row__body">
+              <div class="acc-row__name">${esc(p.name)}</div>
+              <div class="acc-row__meta">${esc(p.role)}</div>
+            </span>
+            <select class="select" data-perm="${i}">
+              ${['Editor','Viewer'].map(v => `<option ${p.perm === v ? 'selected' : ''}>${v}</option>`).join('')}
+            </select>
+          </div>`).join('')}
+        <div class="acc-row">
+          <span class="avatar" style="background:var(--avatar-tertiary-background);color:var(--avatar-tertiary-icon)">
+            <span class="ico ico--12" style="color:inherit">${IC.plus}</span></span>
+          <span class="acc-row__body"><div class="acc-row__meta">Add people, teams or guests…</div></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner">
+      ${IC.lock}
+      <span>Objects keep their own permissions. Adding a table to this app does
+      <strong>not</strong> grant access to it — people who lack access simply won't see that row.</span>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TYPEAHEAD
+   ═══════════════════════════════════════════════════════════════════════ */
+let taSi = null, taCursor = 0, taResults = [];
+function openTA(si, anchor) {
+  taSi = si; taCursor = 0;
+  $('#ta-input').value = '';
+  paintTA();
+  const ta = $('#ta');
+  ta.classList.add('ta--on');
+  const r = anchor.getBoundingClientRect();
+  // Keep the popover on-screen
+  const top = Math.min(r.bottom + 6, window.innerHeight - ta.offsetHeight - 12);
+  const left = Math.min(r.left, window.innerWidth - 340);
+  ta.style.top = Math.max(12, top) + 'px';
+  ta.style.left = Math.max(12, left) + 'px';
+  setTimeout(() => $('#ta-input').focus(), 20);
+}
+function closeTA() { $('#ta').classList.remove('ta--on'); taSi = null; }
+
+const usedIds = () => CFG.sections.flatMap(s => s.items);
+
+function paintTA() {
+  const q = $('#ta-input').value.trim().toLowerCase();
+  const used = usedIds();
+  taResults = CATALOG
+    .filter(o => !q || o.name.toLowerCase().includes(q) || TYPES[o.type].label.toLowerCase().includes(q))
+    .sort((a, b) => {
+      if (!q) return 0;
+      // Prefix matches first — feels like Asana's picker
+      const ap = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+      const bp = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+      return ap - bp;
+    });
+  if (taCursor >= taResults.length) taCursor = Math.max(0, taResults.length - 1);
+
+  if (!taResults.length) {
+    $('#ta-list').innerHTML = `<div class="ta__empty">No objects match “${esc(q)}”.</div>`;
+    return;
+  }
+  // group by type, preserving TYPES order
+  const order = Object.keys(TYPES);
+  const groups = order.map(t => [t, taResults.filter(o => o.type === t)]).filter(([, v]) => v.length);
+  let n = -1;
+  $('#ta-list').innerHTML = groups.map(([t, items]) => `
+    <div class="ta__group">${TYPES[t].label}s</div>
+    ${items.map(o => {
+      n++;
+      const isUsed = used.includes(o.id);
+      return `<div class="ta__opt ${n === taCursor ? 'ta__opt--cursor' : ''} ${isUsed ? 'ta__opt--dis' : ''}"
+                   data-pick="${o.id}" data-n="${n}">
+        ${typeAvatar(o.type, 'sm')}
+        <span class="ta__opt-body">
+          <div class="ta__opt-name">${mark(o.name, q)}</div>
+          <div class="ta__opt-meta">${esc(o.meta)}</div>
+        </span>
+        ${isUsed ? '<span class="ta__opt-added">Added</span>' : ''}
+      </div>`;
+    }).join('')}`).join('');
+}
+function mark(name, q) {
+  if (!q) return esc(name);
+  const i = name.toLowerCase().indexOf(q);
+  if (i < 0) return esc(name);
+  return esc(name.slice(0, i)) + '<span class="hl">' + esc(name.slice(i, i + q.length)) + '</span>' + esc(name.slice(i + q.length));
+}
+function pick(id) {
+  if (taSi == null) return;
+  const sec = CFG.sections[taSi];
+  if (sec.items.includes(id)) { toast(`${byId(id).name} is already in this app`); return; }
+  sec.items.push(id);
+  S.sel = id;
+  closeTA();
+  paintBuilder();
+  toast(`Added ${byId(id).name}`);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   OBJECT CONTENT — what each type renders as
+   ═══════════════════════════════════════════════════════════════════════ */
+const PROPS = [
+  ['The Marlow','Oakland, CA',84,'Takeover','68%'],
+  ['Beacon Hill Apartments','Boston, MA',156,'Stabilized','96%'],
+  ['Sunset Commons','Los Angeles, CA',42,'Takeover','52%'],
+  ['Riverview Lofts','Portland, OR',98,'Stabilized','94%'],
+  ['Cedar Park Flats','Denver, CO',120,'New Development','0%'],
+  ['Northgate Place','Austin, TX',68,'New Development','74%'],
+];
+const STATUS_COLOR = {
+  'Takeover':'yellow', 'Stabilized':'green', 'New Development':'blue-green',
+  'Renovation':'indigo', 'Separation':'pink', 'On track':'green', 'At risk':'orange',
+};
+function statusPill(s) {
+  const c = STATUS_COLOR[s] || 'none';
+  return `<span class="status" style="background:${cz(c,'bg')};color:${cz(c,'fg')}">${esc(s)}</span>`;
+}
+
+function objectHtml(o, isPreview) {
+  const head = `
+    <div class="cv__head">
+      <div class="cv__title-row">
+        ${typeAvatar(o.type)}
+        <span class="cv__title">${esc(o.name)}</span>
+      </div>
+      <span class="cv__sub">${TYPES[o.type].label} · ${esc(o.meta)}</span>
+    </div>`;
+  return head + `<div class="cv__body">${bodyFor(o)}</div>`;
+}
+
+function bodyFor(o) {
+  switch (o.type) {
+    case 'table': {
+      const rows = o.id === 'tb-prop' ? PROPS : PROPS.slice(0, 4);
+      return `<div class="grid-wrap"><table class="grid">
+        <thead><tr><th>Name</th><th>Location</th><th>Units</th><th>Status</th><th>Occupancy</th></tr></thead>
+        <tbody>${rows.map(r => `<tr>
+          <td>${esc(r[0])}</td><td>${esc(r[1])}</td><td class="num">${r[2]}</td>
+          <td>${statusPill(r[3])}</td><td class="num">${r[4]}</td></tr>`).join('')}</tbody>
+      </table></div>`;
+    }
+    case 'dashboard':
+      return `<div class="metrics">
+        ${[['Active work','27','+4 this week','up'],
+           ['Open tasks','505','of 723','' ],
+           ['Vendors','86','12 pending','' ],
+           ['Overdue','9','−3 vs last week','up']]
+          .map(([l,v,d,dir]) => `<div class="metric">
+            <span class="metric__label">${l}</span>
+            <span class="metric__value">${v}</span>
+            <span class="metric__delta ${dir}">${d}</span></div>`).join('')}
+      </div>`;
+    case 'portfolio':
+      return `<div class="grid-wrap"><table class="grid">
+        <thead><tr><th>Project</th><th>Owner</th><th>Status</th><th>Progress</th><th>Due</th></tr></thead>
+        <tbody>${[['Marlow Renovation','James Wu','Takeover','68%','Nov 14'],
+                   ['Beacon Hill Takeover','Sarah Chen','Stabilized','96%','Sep 30'],
+                   ['Sunset Commons Lease-Up','James Wu','Takeover','52%','Dec 1'],
+                   ['Vendor Onboarding','Priya Patel','On track','41%','ongoing']]
+          .map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${statusPill(r[2])}</td>
+            <td class="num">${r[3]}</td><td>${r[4]}</td></tr>`).join('')}</tbody>
+      </table></div>`;
+    case 'project':
+      return `<div class="tasklist">
+        ${[['Final walkthrough — units 1–12','Aug 22','done'],
+           ['Punch list sign-off','Aug 25',''],
+           ['Vendor invoices reconciled','Aug 28',''],
+           ['Resident move-in packets','Sep 2',''],
+           ['Update occupancy forecast','Sep 5','']]
+          .map(([n,d,st]) => `<div class="task ${st === 'done' ? 'task--done' : ''}">
+            <span class="check"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 8.4l3 3 5.8-6"/></svg></span>
+            <span class="task__name">${esc(n)}</span><span class="task__meta">${d}</span></div>`).join('')}
+      </div>`;
+    case 'page':
+      return `<div class="doc">
+        <h4>Purpose</h4>
+        <p>How the operations team takes a property from acquisition through
+        stabilization, and who owns each stage.</p>
+        <h4>Stages</h4>
+        <ul><li>Due diligence &amp; handover</li><li>Staffing and vendor setup</li>
+        <li>Unit turns and capital work</li><li>Lease-up and stabilization</li></ul>
+        <h4>Escalation</h4>
+        <p>Anything that puts the stabilization date at risk goes to the regional
+        manager same-day, and onto the Leadership Digest that week.</p>
+      </div>`;
+    case 'team':
+      return `<div class="people-grid">
+        ${[['James Wu','Regional Manager','blue'],['Sarah Chen','Ops Lead','pink'],
+           ['Marcus Reid','Facilities','indigo'],['Priya Patel','Vendor Manager','orange'],
+           ['Dana Ruiz','Analyst','aqua'],['Sam Cole','Compliance','green']]
+          .map(([n,r,c]) => `<div class="person">
+            <span class="avatar" style="background:${cz(c,'bg')};color:${cz(c,'fg')}">${n.split(' ').map(x=>x[0]).join('')}</span>
+            <span><div class="person__name">${esc(n)}</div><div class="person__role">${esc(r)}</div></span>
+          </div>`).join('')}
+      </div>`;
+    case 'goal':
+      return `<div class="metrics" style="margin-bottom:16px">
+        <div class="metric"><span class="metric__label">Target</span><span class="metric__value">95%</span><span class="metric__delta">portfolio occupancy</span></div>
+        <div class="metric"><span class="metric__label">Current</span><span class="metric__value">91.4%</span><span class="metric__delta up">+1.2 this quarter</span></div>
+        <div class="metric"><span class="metric__label">Status</span><span class="metric__value" style="font-size:16px;line-height:32px">${o.meta.includes('risk') ? 'At risk' : 'On track'}</span><span class="metric__delta">updated 2d ago</span></div>
+      </div>
+      <div class="doc"><h4>Contributing work</h4>
+      <p>4 projects and 2 portfolios roll up into this goal.</p></div>`;
+    default:
+      return '<div class="empty"><span class="empty__title">Nothing to show</span></div>';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCREEN 4 — END-USER APP
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderEndUser() {
+  $('#rail').innerHTML = railHtml({ appEntry: true, appActive: true });
+
+  const secs = CFG.sections.map(sec => `
+    <div class="sb__section">${esc(sec.name)}</div>
+    <div class="sb__group">
+      ${sec.items.map(id => {
+        const o = byId(id);
+        return `<div class="sb__row ${S.sel === id ? 'sb__row--active' : ''}" data-open="${id}">
+          ${typeAvatar(o.type, 'sm')}
+          <span class="sb__row-label">${esc(o.name)}</span>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+
+  $('#sidebar').innerHTML = `<div class="sb__section" style="height:36px;align-items:center">
+      ${avatarHtml(CFG.glyph, CFG.color, 'sm')}
+      <span style="margin-left:8px;color:var(--text);font-size:var(--type-m-size);font-weight:500">${esc(CFG.name)}</span>
+    </div>${secs}`;
+
+  const first = CFG.sections[0] && CFG.sections[0].items[0];
+  if (!S.sel) S.sel = first || null;
+
+  $('#canvas').innerHTML = S.sel ? objectHtml(byId(S.sel)) : `
+    <div class="empty"><span class="empty__art">${IC.build}</span>
+    <span class="empty__title">This app is empty</span></div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ROUTER
+   ═══════════════════════════════════════════════════════════════════════ */
+function go(screen) {
+  S.screen = screen;
+  if (screen !== 'builder') $('#builder').classList.remove('builder--on');
+  if (screen === 'workspace') { S.railMode = 'work'; renderWorkspace(); }
+  if (screen === 'apps')      renderApps();
+  if (screen === 'builder')   { $('#builder').classList.add('builder--on'); paintBuilder(); }
+  if (screen === 'app')       renderEndUser();
+  renderSteps();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   EVENTS — delegated, so every re-render keeps working
+   ═══════════════════════════════════════════════════════════════════════ */
+document.addEventListener('click', (e) => {
+  const t = e.target;
+
+  // prototype step trail
+  const step = t.closest('[data-step]');
+  if (step && !step.disabled) { go(step.dataset.step); return; }
+
+  // rail
+  const rail = t.closest('[data-rail]');
+  if (rail) {
+    const k = rail.dataset.rail;
+    if (k === 'build') { go('apps'); return; }
+    if (k === 'app')   { if (S.published) { S.sel = null; go('app'); } return; }
+    S.railMode = k;
+    if (S.screen !== 'workspace') go('workspace'); else renderWorkspace();
+    return;
+  }
+
+  // apps index
+  if (t.closest('#new-app') || t.closest('#new-app-card')) { openModal(); return; }
+  if (t.closest('[data-open-app]')) { S.sel = null; go('app'); return; }
+
+  // modal
+  if (t.closest('[data-glyph]')) { CFG.glyph = t.closest('[data-glyph]').dataset.glyph; paintModal(); return; }
+  if (t.closest('[data-color]')) { CFG.color = t.closest('[data-color]').dataset.color; paintModal(); return; }
+  if (t.closest('#modal-cancel')) { $('#scrim').classList.remove('scrim--on'); return; }
+  if (t.closest('#modal-create')) {
+    CFG.name = $('#app-name').value.trim() || 'Untitled app';
+    $('#scrim').classList.remove('scrim--on');
+    openBuilder();
+    return;
+  }
+
+  // builder tabs
+  const bt = t.closest('[data-bt]');
+  if (bt) { S.bldTab = bt.dataset.bt; paintBuilder(); return; }
+
+  // sections
+  if (t.closest('#add-section')) {
+    CFG.sections.push({ name: `Section ${CFG.sections.length + 1}`, items: [] });
+    paintBuilder();
+    // focus the new section's name so it can be renamed immediately
+    const inputs = $$('[data-secname]');
+    const last = inputs[inputs.length - 1];
+    if (last) { last.focus(); last.select(); }
+    return;
+  }
+  const delsec = t.closest('[data-delsec]');
+  if (delsec) {
+    const si = +delsec.dataset.delsec;
+    const removed = CFG.sections.splice(si, 1)[0];
+    if (removed && removed.items.includes(S.sel)) S.sel = null;
+    paintBuilder();
+    return;
+  }
+  const addobj = t.closest('[data-addobj]');
+  if (addobj) { openTA(+addobj.dataset.addobj, addobj); return; }
+  const delobj = t.closest('[data-delobj]');
+  if (delobj) {
+    const [si, ii] = delobj.dataset.delobj.split(':').map(Number);
+    const gone = CFG.sections[si].items.splice(ii, 1)[0];
+    if (S.sel === gone) S.sel = null;
+    paintBuilder();
+    return;
+  }
+  // select an object (preview + end user)
+  const item = t.closest('[data-obj]');
+  if (item) { S.sel = item.dataset.obj; renderPreview(); return; }
+  const open = t.closest('[data-open]');
+  if (open) { S.sel = open.dataset.open; renderEndUser(); return; }
+
+  // typeahead pick
+  const p = t.closest('[data-pick]');
+  if (p) { if (!p.classList.contains('ta__opt--dis')) pick(p.dataset.pick); return; }
+
+  // settings
+  const gen = t.closest('[data-gen]');
+  if (gen) { CFG.access.general = gen.dataset.gen; renderSettings(); return; }
+
+  // builder actions
+  if (t.closest('#bld-cancel')) {
+    $('#builder').classList.remove('builder--on');
+    go(S.published ? 'apps' : 'apps');
+    return;
+  }
+  if (t.closest('#bld-publish')) {
+    S.published = true;
+    $('#builder').classList.remove('builder--on');
+    S.sel = null;
+    go('app');
+    toast(`${CFG.name} published`);
+    return;
+  }
+
+  if (t.closest('#reset')) { hardReset(); return; }
+
+  // click-away closes the typeahead
+  if (!t.closest('#ta')) closeTA();
+});
+
+/* section rename */
+document.addEventListener('input', (e) => {
+  const sn = e.target.closest('[data-secname]');
+  if (sn) { CFG.sections[+sn.dataset.secname].name = sn.value; return; }
+  if (e.target.id === 'app-name') { $('#modal-create').disabled = !e.target.value.trim(); return; }
+  if (e.target.id === 'ta-input') { taCursor = 0; paintTA(); return; }
+});
+document.addEventListener('change', (e) => {
+  const perm = e.target.closest('[data-perm]');
+  if (perm) { CFG.access.people[+perm.dataset.perm].perm = perm.value; return; }
+});
+
+/* keyboard */
+document.addEventListener('keydown', (e) => {
+  // modal
+  if ($('#scrim').classList.contains('scrim--on')) {
+    if (e.key === 'Escape') $('#scrim').classList.remove('scrim--on');
+    if (e.key === 'Enter' && $('#app-name').value.trim()) $('#modal-create').click();
+    return;
+  }
+  // typeahead
+  if ($('#ta').classList.contains('ta--on')) {
+    if (e.key === 'Escape') { e.preventDefault(); closeTA(); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); taCursor = Math.min(taCursor + 1, taResults.length - 1); paintTA(); scrollCursor(); return; }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); taCursor = Math.max(taCursor - 1, 0); paintTA(); scrollCursor(); return; }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const o = taResults[taCursor];
+      if (o && !usedIds().includes(o.id)) pick(o.id);
+      return;
+    }
+  }
+  // blur a section name on Enter
+  if (e.key === 'Enter' && e.target.closest('[data-secname]')) { e.target.blur(); }
+});
+function scrollCursor() {
+  const el = $('.ta__opt--cursor');
+  if (el) el.scrollIntoView({ block: 'nearest' });
+}
+
+/* ── drag to reorder objects within / across sections ────────────────── */
+let dragFrom = null;
+document.addEventListener('dragstart', (e) => {
+  const it = e.target.closest('.sec__item');
+  if (!it) return;
+  dragFrom = { si: +it.dataset.si, ii: +it.dataset.ii };
+  it.classList.add('sec__item--drag');
+  e.dataTransfer.effectAllowed = 'move';
+  // Firefox needs data set for the drag to start
+  e.dataTransfer.setData('text/plain', it.dataset.obj);
+});
+document.addEventListener('dragend', () => {
+  $$('.sec__item--drag').forEach(n => n.classList.remove('sec__item--drag'));
+  $$('.sec__item--over').forEach(n => n.classList.remove('sec__item--over'));
+});
+document.addEventListener('dragover', (e) => {
+  const it = e.target.closest('.sec__item');
+  const items = e.target.closest('[data-items]');
+  if (!it && !items) return;
+  e.preventDefault();
+  $$('.sec__item--over').forEach(n => n.classList.remove('sec__item--over'));
+  if (it) it.classList.add('sec__item--over');
+});
+document.addEventListener('drop', (e) => {
+  if (!dragFrom) return;
+  const it = e.target.closest('.sec__item');
+  const zone = e.target.closest('[data-items]');
+  if (!it && !zone) return;
+  e.preventDefault();
+
+  const toSi = it ? +it.dataset.si : +zone.dataset.items;
+  const toIi = it ? +it.dataset.ii : CFG.sections[toSi].items.length;
+  const moved = CFG.sections[dragFrom.si].items.splice(dragFrom.ii, 1)[0];
+  // account for the removal shifting indices within the same section
+  const adj = (dragFrom.si === toSi && dragFrom.ii < toIi) ? toIi - 1 : toIi;
+  CFG.sections[toSi].items.splice(adj, 0, moved);
+  dragFrom = null;
+  paintBuilder();
+});
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RESET
+   ═══════════════════════════════════════════════════════════════════════ */
+function hardReset() {
+  S = { screen:'workspace', railMode:'work', published:false, sel:null, bldTab:'build' };
+  CFG = freshCfg();
+  closeTA();
+  $('#scrim').classList.remove('scrim--on');
+  $('#builder').classList.remove('builder--on');
+  go('workspace');
+}
+
+/* boot */
+CFG = freshCfg();
+go('workspace');
+</script>
+</body>
+</html>
