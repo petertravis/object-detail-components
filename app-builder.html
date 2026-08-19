@@ -1061,10 +1061,13 @@ function freshCfg() {
     sections: [],
     access: {
       general: 'workspace',           // workspace | invited | public
+      // This list is EDITORS only — who can manage and change the app.
+      // Who can merely open it is decided by `general` above, so a
+      // "Viewer" role here would contradict the section's own title.
       people: [
-        { name:'Taylor Kim',   role:'You · Property Ops', perm:'Editor', color:'yellow',  init:'TK' },
-        { name:'Dana Ruiz',    role:'Facilities',         perm:'Editor', color:'blue',    init:'DR' },
-        { name:'Property Ops', role:'Team · 34 members',  perm:'Viewer', color:'aqua',    init:'PO', team:true },
+        { name:'Taylor Kim',   role:'You · Property Ops', perm:'Owner',  color:'yellow', init:'TK', owner:true },
+        { name:'Dana Ruiz',    role:'Facilities',         perm:'Editor', color:'blue',   init:'DR' },
+        { name:'Property Ops', role:'Team · 34 members',  perm:'Editor', color:'aqua',   init:'PO', team:true },
       ],
     },
   };
@@ -1426,8 +1429,8 @@ function renderSettings() {
     <div>
       <div class="set__card">
         <div class="set__cardhead">
-          <div class="set__cardtitle">People &amp; teams</div>
-          <div class="set__cardsub">Editors can change the app's structure. Viewers just use it.</div>
+          <div class="set__cardtitle">App editors</div>
+          <div class="set__cardsub">People who can manage and edit the app.</div>
         </div>
         ${a.people.map((p, i) => `
           <div class="acc-row">
@@ -1436,14 +1439,16 @@ function renderSettings() {
               <div class="acc-row__name">${esc(p.name)}</div>
               <div class="acc-row__meta">${esc(p.role)}</div>
             </span>
-            <select class="select" data-perm="${i}">
-              ${['Editor','Viewer'].map(v => `<option ${p.perm === v ? 'selected' : ''}>${v}</option>`).join('')}
-            </select>
+            ${p.owner
+              ? '<span class="acc-row__meta">Owner</span>'
+              : `<select class="select" data-perm="${i}">
+                   ${['Editor','Remove'].map(v => `<option ${p.perm === v ? 'selected' : ''}>${v}</option>`).join('')}
+                 </select>`}
           </div>`).join('')}
         <div class="acc-row">
           <span class="avatar" style="background:var(--avatar-tertiary-background);color:var(--avatar-tertiary-icon)">
             <span class="ico ico--12" style="color:inherit">${IC.plus}</span></span>
-          <span class="acc-row__body"><div class="acc-row__meta">Add people, teams or guests…</div></span>
+          <span class="acc-row__body"><div class="acc-row__meta">Add people or teams…</div></span>
         </div>
       </div>
     </div>
@@ -1798,7 +1803,17 @@ document.addEventListener('input', (e) => {
 });
 document.addEventListener('change', (e) => {
   const perm = e.target.closest('[data-perm]');
-  if (perm) { CFG.access.people[+perm.dataset.perm].perm = perm.value; return; }
+  if (perm) {
+    const i = +perm.dataset.perm;
+    if (perm.value === 'Remove') {
+      const gone = CFG.access.people.splice(i, 1)[0];
+      renderSettings();
+      toast(`Removed ${gone.name} as an editor`);
+    } else {
+      CFG.access.people[i].perm = perm.value;
+    }
+    return;
+  }
 });
 
 /* keyboard */
