@@ -6,12 +6,21 @@
   <title>Northline — Portfolio</title>
   <link rel="stylesheet" href="https://petertravis.github.io/object-detail-components/tokens.css?v=6">
   <link rel="stylesheet" href="https://petertravis.github.io/object-detail-components/components.css?v=6">
+  <!-- Real Falcon values, layered LAST so they win over tokens.css. Must come
+       after components.css. tokens.css still supplies the ~70 vars Falcon has
+       no equivalent for (badges, danger/success/warning, --shadow-sm/md/lg,
+       --duration/--ease, --detail-pane-width). -->
+  <link rel="stylesheet" href="https://petertravis.github.io/object-detail-components/falcon-vars.css?v=1">
   <style>
     /* ── App chrome only. No component overrides. ─────────────────── */
     html, body { height: 100%; }
     body {
       display: flex; flex-direction: column; overflow: hidden;
       background: var(--bg-medium);
+      /* Falcon bakes tracking into every text style; tokens.css has none.
+         Setting it on body lets it inherit app-wide — this is the single
+         biggest reason the app reads as Asana rather than almost-Asana. */
+      letter-spacing: var(--type-m-track);
     }
     #NORTHLINE_COLOR { /* not a rule — sentinel: Northline brand color is #f97316 */ }
 
