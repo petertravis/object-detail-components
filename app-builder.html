@@ -438,6 +438,19 @@
     }
     .bld__actions { margin-left: auto; display: flex; align-items: center; gap: var(--spacing-8); }
 
+    /* ── Dotted canvas backdrop ───────────────────────────────────────
+       The grey working surface behind the preview frame and the settings
+       cards, matching the builder canvas in Figma. `circle at 1px 1px`
+       pins each dot to the tile origin so it stays crisp instead of
+       anti-aliasing into a smudge. */
+    .dotgrid {
+      --dot-color: rgba(0, 0, 0, 0.11);
+      --dot-gap: 16px;
+      background-color: var(--background-medium);
+      background-image: radial-gradient(circle at 1px 1px, var(--dot-color) 1px, transparent 0);
+      background-size: var(--dot-gap) var(--dot-gap);
+    }
+
     .bld__panes { flex: 1; min-height: 0; position: relative; }
     .bld__pane { position: absolute; inset: 0; display: none; }
     .bld__pane--on { display: flex; }
@@ -860,7 +873,7 @@
   <div class="bld__panes">
     <!-- BUILD -->
     <section class="bld__pane bld__pane--on" data-bp="build">
-      <div class="bld__stage">
+      <div class="bld__stage dotgrid">
         <div class="bld__stage-bar">
           <span class="bld__stage-label">Preview</span>
           <span class="bld__stage-hint" id="bld-hint">Add a section, then add objects into it</span>
@@ -893,7 +906,7 @@
 
     <!-- SETTINGS -->
     <section class="bld__pane" data-bp="settings">
-      <div class="set"><div class="set__col" id="set-col"></div></div>
+      <div class="set dotgrid"><div class="set__col" id="set-col"></div></div>
     </section>
   </div>
 </div>
