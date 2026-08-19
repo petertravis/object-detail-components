@@ -397,11 +397,13 @@
       display: none; flex-direction: column;
     }
     .builder--on { display: flex; }
+    /* White header, 56px — matches .builder__head in builder-mvp */
     .bld__topbar {
-      height: var(--topbar-height); flex-shrink: 0;
+      position: relative;
+      height: 56px; flex-shrink: 0;
       display: flex; align-items: center; gap: var(--spacing-12);
       padding: 0 var(--spacing-16);
-      background: var(--background-medium);
+      background: var(--background-weak);
       border-bottom: 1px solid var(--border);
     }
     .bld__id { display: flex; align-items: center; gap: var(--spacing-8); min-width: 0; }
@@ -415,22 +417,25 @@
       display: inline-flex; align-items: center;
       background: var(--background-strong); border-radius: 4px;
     }
-    /* Segmented Build|Settings, centred */
-    .bld__tabs {
+    /* Build | Settings segmented control, centred.
+       Lifted verbatim from builder-mvp's .segmented so the two prototypes
+       share one component rather than two lookalikes. No leading icons. */
+    .segmented {
       position: absolute; left: 50%; transform: translateX(-50%);
       display: inline-flex; gap: 2px; padding: 2px;
-      background: var(--background-strong); border-radius: 8px;
+      background: var(--background-medium); border-radius: 6px;
     }
-    .bld__tab {
-      height: 28px; padding: 0 16px; border: none; border-radius: 6px;
-      background: none; color: var(--text-weak); cursor: pointer;
-      font-family: inherit; font-size: var(--type-m-size);
-      letter-spacing: var(--type-m-track);
-      display: inline-flex; align-items: center; gap: 6px;
+    .segmented__btn {
+      height: 24px; padding: 0 var(--spacing-12);
+      border: none; background: none; border-radius: 5px;
+      font-family: inherit; font-size: var(--type-s-size);
+      letter-spacing: 0; color: var(--text-weak); cursor: pointer;
     }
-    .bld__tab svg { width: 14px; height: 14px; }
-    .bld__tab:hover { color: var(--text); }
-    .bld__tab--on { background: var(--background-weak); color: var(--text); font-weight: 500; box-shadow: var(--shadow-medium); }
+    .segmented__btn:hover { color: var(--text); }
+    .segmented__btn--active {
+      background: var(--background-weak); color: var(--text);
+      font-weight: 500; box-shadow: var(--shadow-medium);
+    }
     .bld__actions { margin-left: auto; display: flex; align-items: center; gap: var(--spacing-8); }
 
     .bld__panes { flex: 1; min-height: 0; position: relative; }
@@ -842,15 +847,9 @@
       <span class="bld__name" id="bld-name">Untitled app</span>
       <span class="bld__badge" id="bld-badge">Draft</span>
     </div>
-    <div class="bld__tabs">
-      <button class="bld__tab bld__tab--on" data-bt="build">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="11" rx="1.6"/><path d="M2 6h12M6 6v7.5"/></svg>
-        Build
-      </button>
-      <button class="bld__tab" data-bt="settings">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.1"/><path d="M8 1.8v1.6M8 12.6v1.6M3.6 3.6l1.2 1.2M11.2 11.2l1.2 1.2M1.8 8h1.6M12.6 8h1.6M3.6 12.4l1.2-1.2M11.2 4.8l1.2-1.2"/></svg>
-        Settings
-      </button>
+    <div class="segmented">
+      <button class="segmented__btn segmented__btn--active" data-bt="build">Build</button>
+      <button class="segmented__btn" data-bt="settings">Settings</button>
     </div>
     <div class="bld__actions">
       <button class="btn btn--subtle btn--sm" id="bld-cancel">Cancel</button>
@@ -1332,7 +1331,7 @@ function paintBuilder() {
   $('#bld-badge').textContent = S.published ? 'Live' : 'Draft';
 
   // tabs
-  $$('.bld__tab').forEach(t => t.classList.toggle('bld__tab--on', t.dataset.bt === S.bldTab));
+  $$('.segmented__btn').forEach(t => t.classList.toggle('segmented__btn--active', t.dataset.bt === S.bldTab));
   $$('.bld__pane').forEach(p => p.classList.toggle('bld__pane--on', p.dataset.bp === S.bldTab));
 
   const count = CFG.sections.reduce((n, s) => n + s.items.length, 0);
