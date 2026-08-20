@@ -538,6 +538,14 @@
     .sec__item--drag { opacity: 0.4; }
     .sec__item--over { box-shadow: inset 0 2px 0 0 var(--primary-background-strong); }
 
+    /* Section reordering. The grip is the drag source so the name input stays
+       clickable; the drop cue is a line on the target's TOP edge, matching
+       the insert-before behaviour in the drop handler. */
+    .sec__grip { cursor: grab; }
+    .sec__grip:active { cursor: grabbing; }
+    .sec--drag { opacity: 0.4; }
+    .sec--over { box-shadow: inset 0 2px 0 0 var(--primary-background-strong); }
+
     /* Add-object row inside a section */
     .sec__add {
       display: flex; align-items: center; gap: 6px;
@@ -1512,6 +1520,8 @@ function renderPreview() {
         <input class="sec__name" value="${esc(sec.name)}" data-secname="${si}"
                aria-label="Section name" spellcheck="false">
         <span class="sec__tools">
+          <button class="icon-btn icon-btn--sm sec__grip" data-sec-drag="${si}" draggable="true"
+                  title="Drag to reorder section" aria-label="Reorder section">${IC.drag}</button>
           <button class="icon-btn icon-btn--sm" data-addobj="${si}" title="Add object">${IC.plus}</button>
           <button class="icon-btn icon-btn--sm" data-delsec="${si}" title="Remove section">${IC.x}</button>
         </span>
@@ -2246,22 +2256,52 @@ function scrollCursor() {
   if (el) el.scrollIntoView({ block: 'nearest' });
 }
 
-/* ── drag to reorder objects within / across sections ────────────────── */
-let dragFrom = null;
+/* ── drag to reorder ──────────────────────────────────────────────────
+   Two independent drags share these handlers: an OBJECT within/between
+   sections, and a whole SECTION. Exactly one of dragFrom / dragSec is set,
+   and each handler branches on that — otherwise dragging a section over an
+   object would be read as an object drop.
+
+   Sections are dragged from a grip rather than the header itself: the
+   header holds a text input, and making it draggable would fight with
+   clicking in to rename. */
+let dragFrom = null;   // { si, ii } — an object
+let dragSec  = null;   // section index
+
+const clearDropCues = () => {
+  $$('.sec__item--drag, .sec__item--over').forEach(n => n.classList.remove('sec__item--drag', 'sec__item--over'));
+  $$('.sec--drag, .sec--over').forEach(n => n.classList.remove('sec--drag', 'sec--over'));
+};
+
 document.addEventListener('dragstart', (e) => {
+  const grip = e.target.closest('[data-sec-drag]');
+  if (grip) {
+    dragSec = +grip.dataset.secDrag; dragFrom = null;
+    grip.closest('.sec').classList.add('sec--drag');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', 'section:' + dragSec);
+    return;
+  }
   const it = e.target.closest('.sec__item');
   if (!it) return;
-  dragFrom = { si: +it.dataset.si, ii: +it.dataset.ii };
+  dragFrom = { si: +it.dataset.si, ii: +it.dataset.ii }; dragSec = null;
   it.classList.add('sec__item--drag');
   e.dataTransfer.effectAllowed = 'move';
   // Firefox needs data set for the drag to start
   e.dataTransfer.setData('text/plain', it.dataset.obj);
 });
-document.addEventListener('dragend', () => {
-  $$('.sec__item--drag').forEach(n => n.classList.remove('sec__item--drag'));
-  $$('.sec__item--over').forEach(n => n.classList.remove('sec__item--over'));
-});
+
+document.addEventListener('dragend', () => { clearDropCues(); dragFrom = null; dragSec = null; });
+
 document.addEventListener('dragover', (e) => {
+  if (dragSec !== null) {
+    const sec = e.target.closest('.sec');
+    if (!sec) return;
+    e.preventDefault();
+    $$('.sec--over').forEach(n => n.classList.remove('sec--over'));
+    if (+sec.dataset.si !== dragSec) sec.classList.add('sec--over');
+    return;
+  }
   const it = e.target.closest('.sec__item');
   const items = e.target.closest('[data-items]');
   if (!it && !items) return;
@@ -2269,7 +2309,27 @@ document.addEventListener('dragover', (e) => {
   $$('.sec__item--over').forEach(n => n.classList.remove('sec__item--over'));
   if (it) it.classList.add('sec__item--over');
 });
+
 document.addEventListener('drop', (e) => {
+  // ── whole section ──
+  if (dragSec !== null) {
+    const sec = e.target.closest('.sec');
+    if (!sec) return;
+    e.preventDefault();
+    const to = +sec.dataset.si;
+    if (to !== dragSec) {
+      const moved = CFG.sections.splice(dragSec, 1)[0];
+      // The cue is a line on the target's TOP edge, so land before it.
+      // Removing an earlier section shifts the target down by one.
+      CFG.sections.splice(dragSec < to ? to - 1 : to, 0, moved);
+      dragSec = null;
+      paintBuilder();
+    }
+    dragSec = null;
+    return;
+  }
+
+  // ── single object ──
   if (!dragFrom) return;
   const it = e.target.closest('.sec__item');
   const zone = e.target.closest('[data-items]');
