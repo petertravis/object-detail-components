@@ -835,6 +835,9 @@
       overflow-x: auto; scrollbar-width: none;
     }
     .pf-head__tabs::-webkit-scrollbar { display: none; }
+    /* Dashboards have no views, so no tab bar. The tabs were supplying the
+       gap above the toolbar, so restore it here. */
+    .pf-head--flush { padding-bottom: var(--spacing-12); }
 
     .avatar-24 {
       width: var(--sizing-24); height: var(--sizing-24); border-radius: 500px;
@@ -2268,7 +2271,7 @@ const DASHBOARDS = {
 function dashboardHtml(o) {
   const d = DASHBOARDS[o.id] || DASHBOARDS['db-health'];
   return `
-    <div class="pf-head">
+    <div class="pf-head pf-head--flush">
       <div class="pf-head__crumb">${esc(d.crumb)}</div>
       <div class="pf-head__top">
         <span class="pf-head__icon" style="background:${TYPES.dashboard.bg};color:${TYPES.dashboard.fg}">
@@ -2282,10 +2285,6 @@ function dashboardHtml(o) {
           <span class="pf-head__sep"></span>
           <button class="icon-btn" aria-label="Customize">${IC.brush}</button>
         </span>
-      </div>
-      <div class="pf-head__tabs">
-        <button class="db-tab db-tab--active">Dashboard</button>
-        <button class="db-tab" aria-label="Add view">${IC.plus}</button>
       </div>
     </div>
     <div class="pf-toolbar">
