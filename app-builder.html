@@ -826,10 +826,11 @@
     .pf-head { padding: var(--pf-inset) var(--pf-inset) 0; flex-shrink: 0; }
     .pf-head__crumb { font-size: 11.5px; color: var(--text-weak); margin-bottom: 4px; }
     .pf-head__top { display: flex; align-items: center; gap: var(--spacing-8); }
+    /* Colour comes from the portfolio's own hue, set inline — the page header
+       must match the sidebar row for the same object. */
     .pf-head__icon {
       width: var(--sizing-24); height: var(--sizing-24); flex-shrink: 0;
       border-radius: 5px;
-      background: var(--cz-yellow-orange-bg); color: var(--cz-yellow-orange-fg);
       display: inline-flex; align-items: center; justify-content: center;
     }
     .pf-head__name {
@@ -1140,10 +1141,12 @@ const TYPES = {
    not a place where new content is authored.
    ═══════════════════════════════════════════════════════════════════════ */
 const CATALOG = [
-  { id:'pf-ops',   type:'portfolio', name:'Property Ops', meta:'4 projects · Real Estate' },
-  { id:'pf-mkt',   type:'portfolio', name:'Marketing',    meta:'4 projects · Growth' },
-  { id:'pf-legal', type:'portfolio', name:'Legal',        meta:'4 projects · Corporate' },
-  { id:'pf-fac',   type:'portfolio', name:'Facilities',   meta:'4 projects · Operations' },
+  // `hue` overrides the portfolio type colour per object — same folder glyph,
+  // its own colour, so four portfolios are tellable apart at a glance.
+  { id:'pf-ops',   type:'portfolio', hue:'yellow-orange', name:'Property Ops', meta:'4 projects · Real Estate' },
+  { id:'pf-mkt',   type:'portfolio', hue:'hot-pink',      name:'Marketing',    meta:'4 projects · Growth' },
+  { id:'pf-legal', type:'portfolio', hue:'indigo',        name:'Legal',        meta:'4 projects · Corporate' },
+  { id:'pf-fac',   type:'portfolio', hue:'blue-green',    name:'Facilities',   meta:'4 projects · Operations' },
 
   { id:'pj-marlow', type:'project', name:'Marlow Renovation',        meta:'42 tasks · due Nov 14' },
   { id:'pj-beacon', type:'project', name:'Beacon Hill Takeover',     meta:'67 tasks · due Sep 30' },
@@ -1231,11 +1234,16 @@ function avatarHtml(glyph, color, size) {
   return `<span class="obj-av${cls}" style="background:${cz(color,'bg')};color:${cz(color,'fg')}">
     <span class="ico ${box}" style="color:inherit">${IC[glyph] || IC.portfolio}</span></span>`;
 }
-function typeAvatar(type, size) {
-  const t = TYPES[type];
+/* Takes the OBJECT, not just its type, so an individual object can override
+   its type's colour with `hue` while keeping the type's glyph — that's how
+   each portfolio gets its own folder colour. */
+function typeAvatar(o, size) {
+  const t = TYPES[o.type];
+  const bg = o.hue ? cz(o.hue, 'bg') : t.bg;
+  const fg = o.hue ? cz(o.hue, 'fg') : t.fg;
   const cls = size === 'sm' ? ' obj-av--sm' : '';
   const box = size === 'sm' ? 'ico--12' : 'ico--16';
-  return `<span class="obj-av${cls}" style="background:${t.bg};color:${t.fg}">
+  return `<span class="obj-av${cls}" style="background:${bg};color:${fg}">
     <span class="ico ${box}" style="color:inherit">${IC[t.icon]}</span></span>`;
 }
 
@@ -1518,7 +1526,7 @@ function renderPreview() {
           const o = byId(it);
           return `<div class="sec__item ${S.sel === it ? 'sec__item--sel' : ''}" draggable="true"
                        data-si="${si}" data-ii="${ii}" data-obj="${it}">
-            ${typeAvatar(o.type, 'sm')}
+            ${typeAvatar(o, 'sm')}
             <span class="sec__item-label">${esc(o.name)}</span>
             <button class="icon-btn icon-btn--sm sec__item-x" data-delobj="${si}:${ii}" title="Remove">${IC.x}</button>
           </div>`;
@@ -1681,7 +1689,7 @@ function paintTA() {
       const isUsed = used.includes(o.id);
       return `<div class="ta__opt ${n === taCursor ? 'ta__opt--cursor' : ''} ${isUsed ? 'ta__opt--dis' : ''}"
                    data-pick="${o.id}" data-n="${n}">
-        ${typeAvatar(o.type, 'sm')}
+        ${typeAvatar(o, 'sm')}
         <span class="ta__opt-body">
           <div class="ta__opt-name">${mark(o.name, q)}</div>
           <div class="ta__opt-meta">${esc(o.meta)}</div>
@@ -1798,7 +1806,7 @@ function portfolioHtml(o) {
     <div class="pf-head">
       <div class="pf-head__crumb">${esc(v.crumb)}</div>
       <div class="pf-head__top">
-        <span class="pf-head__icon">${IC.folder}</span>
+        <span class="pf-head__icon" style="background:${cz(o.hue || 'yellow-orange','bg')};color:${cz(o.hue || 'yellow-orange','fg')}">${IC.folder}</span>
         <span class="pf-head__name">${esc(o.name)}</span>
         <button class="icon-btn icon-btn--sm" aria-label="Portfolio menu">${IC.caret}</button>
         <button class="icon-btn icon-btn--sm" aria-label="Star">${IC.star}</button>
@@ -1839,7 +1847,7 @@ function objectHtml(o, isPreview) {
   const head = `
     <div class="cv__head">
       <div class="cv__title-row">
-        ${typeAvatar(o.type)}
+        ${typeAvatar(o)}
         <span class="cv__title">${esc(o.name)}</span>
       </div>
       <span class="cv__sub">${TYPES[o.type].label} · ${esc(o.meta)}</span>
@@ -1927,7 +1935,7 @@ function renderEndUser() {
       ${sec.items.map(id => {
         const o = byId(id);
         return `<div class="sb__row ${S.sel === id ? 'sb__row--active' : ''}" data-open="${id}">
-          ${typeAvatar(o.type, 'sm')}
+          ${typeAvatar(o, 'sm')}
           <span class="sb__row-label">${esc(o.name)}</span>
         </div>`;
       }).join('')}
