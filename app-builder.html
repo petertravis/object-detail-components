@@ -741,21 +741,6 @@
       bottom: -1px; height: 2px; background: var(--text); border-radius: 2px;
     }
 
-    table.grid { width: 100%; border-collapse: collapse; }
-    table.grid th {
-      text-align: left; font-size: var(--type-s-size); font-weight: 500;
-      color: var(--text-weak); padding: 0 var(--spacing-12);
-      height: 32px; border-bottom: 1px solid var(--border); white-space: nowrap;
-    }
-    table.grid td {
-      padding: 0 var(--spacing-12); height: var(--row-height);
-      border-bottom: 1px solid var(--border);
-      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
-      white-space: nowrap;
-    }
-    table.grid tr:last-child td { border-bottom: none; }
-    table.grid td.num { font-variant-numeric: tabular-nums; }
-    .grid-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--spacing-8); }
 
     .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: var(--spacing-12); }
     .metric {
@@ -805,10 +790,6 @@
     .person__name { font-size: var(--type-m-size); }
     .person__role { font-size: var(--type-s-size); color: var(--text-weak); }
 
-    .status {
-      display: inline-flex; align-items: center; height: 20px; padding: 0 8px;
-      border-radius: 500px; font-size: var(--type-s-size); letter-spacing: 0;
-    }
 
     /* ══════════════════════════════════════════════════════════════════
        PORTFOLIO VIEW — lifted from builder-mvp's portfolio chrome so a
@@ -912,6 +893,12 @@
       color: var(--text-weak); font-size: var(--type-m-size);
       letter-spacing: var(--type-m-track); cursor: pointer;
     }
+    .pfg__n { color: var(--text-weak); font-variant-numeric: tabular-nums; }
+    /* Confidential-record marker, as in Northline's property list */
+    .rec-lock {
+      display: inline-flex; vertical-align: -1px; margin-right: 5px; color: #b0801f;
+    }
+    .rec-lock svg { width: 11px; height: 11px; }
     .pf-pill {
       display: inline-flex; align-items: center;
       height: var(--sizing-24); padding: 0 var(--spacing-8);
@@ -1153,12 +1140,20 @@ const CATALOG = [
   { id:'pj-sunset', type:'project', name:'Sunset Commons Lease-Up',  meta:'23 tasks · due Dec 1' },
   { id:'pj-vendor', type:'project', name:'Vendor Onboarding',        meta:'18 tasks · ongoing' },
 
-  { id:'tb-prop',   type:'table', name:'Properties',   meta:'450 records · synced' },
-  { id:'tb-units',  type:'table', name:'Units',        meta:'698 records' },
-  { id:'tb-vend',   type:'table', name:'Vendors',      meta:'86 records' },
-  { id:'tb-work',   type:'table', name:'Work Orders',  meta:'1,204 records' },
-  { id:'tb-lease',  type:'table', name:'Leases',       meta:'612 records' },
-  { id:'tb-res',    type:'table', name:'Residents',    meta:'1,880 records' },
+  /* The five Properties groupings are NOT five tables — they are five tabs of
+     ONE table. A sidebar item deep-links to its tab, so `table` names the
+     object that opens and `tab` says which view lands active. */
+  { id:'tb-prop-all',  type:'table', table:'Properties', tab:'All properties',   name:'All properties',   meta:'Properties table · 8 records' },
+  { id:'tb-prop-take', type:'table', table:'Properties', tab:'Takeovers',        name:'Takeovers',        meta:'Properties table · 2 records' },
+  { id:'tb-prop-new',  type:'table', table:'Properties', tab:'New Developments', name:'New Developments', meta:'Properties table · 2 records' },
+  { id:'tb-prop-stab', type:'table', table:'Properties', tab:'Stabilized',       name:'Stabilized',       meta:'Properties table · 2 records' },
+  { id:'tb-prop-sep',  type:'table', table:'Properties', tab:'Separations',      name:'Separations',      meta:'Properties table · 2 records' },
+
+  { id:'tb-units',  type:'table', table:'Units',       name:'Units',       meta:'698 records' },
+  { id:'tb-vend',   type:'table', table:'Vendors',     name:'Vendors',     meta:'86 records' },
+  { id:'tb-work',   type:'table', table:'Work Orders', name:'Work Orders', meta:'1,204 records' },
+  { id:'tb-lease',  type:'table', table:'Leases',      name:'Leases',      meta:'612 records' },
+  { id:'tb-res',    type:'table', table:'Residents',   name:'Residents',   meta:'1,880 records' },
 
   { id:'db-metrics', type:'dashboard', name:'Portfolio Metrics',  meta:'4 widgets' },
   { id:'db-occ',     type:'dashboard', name:'Occupancy Trends',   meta:'3 charts' },
@@ -1718,22 +1713,149 @@ function pick(id) {
 /* ═══════════════════════════════════════════════════════════════════════
    OBJECT CONTENT — what each type renders as
    ═══════════════════════════════════════════════════════════════════════ */
-const PROPS = [
-  ['The Marlow','Oakland, CA',84,'Takeover','68%'],
-  ['Beacon Hill Apartments','Boston, MA',156,'Stabilized','96%'],
-  ['Sunset Commons','Los Angeles, CA',42,'Takeover','52%'],
-  ['Riverview Lofts','Portland, OR',98,'Stabilized','94%'],
-  ['Cedar Park Flats','Denver, CO',120,'New Development','0%'],
-  ['Northgate Place','Austin, TX',68,'New Development','74%'],
+/* ── The Properties table ──────────────────────────────────────────────
+   One record set. The groupings filter it by Status; "All properties" is
+   the unfiltered view. Locked rows are confidential, as in Northline. */
+const PROPERTY_RECORDS = [
+  { name:'The Marlow',             loc:'Oakland, CA',    units:84,  status:'Takeover',        occ:'68%', mgr:['JW','aqua'] },
+  { name:'Beacon Hill Apartments', loc:'Sacramento, CA', units:156, status:'Stabilized',      occ:'96%', mgr:['SC','magenta'], locked:true },
+  { name:'Sunset Commons',         loc:'San Jose, CA',   units:42,  status:'Takeover',        occ:'52%', mgr:['JW','aqua'] },
+  { name:'Riverside Lofts',        loc:'Portland, OR',   units:98,  status:'Stabilized',      occ:'94%', mgr:['JW','aqua'] },
+  { name:'The Hollis',             loc:'Denver, CO',     units:120, status:'New Development', occ:'0%',  mgr:['MR','indigo'], locked:true },
+  { name:'North Park Residences',  loc:'Austin, TX',     units:68,  status:'New Development', occ:'74%', mgr:['PP','yellow-orange'] },
+  { name:'Ivy & Vine',             loc:'Seattle, WA',    units:54,  status:'Separation',      occ:'61%', mgr:['JW','aqua'] },
+  { name:'Riverbend Flats',        loc:'Boston, MA',     units:76,  status:'Separation',      occ:'63%', mgr:['PP','yellow-orange'] },
 ];
+
+/* Grouping tab -> the Status it filters on. null = no filter. */
+const GROUPINGS = {
+  'All properties':   null,
+  'Takeovers':        'Takeover',
+  'New Developments': 'New Development',
+  'Stabilized':       'Stabilized',
+  'Separations':      'Separation',
+};
+
+const lockIcon = `<span class="rec-lock" title="Confidential">${IC.lock}</span>`;
+
+/* Per-table columns and rows. Every table renders with the same page chrome
+   as a portfolio; only Properties has more than one view. */
+const TABLE_DEFS = {
+  Properties: {
+    addLabel: 'Add property',
+    tabs: Object.keys(GROUPINGS),
+    cols: [['#',40], ['Property',220], ['Location',150], ['Units',70], ['Status',150], ['Occupancy',100], ['Regional Mgr',120]],
+    rows(tab) {
+      const f = GROUPINGS[tab];
+      const rs = f ? PROPERTY_RECORDS.filter(r => r.status === f) : PROPERTY_RECORDS;
+      return rs.map((r, i) => [
+        `<span class="pfg__n">${i + 1}</span>`,
+        (r.locked ? lockIcon : '') + esc(r.name),
+        pfPill(r.loc, LOC_HUE[r.loc] || 'none'),
+        r.units,
+        pfPill(r.status, STATUS_COLOR[r.status] || 'none'),
+        r.occ,
+        face(r.mgr[0], r.mgr[1]),
+      ]);
+    },
+  },
+  Units: {
+    addLabel: 'Add unit', tabs: ['All records'],
+    cols: [['Unit',90], ['Property',220], ['Type',110], ['Rent',110], ['Status',130]],
+    rows() { return [
+      ['12A', 'The Marlow',             '2 bed',  '$3,450', pfPill('Occupied','green')],
+      ['4C',  'Beacon Hill Apartments', '1 bed',  '$2,180', pfPill('Vacant','yellow')],
+      ['8B',  'Sunset Commons',         'Studio', '$1,940', pfPill('Occupied','green')],
+    ]; },
+  },
+  Vendors: {
+    addLabel: 'Add vendor', tabs: ['All records'],
+    cols: [['Vendor',220], ['Category',140], ['Contact',150], ['Contract',110], ['Status',130]],
+    rows() { return [
+      ['Bayview Plumbing',      'Plumbing',  'Ana Reyes',  '$84,000',  pfPill('Active','green')],
+      ['Summit Elevator',       'Elevators', 'Cole Tran',  '$210,000', pfPill('Active','green')],
+      ['GreenLeaf Landscaping', 'Grounds',   'Mia Duarte', '$46,000',  pfPill('Renewing','yellow-orange')],
+    ]; },
+  },
+  'Work Orders': {
+    addLabel: 'Add work order', tabs: ['All records'],
+    cols: [['Order',110], ['Property',220], ['Issue',200], ['Priority',120], ['Opened',100]],
+    rows() { return [
+      ['WO-1042', 'The Marlow',      'HVAC unit 12A',  pfPill('High','yellow-orange'), 'Aug 18'],
+      ['WO-1041', 'Riverside Lofts', 'Roof leak',      pfPill('Urgent','orange'),      'Aug 17'],
+      ['WO-1039', 'Sunset Commons',  'Lobby lighting', pfPill('Low','none'),           'Aug 15'],
+    ]; },
+  },
+  Leases: {
+    addLabel: 'Add lease', tabs: ['All records'],
+    cols: [['Lease',110], ['Resident',160], ['Property',220], ['Term',90], ['Expires',110]],
+    rows() { return [
+      ['L-2291', 'Dana Whit',  'The Marlow',             '12 mo', 'Mar 2027'],
+      ['L-2288', 'Omar Reyes', 'Beacon Hill Apartments', '18 mo', 'Sep 2027'],
+      ['L-2280', 'Lena Poole', 'Sunset Commons',         '12 mo', 'Jan 2027'],
+    ]; },
+  },
+  Residents: {
+    addLabel: 'Add resident', tabs: ['All records'],
+    cols: [['Resident',180], ['Property',220], ['Unit',90], ['Since',90], ['Status',130]],
+    rows() { return [
+      ['Dana Whit',  'The Marlow',             '12A', '2024', pfPill('Current','green')],
+      ['Omar Reyes', 'Beacon Hill Apartments', '4C',  '2023', pfPill('Current','green')],
+      ['Lena Poole', 'Sunset Commons',         '8B',  '2025', pfPill('Notice','yellow-orange')],
+    ]; },
+  },
+};
+
+/* Same chrome as portfolioHtml — the page title is the TABLE, and the
+   grouping the user picked is simply the active tab. */
+function tableHtml(o) {
+  const def = TABLE_DEFS[o.table] || TABLE_DEFS.Properties;
+  const tab = o.tab || def.tabs[0];
+  const tabs = def.tabs.map(t =>
+    `<button class="db-tab ${t === tab ? 'db-tab--active' : ''}">${esc(t)}</button>`).join('') +
+    `<button class="db-tab" aria-label="Add view">${IC.plus}</button>`;
+
+  const rows = def.rows(tab).map(cells =>
+    `<tr>${cells.map(c => `<td>${c}</td>`).join('')}<td></td></tr>`).join('');
+
+  return `
+    <div class="pf-head">
+      <div class="pf-head__crumb">Tables / ${esc(o.table)}</div>
+      <div class="pf-head__top">
+        <span class="pf-head__icon" style="background:${TYPES.table.bg};color:${TYPES.table.fg}">
+          <span class="ico ico--16" style="color:inherit">${IC.table}</span></span>
+        <span class="pf-head__name">${esc(o.table)}</span>
+        <button class="icon-btn icon-btn--sm" aria-label="Table menu">${IC.caret}</button>
+        <button class="icon-btn icon-btn--sm" aria-label="Star">${IC.star}</button>
+        <span class="pf-head__actions">
+          <span class="facepile">${PF_FACES.map(([i, h]) => face(i, h)).join('')}</span>
+          <button class="btn btn--secondary btn--sm">Share</button>
+          <span class="pf-head__sep"></span>
+          <button class="icon-btn" aria-label="Customize">${IC.brush}</button>
+        </span>
+      </div>
+      <div class="pf-head__tabs">${tabs}</div>
+    </div>
+    <div class="pf-toolbar">
+      <button class="btn btn--secondary btn--sm">${IC.plus}${esc(def.addLabel)}</button>
+      <span class="pf-toolbar__right">
+        ${['Filter','Sort','Group','Options'].map(x => `<span class="pf-toolbar__item">${x}</span>`).join('')}
+      </span>
+    </div>
+    <div class="pf-body">
+      <div class="pfg-wrap">
+        <table class="pfg">
+          <thead><tr>${def.cols.map(([c, w]) => `<th style="width:${w}px">${esc(c)}</th>`).join('')}<th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="pfg__add">${esc(def.addLabel)}…</div>
+      </div>
+    </div>`;
+}
 const STATUS_COLOR = {
   'Takeover':'yellow', 'Stabilized':'green', 'New Development':'blue-green',
   'Renovation':'indigo', 'Separation':'pink', 'On track':'green', 'At risk':'orange',
 };
-function statusPill(s) {
-  const c = STATUS_COLOR[s] || 'none';
-  return `<span class="status" style="background:${cz(c,'bg')};color:${cz(c,'fg')}">${esc(s)}</span>`;
-}
 
 /* ═══════════════════════════════════════════════════════════════════════
    PORTFOLIO VIEW — the same object as builder-mvp's "Transitions" page:
@@ -1841,8 +1963,9 @@ function portfolioHtml(o) {
 }
 
 function objectHtml(o, isPreview) {
-  // Portfolios own their whole page chrome, not just a body
+  // Portfolios and tables own their whole page chrome, not just a body
   if (o.type === 'portfolio') return portfolioHtml(o);
+  if (o.type === 'table')     return tableHtml(o);
 
   const head = `
     <div class="cv__head">
@@ -1857,15 +1980,6 @@ function objectHtml(o, isPreview) {
 
 function bodyFor(o) {
   switch (o.type) {
-    case 'table': {
-      const rows = o.id === 'tb-prop' ? PROPS : PROPS.slice(0, 4);
-      return `<div class="grid-wrap"><table class="grid">
-        <thead><tr><th>Name</th><th>Location</th><th>Units</th><th>Status</th><th>Occupancy</th></tr></thead>
-        <tbody>${rows.map(r => `<tr>
-          <td>${esc(r[0])}</td><td>${esc(r[1])}</td><td class="num">${r[2]}</td>
-          <td>${statusPill(r[3])}</td><td class="num">${r[4]}</td></tr>`).join('')}</tbody>
-      </table></div>`;
-    }
     case 'dashboard':
       return `<div class="metrics">
         ${[['Active work','27','+4 this week','up'],
