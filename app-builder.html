@@ -971,6 +971,7 @@
     .davatar { font-size: 9px; font-weight: 500; fill: var(--text); font-family: var(--font-text); }
     .daxis { stroke: var(--border-strong); stroke-width: 1; }
     .dgrid { stroke: var(--border); stroke-width: 1; }
+    .dmore { font-size: 10px; fill: var(--text-weak); font-family: var(--font-text); }
 
     .pfg__n { color: var(--text-weak); font-variant-numeric: tabular-nums; }
     /* Confidential-record marker, as in Northline's property list */
@@ -1808,6 +1809,34 @@ const PROPERTY_RECORDS = [
   { name:'North Park Residences',  loc:'Austin, TX',     units:68,  status:'New Development', occ:'74%', mgr:['PP','yellow-orange'] },
   { name:'Ivy & Vine',             loc:'Seattle, WA',    units:54,  status:'Separation',      occ:'61%', mgr:['JW','aqua'] },
   { name:'Riverbend Flats',        loc:'Boston, MA',     units:76,  status:'Separation',      occ:'63%', mgr:['PP','yellow-orange'] },
+
+  // ── Stabilized: the bulk of a mature portfolio ──
+  { name:'Halstead Row',         loc:'Chicago, IL',        units:142, status:'Stabilized', occ:'97%', mgr:['SC','magenta'] },
+  { name:'Camden Yard Lofts',    loc:'Atlanta, GA',        units:118, status:'Stabilized', occ:'93%', mgr:['HM','pink'] },
+  { name:'Willow Creek',         loc:'Nashville, TN',      units:96,  status:'Stabilized', occ:'95%', mgr:['DK','blue-green'] },
+  { name:'Brickline Apartments', loc:'Charlotte, NC',      units:164, status:'Stabilized', occ:'91%', mgr:['SC','magenta'] },
+  { name:'Lakeshore Terrace',    loc:'Minneapolis, MN',    units:88,  status:'Stabilized', occ:'94%', mgr:['MR','indigo'] },
+  { name:'Presidio Commons',     loc:'San Diego, CA',      units:132, status:'Stabilized', occ:'96%', mgr:['JW','aqua'] },
+  { name:'Oakmont Flats',        loc:'Raleigh, NC',        units:74,  status:'Stabilized', occ:'92%', mgr:['DK','blue-green'] },
+  { name:'Grandview Heights',    loc:'Columbus, OH',       units:110, status:'Stabilized', occ:'90%', mgr:['PP','yellow-orange'] },
+  { name:'Verde Springs',        loc:'Phoenix, AZ',        units:126, status:'Stabilized', occ:'93%', mgr:['HM','pink'] },
+
+  // ── Takeover: newly acquired, still climbing ──
+  { name:'Fairmount Place',      loc:'Dallas, TX',         units:158, status:'Takeover',   occ:'61%', mgr:['PP','yellow-orange'], locked:true },
+  { name:'Cedar & Vine',         loc:'Tampa, FL',          units:92,  status:'Takeover',   occ:'58%', mgr:['JW','aqua'] },
+  { name:'Stonegate Manor',      loc:'Kansas City, MO',    units:104, status:'Takeover',   occ:'66%', mgr:['MR','indigo'] },
+  { name:'Harborview Flats',     loc:'Seattle, WA',        units:136, status:'Takeover',   occ:'71%', mgr:['DK','blue-green'] },
+  { name:'Alder Court',          loc:'Richmond, VA',       units:68,  status:'Takeover',   occ:'54%', mgr:['SC','magenta'] },
+
+  // ── New Development: pre-lease or just delivered ──
+  { name:'Meridian Yards',       loc:'Salt Lake City, UT', units:148, status:'New Development', occ:'0%',  mgr:['MR','indigo'] },
+  { name:'The Ashford',          loc:'Austin, TX',         units:112, status:'New Development', occ:'12%', mgr:['PP','yellow-orange'], locked:true },
+  { name:'Larkspur Landing',     loc:'Denver, CO',         units:96,  status:'New Development', occ:'0%',  mgr:['HM','pink'] },
+
+  // ── Separation: exiting management ──
+  { name:'Pinehurst Court',      loc:'Atlanta, GA',        units:82,  status:'Separation', occ:'47%', mgr:['SC','magenta'] },
+  { name:'Bayside Crossing',     loc:'Tampa, FL',          units:90,  status:'Separation', occ:'52%', mgr:['JW','aqua'] },
+  { name:'Elm Street Commons',   loc:'Columbus, OH',       units:64,  status:'Separation', occ:'44%', mgr:['DK','blue-green'] },
 ];
 
 /* Work orders, vendors and leases live outside TABLE_DEFS because the
@@ -1883,8 +1912,13 @@ const M = {
   byLifecycle: () => Object.entries(GROUPINGS).filter(([, f]) => f)
     .map(([label, f]) => ({ label, value: PROPERTY_RECORDS.filter(r => r.status === f).length })),
 
-  occByProperty: () => PROPERTY_RECORDS.map(r => ({ label: r.name, value: parseFloat(r.occ) }))
-    .sort((a, b) => b.value - a.value),
+  // ASCENDING, and excluding pre-lease new builds. Sorted descending, the
+  // top 10 of 28 are all 91-97% — a flat chart that tells leadership
+  // nothing. The actionable end of this distribution is the bottom.
+  occByProperty: () => PROPERTY_RECORDS
+    .filter(r => r.status !== 'New Development')
+    .map(r => ({ label: r.name, value: parseFloat(r.occ) }))
+    .sort((a, b) => a.value - b.value),
 
   openByDept: () => Object.entries(PF_VIEWS).map(([id, v]) => ({
     label: byId(id).name,
@@ -2067,17 +2101,22 @@ function donut(data, centerVal, centerLab) {
 /* Vertical bars with value labels above and rotated x labels below */
 function barChart(data, opts) {
   opts = opts || {};
-  const max = Math.max(...data.map(d => d.value), 1);
+  // `top` caps how many bars are drawn; the remainder is reported as
+  // "+ N more", the way Asana's charts do once a dimension gets wide.
+  const rows = opts.top ? data.slice(0, opts.top) : data;
+  const more = data.length - rows.length;
+
+  const max = Math.max(...rows.map(d => d.value), 1);
   // Rotated -35deg with text-anchor:end, a label's far end lands
   // width*sin(35) BELOW its anchor. Reserve that space, or .dcard's
   // overflow:hidden shears the labels diagonally and eats their first
   // characters — which looks like bad data rather than a clipped box.
-  const drop = Math.ceil(labelChars(data.length) * 5.4 * 0.574);
+  const drop = Math.ceil(labelChars(rows.length) * 5.4 * 0.574);
   const W = 560, padT = 24, plotH = 112, padB = 26 + drop, H = padT + plotH + padB, padL = 34;
-  const slot = (W - padL) / data.length;
+  const slot = (W - padL) / rows.length;
   const bw = Math.min(38, slot * 0.55);
 
-  const bars = data.map((d, i) => {
+  const bars = rows.map((d, i) => {
     const h = ((d.value / max) * (H - padT - padB)) || 0;
     const x = padL + i * slot + (slot - bw) / 2;
     const y = H - padB - h;
@@ -2087,13 +2126,14 @@ function barChart(data, opts) {
             rx="3" fill="${cz(hue,'bg')}"></rect>
       <text x="${(x + bw/2).toFixed(1)}" y="${(y - 7).toFixed(1)}" class="dval" text-anchor="middle">${opts.fmt ? opts.fmt(d.value) : d.value}</text>
       <text x="${(x + bw/2).toFixed(1)}" y="${H - padB + 14}" class="dlab"
-            text-anchor="end" transform="rotate(-35 ${(x + bw/2).toFixed(1)} ${H - padB + 14})">${esc(trim(d.label, labelChars(data.length)))}</text>`;
+            text-anchor="end" transform="rotate(-35 ${(x + bw/2).toFixed(1)} ${H - padB + 14})">${esc(trim(d.label, labelChars(rows.length)))}</text>`;
   }).join('');
 
   return `<svg viewBox="0 0 ${W} ${H}" class="dchart" role="img">
     <line x1="${padL}" y1="${H - padB}" x2="${W}" y2="${H - padB}" class="daxis"></line>
     <text x="${padL - 8}" y="${H - padB}" class="dlab" text-anchor="end" dominant-baseline="middle">0</text>
     ${bars}
+    ${more > 0 ? `<text x="${W - 2}" y="${H - 5}" class="dmore" text-anchor="end">+ ${more} more</text>` : ''}
   </svg>`;
 }
 
@@ -2187,7 +2227,7 @@ const DASHBOARDS = {
     ],
     charts: () => [
       dcard('Total properties by lifecycle', donut(M.byLifecycle(), M.properties(), 'Properties by lifecycle'), 1),
-      dcard('Occupancy by property', barChart(M.occByProperty(), { hue:'blue', fmt: v => v + '%' }), 1),
+      dcard('Lowest occupancy by property', barChart(M.occByProperty(), { hue:'blue', top:10, fmt: v => v + '%' }), 1),
       dcard('Open work by department', lollipop(M.openByDept()), 2, true),
     ],
   },
@@ -2202,7 +2242,7 @@ const DASHBOARDS = {
     ],
     charts: () => [
       dcard('Portfolio occupancy trend', areaChart(M.occTrend(), { hue:'blue-green' }), 1, true),
-      dcard('Vacant units by property', barChart(M.vacantByProp(), { hue:'hot-pink' }), 1),
+      dcard('Vacant units by property', barChart(M.vacantByProp(), { hue:'hot-pink', top:10 }), 1),
       dcard('Lease expirations by quarter', donut(M.leasesByQtr(), LEASES.length, 'Lease expirations'), 0),
     ],
   },
@@ -2259,6 +2299,20 @@ function dashboardHtml(o) {
       <div class="dash__grid">${d.charts().join('')}</div>
     </div>`;
 }
+
+/* The catalog is declared before the records exist, so its counts are
+   filled in here instead of hardcoded — a grouping can then never
+   advertise a number it doesn't show. */
+(function syncMetas() {
+  CATALOG.filter(o => o.table === 'Properties').forEach(o => {
+    const f = GROUPINGS[o.tab];
+    const n = f ? PROPERTY_RECORDS.filter(r => r.status === f).length : PROPERTY_RECORDS.length;
+    o.meta = `Properties table \u00b7 ${n} record${n === 1 ? '' : 's'}`;
+  });
+  // One record per unit, so the Units table counts units across properties
+  const u = CATALOG.find(o => o.id === 'tb-units');
+  if (u) u.meta = `${PROPERTY_RECORDS.reduce((n, r) => n + r.units, 0).toLocaleString()} records`;
+})();
 
 /* Same chrome as portfolioHtml — the page title is the TABLE, and the
    grouping the user picked is simply the active tab. */
@@ -2327,6 +2381,15 @@ const LOC_HUE = {
   'Portland, OR':'green', 'Seattle, WA':'indigo',  'Boston, MA':'hot-pink',
   'Denver, CO':'orange',  'Austin, TX':'yellow-orange',
   'Bay Area':'blue-green','National':'none',
+  // Added with the wider property set. Hues repeat once the list outgrows
+  // the 13-hue palette, which is what Asana does too.
+  'Chicago, IL':'magenta',       'Atlanta, GA':'pink',
+  'Phoenix, AZ':'yellow',        'Nashville, TN':'blue-green',
+  'Charlotte, NC':'purple',      'Dallas, TX':'orange',
+  'Minneapolis, MN':'indigo',    'San Diego, CA':'aqua',
+  'Raleigh, NC':'green',         'Tampa, FL':'hot-pink',
+  'Columbus, OH':'yellow-orange','Salt Lake City, UT':'blue',
+  'Kansas City, MO':'magenta',   'Richmond, VA':'purple',
 };
 
 const PF_VIEWS = {
