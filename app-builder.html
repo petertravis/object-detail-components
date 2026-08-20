@@ -976,6 +976,147 @@
     .dgrid { stroke: var(--border); stroke-width: 1; }
     .dmore { font-size: 10px; fill: var(--text-weak); font-family: var(--font-text); }
 
+    /* ══════════════════════════════════════════════════════════════════
+       RECORD PANE — 680px, overlays the canvas from the right.
+       Lifted from builder-mvp's record pane. Its section and metric
+       classes are namespaced pn-* here because .sec already means a
+       builder sidebar section in this file, and .metric a dashboard tile.
+       ══════════════════════════════════════════════════════════════════ */
+    .pane {
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: var(--pane-width); max-width: 100%;
+      display: flex; flex-direction: column;
+      background: var(--background-weak);
+      border-left: 1px solid var(--border);
+      box-shadow: var(--shadow-large);
+      z-index: 20;
+      transform: translateX(8px); opacity: 0;
+      transition: transform 160ms ease, opacity 160ms ease;
+    }
+    .pane--on { transform: translateX(0); opacity: 1; }
+    .pane__topbar {
+      display: flex; align-items: center;
+      height: 56px; padding: 0 var(--pane-inset);
+      flex-shrink: 0; border-bottom: 1px solid var(--border);
+    }
+    .pane__crumb {
+      display: inline-flex; align-items: center; gap: var(--spacing-8);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+    .pane__actions { display: flex; align-items: center; gap: var(--spacing-4); margin-left: auto; }
+    .pane__sep { width: 1px; height: 16px; background: #d9d9d9; margin: 0 var(--spacing-4); }
+    .pane__body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: var(--spacing-16); }
+
+    .pane__title-wrap { padding: 0 var(--pane-inset); }
+    .pane__title {
+      display: flex; align-items: center; min-height: 64px;
+      font-family: var(--font-display);
+      font-size: var(--type-h3-size); line-height: var(--type-h3-line);
+      letter-spacing: var(--type-h3-track); font-weight: 500; color: var(--text);
+    }
+
+    /* Pinned meta chips under the title */
+    .pane__meta {
+      display: flex; align-items: center; gap: var(--spacing-8); flex-wrap: wrap;
+      min-height: 28px; padding: 0 var(--pane-inset) var(--spacing-8);
+    }
+    .meta-field { display: inline-flex; align-items: center; gap: var(--spacing-8); }
+    .meta-field__label {
+      padding-left: var(--spacing-4);
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text-weak); letter-spacing: 0;
+    }
+    .meta-field__pill {
+      display: inline-flex; align-items: center; height: 20px;
+      padding: 0 var(--spacing-8); border-radius: 500px;
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      letter-spacing: 0; white-space: nowrap;
+    }
+
+    /* Sections */
+    .pn-sec { padding: 0 var(--pane-inset); margin-bottom: var(--spacing-24); }
+    .pn-sec__title { display: flex; align-items: center; gap: var(--spacing-8); min-height: 20px; }
+    .pn-sec__title > .ico { color: var(--icon); }
+    .pn-sec__label {
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text-weak); letter-spacing: 0;
+    }
+    .pn-sec__body { padding-top: var(--spacing-12); }
+
+    /* Key metrics — 3 tiles */
+    .pn-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--spacing-8); }
+    .pn-metric { background: var(--background-strong); border-radius: var(--spacing-8); padding: var(--spacing-12); }
+    .pn-metric__label {
+      font-size: var(--type-s-size); line-height: var(--type-s-line);
+      color: var(--text-weak); letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .pn-metric__value {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); font-weight: 500; color: var(--text); margin-top: 2px;
+    }
+    .pn-metric__sub { font-size: var(--type-s-size); line-height: var(--type-s-line); color: var(--text-weak); letter-spacing: 0; }
+
+    /* Branding asset */
+    .branding-img { display: block; width: 100%; height: 251px; object-fit: cover; border-radius: var(--spacing-8); }
+    .branding-empty {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: var(--spacing-16);
+      border: 1px dashed var(--border-strong); border-radius: var(--spacing-8);
+      background: var(--background-medium);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text-weak);
+    }
+
+    /* Custom-field rows: 200px label / 1px divider / value */
+    .cf { padding: 0; }
+    .cf__row {
+      display: grid; grid-template-columns: var(--cf-label-width) 1px 1fr;
+      align-items: stretch; min-height: var(--row-height);
+      border-bottom: 1px solid var(--border);
+    }
+    .cf__row:last-child { border-bottom: none; }
+    .cf__label {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding-right: var(--spacing-8);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text-weak);
+    }
+    .cf__label .ico { color: var(--icon); }
+    .cf__divider { background: var(--border); }
+    .cf__value {
+      display: flex; align-items: center; gap: var(--spacing-4); flex-wrap: wrap;
+      padding: 7px var(--spacing-4) 7px var(--spacing-12);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+
+    .count-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 16px; height: 20px; padding: 0 5px;
+      border-radius: 500px; background: var(--background-strong);
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+
+    /* Comment composer pinned at the bottom */
+    .composer {
+      flex-shrink: 0; margin: 0 var(--pane-inset) var(--pane-inset);
+      border: 1px solid var(--border-strong); border-radius: var(--spacing-8);
+      background: var(--background-weak);
+    }
+    .composer__input {
+      padding: var(--spacing-12); color: var(--text-disabled);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+    }
+    .composer__tools {
+      display: flex; align-items: center; gap: var(--spacing-4);
+      padding: 0 var(--spacing-8) var(--spacing-8);
+    }
+    .composer__send { margin-left: auto; }
+
+    /* Selected row in the grid, while its pane is open */
+    .pfg tbody tr.is-open td { background: var(--background-active); }
+
     .pfg__n { color: var(--text-weak); font-variant-numeric: tabular-nums; }
     /* Confidential-record marker, as in Northline's property list */
     .rec-lock {
@@ -1178,6 +1319,10 @@ const IC = {
   home: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8.62 1.2a1 1 0 0 0-1.24 0L1.7 5.72A2 2 0 0 0 .95 7.3V13a2 2 0 0 0 2 2h10.1a2 2 0 0 0 2-2V7.3a2 2 0 0 0-.75-1.56L8.62 1.2Zm-.62 1.1 5.06 4.02a1 1 0 0 1 .37.78V13a1 1 0 0 1-1 1H9.5v-3.3a1.5 1.5 0 0 0-3 0V14H3.95a1 1 0 0 1-1-1V7.1a1 1 0 0 1 .38-.78L8 2.3Z" fill="currentColor"/></svg>',
   inbox: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 .8a4.7 4.7 0 0 0-4.7 4.7v2.3c0 .5-.16 1-.46 1.4l-.9 1.2A1.2 1.2 0 0 0 2.9 12.2h2.3a2.85 2.85 0 0 0 5.6 0h2.3a1.2 1.2 0 0 0 .96-1.9l-.9-1.2a2.35 2.35 0 0 1-.46-1.4V5.5A4.7 4.7 0 0 0 8 .8Zm0 1.2a3.5 3.5 0 0 1 3.5 3.5v2.3c0 .77.25 1.5.7 2.12l.6.78H3.2l.6-.78c.45-.61.7-1.35.7-2.12V5.5A3.5 3.5 0 0 1 8 2Zm0 12a1.65 1.65 0 0 1-1.55-1.1h3.1A1.65 1.65 0 0 1 8 14Z" fill="currentColor"/></svg>',
   check: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 .8a7.2 7.2 0 1 0 0 14.4A7.2 7.2 0 0 0 8 .8Zm0 1.2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm3.06 3.63a.6.6 0 0 0-.46.22L7.3 9.72 5.86 8.28a.6.6 0 1 0-.85.85l1.9 1.9a.6.6 0 0 0 .89-.05l3.7-4.44a.6.6 0 0 0-.44-1.01Z" fill="currentColor"/></svg>',
+  link: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6.6 9.4a2.9 2.9 0 0 0 4.1 0l2.1-2.1a2.9 2.9 0 0 0-4.1-4.1l-.8.8"/><path d="M9.4 6.6a2.9 2.9 0 0 0-4.1 0L3.2 8.7a2.9 2.9 0 0 0 4.1 4.1l.8-.8"/></svg>',
+  expand: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5 9 7M2.5 13.5 7 9"/></svg>',
+  collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v10M13 8H6.5M9 4.5 6 8l3 3.5"/></svg>',
+  send: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7"/></svg>',
   filter: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M4.5 8h7M6.5 11.5h3"/></svg>',
   plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>',
   x: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg>',
@@ -1804,42 +1949,42 @@ function pick(id) {
    One record set. The groupings filter it by Status; "All properties" is
    the unfiltered view. Locked rows are confidential, as in Northline. */
 const PROPERTY_RECORDS = [
-  { name:'The Marlow',             loc:'Oakland, CA',    units:84,  status:'Takeover',        occ:'68%', mgr:['JW','aqua'] },
-  { name:'Beacon Hill Apartments', loc:'Sacramento, CA', units:156, status:'Stabilized',      occ:'96%', mgr:['SC','magenta'], locked:true },
-  { name:'Sunset Commons',         loc:'San Jose, CA',   units:42,  status:'Takeover',        occ:'52%', mgr:['JW','aqua'] },
-  { name:'Riverside Lofts',        loc:'Portland, OR',   units:98,  status:'Stabilized',      occ:'94%', mgr:['JW','aqua'] },
-  { name:'The Hollis',             loc:'Denver, CO',     units:120, status:'New Development', occ:'0%',  mgr:['MR','indigo'], locked:true },
-  { name:'North Park Residences',  loc:'Austin, TX',     units:68,  status:'New Development', occ:'74%', mgr:['PP','yellow-orange'] },
-  { name:'Ivy & Vine',             loc:'Seattle, WA',    units:54,  status:'Separation',      occ:'61%', mgr:['JW','aqua'] },
-  { name:'Riverbend Flats',        loc:'Boston, MA',     units:76,  status:'Separation',      occ:'63%', mgr:['PP','yellow-orange'] },
+  { name:'The Marlow',             loc:'Oakland, CA',    units:84,  status:'Takeover',        occ:'68%', addr:'1725 Broadway, Oakland, CA 94612', year:2024, mgr:['JW','aqua'] },
+  { name:'Beacon Hill Apartments', loc:'Sacramento, CA', units:156, status:'Stabilized',      occ:'96%', addr:'4800 Stockton Blvd, Sacramento, CA 95820', year:2019, mgr:['SC','magenta'], locked:true },
+  { name:'Sunset Commons',         loc:'San Jose, CA',   units:42,  status:'Takeover',        occ:'52%', addr:'200 Park Ave, San Jose, CA 95113', year:2023, mgr:['JW','aqua'] },
+  { name:'Riverside Lofts',        loc:'Portland, OR',   units:98,  status:'Stabilized',      occ:'94%', addr:'915 SE Water Ave, Portland, OR 97214', year:2017, mgr:['JW','aqua'] },
+  { name:'The Hollis',             loc:'Denver, CO',     units:120, status:'New Development', occ:'0%',  addr:'1400 Wewatta St, Denver, CO 80202', year:2026, mgr:['MR','indigo'], locked:true },
+  { name:'North Park Residences',  loc:'Austin, TX',     units:68,  status:'New Development', occ:'74%', addr:'600 Congress Ave, Austin, TX 78701', year:2025, mgr:['PP','yellow-orange'] },
+  { name:'Ivy & Vine',             loc:'Seattle, WA',    units:54,  status:'Separation',      occ:'61%', addr:'2201 Westlake Ave, Seattle, WA 98121', year:2015, mgr:['JW','aqua'] },
+  { name:'Riverbend Flats',        loc:'Boston, MA',     units:76,  status:'Separation',      occ:'63%', addr:'88 Seaport Blvd, Boston, MA 02210', year:2016, mgr:['PP','yellow-orange'] },
 
   // ── Stabilized: the bulk of a mature portfolio ──
-  { name:'Halstead Row',         loc:'Chicago, IL',        units:142, status:'Stabilized', occ:'97%', mgr:['SC','magenta'] },
-  { name:'Camden Yard Lofts',    loc:'Atlanta, GA',        units:118, status:'Stabilized', occ:'93%', mgr:['HM','pink'] },
-  { name:'Willow Creek',         loc:'Nashville, TN',      units:96,  status:'Stabilized', occ:'95%', mgr:['DK','blue-green'] },
-  { name:'Brickline Apartments', loc:'Charlotte, NC',      units:164, status:'Stabilized', occ:'91%', mgr:['SC','magenta'] },
-  { name:'Lakeshore Terrace',    loc:'Minneapolis, MN',    units:88,  status:'Stabilized', occ:'94%', mgr:['MR','indigo'] },
-  { name:'Presidio Commons',     loc:'San Diego, CA',      units:132, status:'Stabilized', occ:'96%', mgr:['JW','aqua'] },
-  { name:'Oakmont Flats',        loc:'Raleigh, NC',        units:74,  status:'Stabilized', occ:'92%', mgr:['DK','blue-green'] },
-  { name:'Grandview Heights',    loc:'Columbus, OH',       units:110, status:'Stabilized', occ:'90%', mgr:['PP','yellow-orange'] },
-  { name:'Verde Springs',        loc:'Phoenix, AZ',        units:126, status:'Stabilized', occ:'93%', mgr:['HM','pink'] },
+  { name:'Halstead Row',         loc:'Chicago, IL',        units:142, status:'Stabilized', occ:'97%', addr:'1130 W Monroe St, Chicago, IL 60607', year:2018, mgr:['SC','magenta'] },
+  { name:'Camden Yard Lofts',    loc:'Atlanta, GA',        units:118, status:'Stabilized', occ:'93%', addr:'675 Ponce De Leon Ave NE, Atlanta, GA 30308', year:2020, mgr:['HM','pink'] },
+  { name:'Willow Creek',         loc:'Nashville, TN',      units:96,  status:'Stabilized', occ:'95%', addr:'1200 Division St, Nashville, TN 37203', year:2021, mgr:['DK','blue-green'] },
+  { name:'Brickline Apartments', loc:'Charlotte, NC',      units:164, status:'Stabilized', occ:'91%', addr:'300 S Tryon St, Charlotte, NC 28202', year:2019, mgr:['SC','magenta'] },
+  { name:'Lakeshore Terrace',    loc:'Minneapolis, MN',    units:88,  status:'Stabilized', occ:'94%', addr:'700 Washington Ave N, Minneapolis, MN 55401', year:2014, mgr:['MR','indigo'] },
+  { name:'Presidio Commons',     loc:'San Diego, CA',      units:132, status:'Stabilized', occ:'96%', addr:'1250 Kettner Blvd, San Diego, CA 92101', year:2022, mgr:['JW','aqua'] },
+  { name:'Oakmont Flats',        loc:'Raleigh, NC',        units:74,  status:'Stabilized', occ:'92%', addr:'410 Glenwood Ave, Raleigh, NC 27603', year:2018, mgr:['DK','blue-green'] },
+  { name:'Grandview Heights',    loc:'Columbus, OH',       units:110, status:'Stabilized', occ:'90%', addr:'1000 W Broad St, Columbus, OH 43222', year:2013, mgr:['PP','yellow-orange'] },
+  { name:'Verde Springs',        loc:'Phoenix, AZ',        units:126, status:'Stabilized', occ:'93%', addr:'2201 E Camelback Rd, Phoenix, AZ 85016', year:2021, mgr:['HM','pink'] },
 
   // ── Takeover: newly acquired, still climbing ──
-  { name:'Fairmount Place',      loc:'Dallas, TX',         units:158, status:'Takeover',   occ:'61%', mgr:['PP','yellow-orange'], locked:true },
-  { name:'Cedar & Vine',         loc:'Tampa, FL',          units:92,  status:'Takeover',   occ:'58%', mgr:['JW','aqua'] },
-  { name:'Stonegate Manor',      loc:'Kansas City, MO',    units:104, status:'Takeover',   occ:'66%', mgr:['MR','indigo'] },
-  { name:'Harborview Flats',     loc:'Seattle, WA',        units:136, status:'Takeover',   occ:'71%', mgr:['DK','blue-green'] },
-  { name:'Alder Court',          loc:'Richmond, VA',       units:68,  status:'Takeover',   occ:'54%', mgr:['SC','magenta'] },
+  { name:'Fairmount Place',      loc:'Dallas, TX',         units:158, status:'Takeover',   occ:'61%', addr:'2440 Victory Park Ln, Dallas, TX 75219', year:2016, mgr:['PP','yellow-orange'], locked:true },
+  { name:'Cedar & Vine',         loc:'Tampa, FL',          units:92,  status:'Takeover',   occ:'58%', addr:'1001 Water St, Tampa, FL 33602', year:2020, mgr:['JW','aqua'] },
+  { name:'Stonegate Manor',      loc:'Kansas City, MO',    units:104, status:'Takeover',   occ:'66%', addr:'4750 Broadway Blvd, Kansas City, MO 64112', year:2012, mgr:['MR','indigo'] },
+  { name:'Harborview Flats',     loc:'Seattle, WA',        units:136, status:'Takeover',   occ:'71%', addr:'590 1st Ave S, Seattle, WA 98104', year:2019, mgr:['DK','blue-green'] },
+  { name:'Alder Court',          loc:'Richmond, VA',       units:68,  status:'Takeover',   occ:'54%', addr:'820 E Main St, Richmond, VA 23219', year:2011, mgr:['SC','magenta'] },
 
   // ── New Development: pre-lease or just delivered ──
-  { name:'Meridian Yards',       loc:'Salt Lake City, UT', units:148, status:'New Development', occ:'0%',  mgr:['MR','indigo'] },
-  { name:'The Ashford',          loc:'Austin, TX',         units:112, status:'New Development', occ:'12%', mgr:['PP','yellow-orange'], locked:true },
-  { name:'Larkspur Landing',     loc:'Denver, CO',         units:96,  status:'New Development', occ:'0%',  mgr:['HM','pink'] },
+  { name:'Meridian Yards',       loc:'Salt Lake City, UT', units:148, status:'New Development', occ:'0%',  addr:'111 S Main St, Salt Lake City, UT 84111', year:2026, mgr:['MR','indigo'] },
+  { name:'The Ashford',          loc:'Austin, TX',         units:112, status:'New Development', occ:'12%', addr:'1400 E 6th St, Austin, TX 78702', year:2026, mgr:['PP','yellow-orange'], locked:true },
+  { name:'Larkspur Landing',     loc:'Denver, CO',         units:96,  status:'New Development', occ:'0%',  addr:'3000 Brighton Blvd, Denver, CO 80216', year:2027, mgr:['HM','pink'] },
 
   // ── Separation: exiting management ──
-  { name:'Pinehurst Court',      loc:'Atlanta, GA',        units:82,  status:'Separation', occ:'47%', mgr:['SC','magenta'] },
-  { name:'Bayside Crossing',     loc:'Tampa, FL',          units:90,  status:'Separation', occ:'52%', mgr:['JW','aqua'] },
-  { name:'Elm Street Commons',   loc:'Columbus, OH',       units:64,  status:'Separation', occ:'44%', mgr:['DK','blue-green'] },
+  { name:'Pinehurst Court',      loc:'Atlanta, GA',        units:82,  status:'Separation', occ:'47%', addr:'1050 Memorial Dr SE, Atlanta, GA 30316', year:2009, mgr:['SC','magenta'] },
+  { name:'Bayside Crossing',     loc:'Tampa, FL',          units:90,  status:'Separation', occ:'52%', addr:'4200 Bayshore Blvd, Tampa, FL 33611', year:2010, mgr:['JW','aqua'] },
+  { name:'Elm Street Commons',   loc:'Columbus, OH',       units:64,  status:'Separation', occ:'44%', addr:'250 S High St, Columbus, OH 43215', year:2008, mgr:['DK','blue-green'] },
 ];
 
 /* Work orders, vendors and leases live outside TABLE_DEFS because the
@@ -1977,7 +2122,7 @@ const TABLE_DEFS = {
     rows(tab) {
       const f = GROUPINGS[tab];
       const rs = f ? PROPERTY_RECORDS.filter(r => r.status === f) : PROPERTY_RECORDS;
-      return rs.map((r, i) => [
+      return rs.map((r, i) => ({ key: r.name, cells: [
         `<span class="pfg__n">${i + 1}</span>`,
         (r.locked ? lockIcon : '') + esc(r.name),
         pfPill(r.loc, LOC_HUE[r.loc] || 'none'),
@@ -1985,7 +2130,7 @@ const TABLE_DEFS = {
         pfPill(r.status, STATUS_COLOR[r.status] || 'none'),
         r.occ,
         face(r.mgr[0], r.mgr[1]),
-      ]);
+      ] }));
     },
   },
   Units: {
@@ -2313,6 +2458,122 @@ function dashboardHtml(o) {
   if (u) u.meta = `${PROPERTY_RECORDS.reduce((n, r) => n + r.units, 0).toLocaleString()} records`;
 })();
 
+/* ═══════════════════════════════════════════════════════════════════════
+   RECORD PANE — builder-mvp's property pane, driven by PROPERTY_RECORDS.
+   Only The Marlow has a real branding asset; the rest get a genuine empty
+   state rather than a borrowed image, which is also the honest signal that
+   structure is shared but content is per-record.
+   ═══════════════════════════════════════════════════════════════════════ */
+const BRANDING = { 'The Marlow': 'marlow-branding.png' };
+
+function cfRow(label, icon, value) {
+  return `<div class="cf__row">
+    <div class="cf__label"><span class="ico ico--14">${icon}</span>${esc(label)}</div>
+    <div class="cf__divider"></div>
+    <div class="cf__value">${value}</div>
+  </div>`;
+}
+
+function paneHtml(r) {
+  const openWO = WORK_ORDERS.filter(w => w.prop === r.name).length;
+  const brand = BRANDING[r.name];
+
+  const meta = [
+    ['Location', pfPill(r.loc, LOC_HUE[r.loc] || 'none')],
+    ['Status',   pfPill(r.status, STATUS_COLOR[r.status] || 'none')],
+    ['Units',    `<span class="meta-field__pill" style="background:var(--background-strong);color:var(--text)">${r.units}</span>`],
+  ].map(([l, v]) => `<span class="meta-field"><span class="meta-field__label">${l}</span>${v}</span>`).join('');
+
+  const section = (label, icon, body) => `
+    <div class="pn-sec">
+      <div class="pn-sec__title"><span class="ico ico--12">${icon}</span><span class="pn-sec__label">${esc(label)}</span></div>
+      <div class="pn-sec__body">${body}</div>
+    </div>`;
+
+  return `
+    <div class="pane__topbar">
+      <span class="pane__crumb"><span class="ico ico--16">${IC.table}</span>Properties</span>
+      <span class="pane__actions">
+        ${face(r.mgr[0], r.mgr[1])}
+        <button class="icon-btn" aria-label="Add follower">${IC.plus}</button>
+        <button class="btn btn--secondary btn--sm">Share</button>
+        <span class="pane__sep"></span>
+        <button class="icon-btn" aria-label="Copy link">${IC.link}</button>
+        <button class="icon-btn" aria-label="Expand">${IC.expand}</button>
+        <button class="icon-btn" aria-label="Customize">${IC.brush}</button>
+        <button class="icon-btn" aria-label="More">${IC.more}</button>
+        <button class="icon-btn" id="pane-close" aria-label="Close">${IC.collapse}</button>
+      </span>
+    </div>
+
+    <div class="pane__body">
+      <div class="pane__title-wrap"><div class="pane__title">${r.locked ? lockIcon : ''}${esc(r.name)}</div></div>
+      <div class="pane__meta">${meta}</div>
+
+      ${section('Key metrics', IC.dashboard, `
+        <div class="pn-metrics">
+          <div class="pn-metric">
+            <div class="pn-metric__label">Occupancy</div>
+            <div class="pn-metric__value">${r.occ}</div>
+            <div class="pn-metric__sub">Current</div>
+          </div>
+          <div class="pn-metric">
+            <div class="pn-metric__label">Units</div>
+            <div class="pn-metric__value">${r.units}</div>
+            <div class="pn-metric__sub">Managed</div>
+          </div>
+          <div class="pn-metric">
+            <div class="pn-metric__label">Work orders</div>
+            <div class="pn-metric__value">${openWO}</div>
+            <div class="pn-metric__sub">${openWO === 1 ? 'Open' : 'Open'}</div>
+          </div>
+        </div>`)}
+
+      ${section('Branding asset', IC.page, brand
+        ? `<img class="branding-img" src="${brand}" alt="${esc(r.name)} branding">`
+        : `<div class="branding-empty">${IC.plus}No branding asset for this property yet</div>`)}
+
+      ${section('Property details', IC.dashboard, `<div class="cf">
+        ${cfRow('Address',           IC.page,   esc(r.addr))}
+        ${cfRow('Units',             IC.table,  r.units)}
+        ${cfRow('Year built',        IC.table,  r.year)}
+        ${cfRow('Status',            IC.goal,   pfPill(r.status, STATUS_COLOR[r.status] || 'none'))}
+        ${cfRow('Occupancy',         IC.goal,   r.occ)}
+        ${cfRow('Regional manager',  IC.people, `${face(r.mgr[0], r.mgr[1])}<span style="margin-left:6px">${esc(MGR_NAMES[r.mgr[0]] || r.mgr[0])}</span>`)}
+      </div>`)}
+    </div>
+
+    <div class="composer">
+      <div class="composer__input">Ask a question or leave a comment</div>
+      <div class="composer__tools">
+        <button class="icon-btn icon-btn--sm" aria-label="Attach">${IC.plus}</button>
+        <button class="icon-btn icon-btn--sm" aria-label="Mention">${IC.people}</button>
+        <button class="icon-btn icon-btn--sm composer__send" aria-label="Send">${IC.send}</button>
+      </div>
+    </div>`;
+}
+
+const MGR_NAMES = { JW:'James Wu', SC:'Sarah Chen', MR:'Marcus Reid', PP:'Priya Patel', HM:'Hana Mori', DK:'Dana Kim' };
+
+/* Open / close, scoped to whichever canvas is showing */
+function openPane(name, root) {
+  const r = PROPERTY_RECORDS.find(p => p.name === name);
+  if (!r) return;
+  closePane(root);
+  const el = document.createElement('aside');
+  el.className = 'pane';
+  el.innerHTML = paneHtml(r);
+  root.appendChild(el);
+  // next frame so the transition actually runs
+  requestAnimationFrame(() => el.classList.add('pane--on'));
+  const row = root.querySelector(`[data-prop="${CSS.escape(name)}"]`);
+  if (row) row.classList.add('is-open');
+}
+function closePane(root) {
+  root.querySelectorAll('.pane').forEach(n => n.remove());
+  root.querySelectorAll('tr.is-open').forEach(n => n.classList.remove('is-open'));
+}
+
 /* Same chrome as portfolioHtml — the page title is the TABLE, and the
    grouping the user picked is simply the active tab. */
 function tableHtml(o) {
@@ -2322,8 +2583,13 @@ function tableHtml(o) {
     `<button class="db-tab ${t === tab ? 'db-tab--active' : ''}">${esc(t)}</button>`).join('') +
     `<button class="db-tab" aria-label="Add view">${IC.plus}</button>`;
 
-  const rows = def.rows(tab).map(cells =>
-    `<tr>${cells.map(c => `<td>${c}</td>`).join('')}<td></td></tr>`).join('');
+  // rows() may return plain cell arrays, or { key, cells } when a row is
+  // clickable — the key is what opens the record pane.
+  const rows = def.rows(tab).map(r => {
+    const cells = Array.isArray(r) ? r : r.cells;
+    const attr  = Array.isArray(r) || !r.key ? '' : ` data-prop="${esc(r.key)}"`;
+    return `<tr${attr}>${cells.map(c => `<td>${c}</td>`).join('')}<td></td></tr>`;
+  }).join('');
 
   return `
     <div class="pf-head">
@@ -2579,6 +2845,9 @@ function renderEndUser() {
    ═══════════════════════════════════════════════════════════════════════ */
 function go(screen) {
   S.screen = screen;
+  // Panes are absolutely positioned inside a canvas, so one left open
+  // survives a screen change and reappears when you come back.
+  document.querySelectorAll('.canvas').forEach(closePane);
   if (screen !== 'builder') $('#builder').classList.remove('builder--on');
   if (screen === 'workspace') { S.railMode = 'work'; renderWorkspace(); }
   if (screen === 'apps')      renderApps();
@@ -2659,6 +2928,16 @@ document.addEventListener('click', (e) => {
     paintBuilder();
     return;
   }
+  // record pane — open on a property row, close on the X or a re-click
+  if (t.closest('#pane-close')) { closePane(t.closest('.canvas')); return; }
+  const propRow = t.closest('[data-prop]');
+  if (propRow) {
+    const root = propRow.closest('.canvas');
+    if (propRow.classList.contains('is-open')) closePane(root);
+    else openPane(propRow.dataset.prop, root);
+    return;
+  }
+
   // select an object (preview + end user)
   const item = t.closest('[data-obj]');
   if (item) { S.sel = item.dataset.obj; renderPreview(); return; }
