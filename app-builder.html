@@ -218,6 +218,9 @@
     .ico--16 > .ico-folder { width: 16px; height: 16px; }
     .ico--12 > .ico-folder { width: 12px; height: 12px; }
     .pf-head__icon > .ico-folder { width: 13px; height: 13px; }
+    /* App-identity icons are square on a 24 grid, so they take their box */
+    .ico--16 > .ico-app { width: 16px; height: 16px; }
+    .ico--12 > .ico-app { width: 12px; height: 12px; }
 
     /* ── Buttons ─────────────────────────────────────────────────────── */
     .btn {
@@ -1319,6 +1322,20 @@ const IC = {
   home: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8.62 1.2a1 1 0 0 0-1.24 0L1.7 5.72A2 2 0 0 0 .95 7.3V13a2 2 0 0 0 2 2h10.1a2 2 0 0 0 2-2V7.3a2 2 0 0 0-.75-1.56L8.62 1.2Zm-.62 1.1 5.06 4.02a1 1 0 0 1 .37.78V13a1 1 0 0 1-1 1H9.5v-3.3a1.5 1.5 0 0 0-3 0V14H3.95a1 1 0 0 1-1-1V7.1a1 1 0 0 1 .38-.78L8 2.3Z" fill="currentColor"/></svg>',
   inbox: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 .8a4.7 4.7 0 0 0-4.7 4.7v2.3c0 .5-.16 1-.46 1.4l-.9 1.2A1.2 1.2 0 0 0 2.9 12.2h2.3a2.85 2.85 0 0 0 5.6 0h2.3a1.2 1.2 0 0 0 .96-1.9l-.9-1.2a2.35 2.35 0 0 1-.46-1.4V5.5A4.7 4.7 0 0 0 8 .8Zm0 1.2a3.5 3.5 0 0 1 3.5 3.5v2.3c0 .77.25 1.5.7 2.12l.6.78H3.2l.6-.78c.45-.61.7-1.35.7-2.12V5.5A3.5 3.5 0 0 1 8 2Zm0 12a1.65 1.65 0 0 1-1.55-1.1h3.1A1.65 1.65 0 0 1 8 14Z" fill="currentColor"/></svg>',
   check: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 .8a7.2 7.2 0 1 0 0 14.4A7.2 7.2 0 0 0 8 .8Zm0 1.2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm3.06 3.63a.6.6 0 0 0-.46.22L7.3 9.72 5.86 8.28a.6.6 0 1 0-.85.85l1.9 1.9a.6.6 0 0 0 .89-.05l3.7-4.44a.6.6 0 0 0-.44-1.01Z" fill="currentColor"/></svg>',
+  /* ── App-identity icons ────────────────────────────────────────────
+     For naming an app, not for typing an object. Drawn in the outlined
+     idiom of the reference set (Building + the emoji categories) rather
+     than the filled idiom of the Figma exports — these read as a picker,
+     which is what the reference shows. Sized via .ico-app below. */
+  building: '<svg class="ico-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20.5h18"/><path d="M6 20.5V5.2a1.2 1.2 0 0 1 1.2-1.2h6.6A1.2 1.2 0 0 1 15 5.2v15.3"/><path d="M15 20.5v-8.3h2.8A1.2 1.2 0 0 1 19 13.4v7.1"/><path d="M8.6 8h3.8M8.6 11.5h3.8M8.6 15h3.8"/></svg>',
+  briefcase: '<svg class="ico-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12.5" rx="2.2"/><path d="M9 7.5V6.2A1.7 1.7 0 0 1 10.7 4.5h2.6A1.7 1.7 0 0 1 15 6.2v1.3"/><path d="M3 12.8h18"/></svg>',
+  smiley: '<svg class="ico-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M8.3 13.4a4.4 4.4 0 0 0 7.4 0"/><circle cx="9.3" cy="10" r=".95" fill="currentColor" stroke="none"/><circle cx="14.7" cy="10" r=".95" fill="currentColor" stroke="none"/></svg>',
+  leaf: '<svg class="ico-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18.9 5.1c1 8.6-4.1 13.3-9.7 13.3-1.7 0-3.1-.6-4-1.7-1.2-1.6-.7-4.1 1.4-6.2C9.8 7.3 13.9 5.5 18.9 5.1Z"/><path d="M3.6 20.4 9.8 14.2"/></svg>',
+  food: '<svg class="ico-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 7.6h11.8v5.9a4.6 4.6 0 0 1-4.6 4.6H9.2a4.6 4.6 0 0 1-4.6-4.6V7.6Z"/><path d="M16.4 9.6h1.9a2.5 2.5 0 0 1 0 5h-1.9"/><path d="M4.6 20.6h11.8"/></svg>',
+  activity: '<svg class="ico-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="9.2" ry="5.9" transform="rotate(-45 12 12)"/><path d="M8.5 15.5 15.5 8.5"/><path d="M9.6 13.2 11.2 14.8M11.2 11.6 12.8 13.2M12.8 10 14.4 11.6"/></svg>',
+  travel: '<svg class="ico-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 16.2v-3.4a2 2 0 0 1 .34-1.12l2.2-3.3A2 2 0 0 1 7.8 7.4h8.4a2 2 0 0 1 1.66.88l2.2 3.3A2 2 0 0 1 20.4 12.8v3.4"/><path d="M3.6 13.2h16.8"/><path d="M12 7.4v5.8"/><circle cx="7.6" cy="16.4" r="1.9"/><circle cx="16.4" cy="16.4" r="1.9"/></svg>',
+  flag: '<svg class="ico-app" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.6v16.8"/><path d="M6 5.2h11.6a.7.7 0 0 1 .6 1.05l-1.9 3.35 1.9 3.35a.7.7 0 0 1-.6 1.05H6"/></svg>',
+
   link: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6.6 9.4a2.9 2.9 0 0 0 4.1 0l2.1-2.1a2.9 2.9 0 0 0-4.1-4.1l-.8.8"/><path d="M9.4 6.6a2.9 2.9 0 0 0-4.1 0L3.2 8.7a2.9 2.9 0 0 0 4.1 4.1l.8-.8"/></svg>',
   expand: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5 9 7M2.5 13.5 7 9"/></svg>',
   collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v10M13 8H6.5M9 4.5 6 8l3 3.5"/></svg>',
@@ -1408,12 +1425,12 @@ const byId = id => CATALOG.find(o => o.id === id);
 
 /* Apps that already exist — the index the Build entry lands on */
 const EXISTING_APPS = [
-  { name:'Facilities Requests', glyph:'build',     color:'blue-green', status:'live',  meta:'Facilities · 4 sections', by:'Dana Ruiz' },
-  { name:'Vendor Compliance',   glyph:'table',     color:'purple',     status:'live',  meta:'Legal · 3 sections',      by:'Sam Cole' },
-  { name:'Capital Planning',    glyph:'dashboard', color:'yellow-orange', status:'draft', meta:'Finance · 2 sections', by:'You' },
+  { name:'Facilities Requests', glyph:'activity',     color:'blue-green', status:'live',  meta:'Facilities · 4 sections', by:'Dana Ruiz' },
+  { name:'Vendor Compliance',   glyph:'briefcase',     color:'purple',     status:'live',  meta:'Legal · 3 sections',      by:'Sam Cole' },
+  { name:'Capital Planning',    glyph:'flag', color:'yellow-orange', status:'draft', meta:'Finance · 2 sections', by:'You' },
 ];
 
-const GLYPH_CHOICES = ['portfolio','table','dashboard','project','page','goal','build'];
+const GLYPH_CHOICES = ['building','briefcase','smiley','leaf','food','activity','travel','flag'];
 const COLOR_CHOICES = ['indigo','blue','blue-green','aqua','green','yellow-orange','orange','purple','magenta','hot-pink'];
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1431,7 +1448,7 @@ let CFG = null;       // APP_CONFIG under construction
 
 function freshCfg() {
   return {
-    name: '', glyph: 'portfolio', color: 'indigo',
+    name: '', glyph: 'building', color: 'indigo',
     sections: [],
     access: {
       general: 'workspace',           // workspace | invited | public
