@@ -901,6 +901,77 @@
       color: var(--text-weak); font-size: var(--type-m-size);
       letter-spacing: var(--type-m-track); cursor: pointer;
     }
+    /* ══════════════════════════════════════════════════════════════════
+       DASHBOARDS — number cards on top, chart cards below
+       ══════════════════════════════════════════════════════════════════ */
+    .dash { padding: var(--pf-inset); display: flex; flex-direction: column; gap: var(--spacing-24); }
+    .dash__nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--spacing-12); }
+    .dash__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacing-12); }
+    @media (max-width: 1080px) {
+      .dash__nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .dash__grid { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    .dcard {
+      display: flex; flex-direction: column;
+      border: 1px solid var(--border); border-radius: var(--spacing-8);
+      background: var(--background-weak); overflow: hidden; min-width: 0;
+    }
+    /* A chart that needs the full row rather than half of it */
+    .dcard--wide { grid-column: 1 / -1; }
+    .dcard__title {
+      padding: var(--spacing-16) var(--spacing-16) var(--spacing-8);
+      font-size: var(--type-m-size); font-weight: 500; color: var(--text);
+      letter-spacing: var(--type-m-track);
+    }
+    .dcard__body { padding: 0 var(--spacing-16) var(--spacing-8); min-width: 0; }
+    .dcard__foot {
+      margin-top: auto;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--spacing-8) var(--spacing-12) var(--spacing-8) var(--spacing-16);
+      border-top: 1px solid var(--border);
+    }
+    .dcard__filter {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+    .dcard__filter svg { width: 12px; height: 12px; }
+
+    /* Number card */
+    .dcard--num .dcard__title { padding-bottom: 0; }
+    .dnum {
+      padding: var(--spacing-8) var(--spacing-16) 0;
+      font-family: var(--font-display); font-weight: 400;
+      font-size: 40px; line-height: 48px; letter-spacing: -0.5px;
+      color: var(--text); font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+    .dnum__sub {
+      padding: 2px var(--spacing-16) var(--spacing-12);
+      font-size: var(--type-s-size); color: var(--text-weak);
+    }
+
+    /* Donut + legend */
+    .ddonut { display: flex; align-items: center; gap: var(--spacing-16); padding: var(--spacing-8) 0; }
+    .ddonut__svg { width: 158px; height: 158px; flex-shrink: 0; }
+    .ddonut__total {
+      font-family: var(--font-display); font-size: 26px; font-weight: 500;
+      fill: var(--text); letter-spacing: 0.35px;
+    }
+    .dlegend { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+    .dlegend__row { display: flex; align-items: center; gap: var(--spacing-8); font-size: var(--type-s-size); min-width: 0; }
+    .dlegend__sw { width: 11px; height: 11px; border-radius: 2px; flex-shrink: 0; }
+    .dlegend__lab { color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dlegend__val { color: var(--text-weak); font-variant-numeric: tabular-nums; }
+
+    /* Shared SVG chart type */
+    .dchart { width: 100%; height: auto; display: block; }
+    .dval  { font-size: 11px; font-weight: 500; fill: var(--text); font-family: var(--font-text); }
+    .dlab  { font-size: 10px; fill: var(--text-weak); font-family: var(--font-text); }
+    .davatar { font-size: 9px; font-weight: 500; fill: var(--text); font-family: var(--font-text); }
+    .daxis { stroke: var(--border-strong); stroke-width: 1; }
+    .dgrid { stroke: var(--border); stroke-width: 1; }
+
     .pfg__n { color: var(--text-weak); font-variant-numeric: tabular-nums; }
     /* Confidential-record marker, as in Northline's property list */
     .rec-lock {
@@ -1103,6 +1174,7 @@ const IC = {
   home: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8.62 1.2a1 1 0 0 0-1.24 0L1.7 5.72A2 2 0 0 0 .95 7.3V13a2 2 0 0 0 2 2h10.1a2 2 0 0 0 2-2V7.3a2 2 0 0 0-.75-1.56L8.62 1.2Zm-.62 1.1 5.06 4.02a1 1 0 0 1 .37.78V13a1 1 0 0 1-1 1H9.5v-3.3a1.5 1.5 0 0 0-3 0V14H3.95a1 1 0 0 1-1-1V7.1a1 1 0 0 1 .38-.78L8 2.3Z" fill="currentColor"/></svg>',
   inbox: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 .8a4.7 4.7 0 0 0-4.7 4.7v2.3c0 .5-.16 1-.46 1.4l-.9 1.2A1.2 1.2 0 0 0 2.9 12.2h2.3a2.85 2.85 0 0 0 5.6 0h2.3a1.2 1.2 0 0 0 .96-1.9l-.9-1.2a2.35 2.35 0 0 1-.46-1.4V5.5A4.7 4.7 0 0 0 8 .8Zm0 1.2a3.5 3.5 0 0 1 3.5 3.5v2.3c0 .77.25 1.5.7 2.12l.6.78H3.2l.6-.78c.45-.61.7-1.35.7-2.12V5.5A3.5 3.5 0 0 1 8 2Zm0 12a1.65 1.65 0 0 1-1.55-1.1h3.1A1.65 1.65 0 0 1 8 14Z" fill="currentColor"/></svg>',
   check: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 .8a7.2 7.2 0 1 0 0 14.4A7.2 7.2 0 0 0 8 .8Zm0 1.2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm3.06 3.63a.6.6 0 0 0-.46.22L7.3 9.72 5.86 8.28a.6.6 0 1 0-.85.85l1.9 1.9a.6.6 0 0 0 .89-.05l3.7-4.44a.6.6 0 0 0-.44-1.01Z" fill="currentColor"/></svg>',
+  filter: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 4.5h11M4.5 8h7M6.5 11.5h3"/></svg>',
   plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>',
   x: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg>',
   drag: '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="6" cy="4" r="1.1"/><circle cx="10" cy="4" r="1.1"/><circle cx="6" cy="8" r="1.1"/><circle cx="10" cy="8" r="1.1"/><circle cx="6" cy="12" r="1.1"/><circle cx="10" cy="12" r="1.1"/></svg>',
@@ -1163,9 +1235,10 @@ const CATALOG = [
   { id:'tb-lease',  type:'table', table:'Leases',      name:'Leases',      meta:'612 records' },
   { id:'tb-res',    type:'table', table:'Residents',   name:'Residents',   meta:'1,880 records' },
 
-  { id:'db-metrics', type:'dashboard', name:'Portfolio Metrics',  meta:'4 widgets' },
-  { id:'db-occ',     type:'dashboard', name:'Occupancy Trends',   meta:'3 charts' },
-  { id:'db-digest',  type:'dashboard', name:'Leadership Digest',  meta:'weekly rollup' },
+  // One dashboard per audience. Metas state the real card/chart counts.
+  { id:'db-health',  type:'dashboard', name:'Portfolio Health',      meta:'Leadership · 4 cards, 3 charts' },
+  { id:'db-leasing', type:'dashboard', name:'Leasing & Occupancy',   meta:'Leasing · 4 cards, 3 charts' },
+  { id:'db-ops',     type:'dashboard', name:'Maintenance & Vendors', meta:'Operations · 4 cards, 4 charts' },
 
   { id:'pg-play',  type:'page', name:'Ops Playbook',      meta:'updated 2d ago' },
   { id:'pg-onb',   type:'page', name:'Onboarding Guide',  meta:'updated 1w ago' },
@@ -1737,6 +1810,44 @@ const PROPERTY_RECORDS = [
   { name:'Riverbend Flats',        loc:'Boston, MA',     units:76,  status:'Separation',      occ:'63%', mgr:['PP','yellow-orange'] },
 ];
 
+/* Work orders, vendors and leases live outside TABLE_DEFS because the
+   dashboards derive their charts from the same arrays the tables render.
+   One source per fact, so a chart can never disagree with its table. */
+const WORK_ORDERS = [
+  { id:'WO-1042', prop:'The Marlow',             issue:'HVAC unit 12A',       pri:'High',   who:['MR','indigo'],        opened:'Aug 18', age:2  },
+  { id:'WO-1041', prop:'Riverside Lofts',        issue:'Roof leak',           pri:'Urgent', who:['MR','indigo'],        opened:'Aug 17', age:3  },
+  { id:'WO-1039', prop:'Sunset Commons',         issue:'Lobby lighting',      pri:'Low',    who:['PP','yellow-orange'], opened:'Aug 15', age:5  },
+  { id:'WO-1038', prop:'The Marlow',             issue:'Elevator inspection', pri:'High',   who:['MR','indigo'],        opened:'Aug 14', age:6  },
+  { id:'WO-1035', prop:'Beacon Hill Apartments', issue:'Unit 4C repaint',     pri:'Low',    who:['SC','magenta'],       opened:'Aug 12', age:8  },
+  { id:'WO-1033', prop:'Riverbend Flats',        issue:'Parking gate',        pri:'High',   who:['PP','yellow-orange'], opened:'Aug 11', age:9  },
+  { id:'WO-1030', prop:'The Marlow',             issue:'Water heater',        pri:'Urgent', who:['MR','indigo'],        opened:'Aug 8',  age:12 },
+  { id:'WO-1028', prop:'Ivy & Vine',             issue:'Window seals',        pri:'Low',    who:['JW','aqua'],          opened:'Aug 6',  age:14 },
+  { id:'WO-1025', prop:'Riverside Lofts',        issue:'Boiler service',      pri:'High',   who:['MR','indigo'],        opened:'Aug 4',  age:16 },
+  { id:'WO-1019', prop:'North Park Residences',  issue:'Fire panel test',     pri:'Low',    who:['PP','yellow-orange'], opened:'Jul 29', age:22 },
+];
+
+const VENDORS = [
+  { name:'Bayview Plumbing',      cat:'Plumbing',   contact:'Ana Reyes',  amt:84000,  status:'Active'   },
+  { name:'Summit Elevator',       cat:'Elevators',  contact:'Cole Tran',  amt:210000, status:'Active'   },
+  { name:'GreenLeaf Landscaping', cat:'Grounds',    contact:'Mia Duarte', amt:46000,  status:'Renewing' },
+  { name:'Harbor HVAC',           cat:'HVAC',       contact:'Dev Shah',   amt:168000, status:'Active'   },
+  { name:'Ironline Roofing',      cat:'Roofing',    contact:'Rae Kim',    amt:132000, status:'Active'   },
+  { name:'Clearview Janitorial',  cat:'Janitorial', contact:'Luis Ortiz', amt:62000,  status:'Active'   },
+];
+
+/* `inDays` is days from the app's "today" (Aug 19), which is what the
+   expiring-soon card counts. */
+const LEASES = [
+  { id:'L-2291', resident:'Dana Whit',    prop:'The Marlow',             term:'12 mo', expires:'Sep 2026', q:'Q3 2026', inDays:26  },
+  { id:'L-2288', resident:'Omar Reyes',   prop:'Beacon Hill Apartments', term:'18 mo', expires:'Oct 2026', q:'Q4 2026', inDays:57  },
+  { id:'L-2280', resident:'Lena Poole',   prop:'Sunset Commons',         term:'12 mo', expires:'Nov 2026', q:'Q4 2026', inDays:88  },
+  { id:'L-2276', resident:'Priya Nair',   prop:'Riverside Lofts',        term:'12 mo', expires:'Dec 2026', q:'Q4 2026', inDays:118 },
+  { id:'L-2271', resident:'Sam Okafor',   prop:'Ivy & Vine',             term:'24 mo', expires:'Jan 2027', q:'Q1 2027', inDays:149 },
+  { id:'L-2265', resident:'Nina Patel',   prop:'Riverbend Flats',        term:'12 mo', expires:'Feb 2027', q:'Q1 2027', inDays:180 },
+  { id:'L-2260', resident:'Theo Brand',   prop:'North Park Residences',  term:'12 mo', expires:'Apr 2027', q:'Q2 2027', inDays:239 },
+  { id:'L-2254', resident:'Ruth Alvarez', prop:'Beacon Hill Apartments', term:'12 mo', expires:'Jun 2027', q:'Q2 2027', inDays:300 },
+];
+
 /* Grouping tab -> the Status it filters on. null = no filter. */
 const GROUPINGS = {
   'All properties':   null,
@@ -1747,6 +1858,77 @@ const GROUPINGS = {
 };
 
 const lockIcon = `<span class="rec-lock" title="Confidential">${IC.lock}</span>`;
+
+const PRI_HUE = { Urgent:'orange', High:'yellow-orange', Low:'none' };
+const money = n => '$' + n.toLocaleString('en-US');
+const pct   = n => n.toFixed(1).replace(/\.0$/, '') + '%';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DERIVED METRICS
+   Every figure below is COMPUTED from the record sets the tables render,
+   so a dashboard can't drift out of sync with the table behind it. The one
+   exception is the 12-month occupancy history, which has no source data —
+   it is illustrative and ends on the derived current value.
+   ═══════════════════════════════════════════════════════════════════════ */
+const M = {
+  properties:  () => PROPERTY_RECORDS.length,
+  units:       () => PROPERTY_RECORDS.reduce((n, r) => n + r.units, 0),
+  occupied:    () => Math.round(PROPERTY_RECORDS.reduce((n, r) => n + r.units * parseFloat(r.occ) / 100, 0)),
+  vacant:      () => M.units() - M.occupied(),
+  // Unit-weighted, not a mean of percentages — a 156-unit building can't
+  // count the same as a 42-unit one.
+  occupancy:   () => (M.occupied() / M.units()) * 100,
+  belowTarget: () => PROPERTY_RECORDS.filter(r => r.status !== 'New Development' && parseFloat(r.occ) < 90).length,
+
+  byLifecycle: () => Object.entries(GROUPINGS).filter(([, f]) => f)
+    .map(([label, f]) => ({ label, value: PROPERTY_RECORDS.filter(r => r.status === f).length })),
+
+  occByProperty: () => PROPERTY_RECORDS.map(r => ({ label: r.name, value: parseFloat(r.occ) }))
+    .sort((a, b) => b.value - a.value),
+
+  openByDept: () => Object.entries(PF_VIEWS).map(([id, v]) => ({
+    label: byId(id).name,
+    value: v.rows.reduce((n, r) => n + (r.open || 0), 0),
+    hue: byId(id).hue,
+  })).sort((a, b) => b.value - a.value),
+
+  openWork:   () => Object.values(PF_VIEWS).reduce((n, v) => n + v.rows.reduce((m, r) => m + (r.open || 0), 0), 0),
+  atRiskWork: () => Object.values(PF_VIEWS).reduce((n, v) => n + v.rows.filter(r => r.status).length, 0),
+
+  workOrders:   () => WORK_ORDERS.length,
+  woOverdue:    () => WORK_ORDERS.filter(w => w.age > 10).length,
+  woAvgAge:     () => WORK_ORDERS.reduce((n, w) => n + w.age, 0) / WORK_ORDERS.length,
+  woByProperty: () => tally(WORK_ORDERS, w => w.prop),
+  woByPriority: () => ['Urgent','High','Low'].map(p => ({ label: p, value: WORK_ORDERS.filter(w => w.pri === p).length })),
+  woByAssignee: () => {
+    const g = {};
+    WORK_ORDERS.forEach(w => { const k = w.who[0]; (g[k] = g[k] || { label:k, value:0, hue:w.who[1] }).value++; });
+    return Object.values(g).sort((a, b) => b.value - a.value);
+  },
+
+  vendorSpend:      () => VENDORS.reduce((n, v) => n + v.amt, 0),
+  spendByCategory:  () => VENDORS.map(v => ({ label: v.cat, value: v.amt })).sort((a, b) => b.value - a.value),
+
+  expiringSoon:  () => LEASES.filter(l => l.inDays <= 90).length,
+  leasesByQtr:   () => tally(LEASES, l => l.q),
+  vacantByProp:  () => PROPERTY_RECORDS
+    .map(r => ({ label: r.name, value: Math.round(r.units * (1 - parseFloat(r.occ) / 100)) }))
+    .filter(d => d.value > 0).sort((a, b) => b.value - a.value),
+  stabilized:    () => PROPERTY_RECORDS.filter(r => r.status === 'Stabilized').length,
+
+  // Illustrative history, pinned to the derived current value at the end
+  occTrend: () => {
+    const now = M.occupancy();
+    return [58.2, 59.4, 61.0, 60.3, 62.1, 63.4, 62.8, 64.1, 63.2, 65.0, 64.2, now]
+      .map((v, i) => ({ label: ['Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'][i], value: v }));
+  },
+};
+
+function tally(arr, keyFn) {
+  const g = {};
+  arr.forEach(x => { const k = keyFn(x); g[k] = (g[k] || 0) + 1; });
+  return Object.entries(g).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
+}
 
 /* Per-table columns and rows. Every table renders with the same page chrome
    as a portfolio; only Properties has more than one view. */
@@ -1781,29 +1963,24 @@ const TABLE_DEFS = {
   Vendors: {
     addLabel: 'Add vendor', tabs: ['All records'],
     cols: [['Vendor',220], ['Category',140], ['Contact',150], ['Contract',110], ['Status',130]],
-    rows() { return [
-      ['Bayview Plumbing',      'Plumbing',  'Ana Reyes',  '$84,000',  pfPill('Active','green')],
-      ['Summit Elevator',       'Elevators', 'Cole Tran',  '$210,000', pfPill('Active','green')],
-      ['GreenLeaf Landscaping', 'Grounds',   'Mia Duarte', '$46,000',  pfPill('Renewing','yellow-orange')],
-    ]; },
+    rows() { return VENDORS.map(v => [
+      esc(v.name), esc(v.cat), esc(v.contact), money(v.amt),
+      pfPill(v.status, v.status === 'Active' ? 'green' : 'yellow-orange'),
+    ]); },
   },
   'Work Orders': {
     addLabel: 'Add work order', tabs: ['All records'],
     cols: [['Order',110], ['Property',220], ['Issue',200], ['Priority',120], ['Opened',100]],
-    rows() { return [
-      ['WO-1042', 'The Marlow',      'HVAC unit 12A',  pfPill('High','yellow-orange'), 'Aug 18'],
-      ['WO-1041', 'Riverside Lofts', 'Roof leak',      pfPill('Urgent','orange'),      'Aug 17'],
-      ['WO-1039', 'Sunset Commons',  'Lobby lighting', pfPill('Low','none'),           'Aug 15'],
-    ]; },
+    rows() { return WORK_ORDERS.map(w => [
+      w.id, esc(w.prop), esc(w.issue), pfPill(w.pri, PRI_HUE[w.pri]), w.opened,
+    ]); },
   },
   Leases: {
     addLabel: 'Add lease', tabs: ['All records'],
     cols: [['Lease',110], ['Resident',160], ['Property',220], ['Term',90], ['Expires',110]],
-    rows() { return [
-      ['L-2291', 'Dana Whit',  'The Marlow',             '12 mo', 'Mar 2027'],
-      ['L-2288', 'Omar Reyes', 'Beacon Hill Apartments', '18 mo', 'Sep 2027'],
-      ['L-2280', 'Lena Poole', 'Sunset Commons',         '12 mo', 'Jan 2027'],
-    ]; },
+    rows() { return LEASES.map(l => [
+      l.id, esc(l.resident), esc(l.prop), l.term, l.expires,
+    ]); },
   },
   Residents: {
     addLabel: 'Add resident', tabs: ['All records'],
@@ -1815,6 +1992,273 @@ const TABLE_DEFS = {
     ]; },
   },
 };
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CHART PRIMITIVES — inline SVG, no libraries.
+   Every chart sits in a .dcard with the Asana footer (filter count left,
+   "See all" right), because that footer is a big part of why an Asana
+   dashboard reads as one.
+   ═══════════════════════════════════════════════════════════════════════ */
+const CHART_HUES = ['blue','indigo','aqua','green','yellow-orange','hot-pink','purple','blue-green','orange','magenta'];
+
+/* Shared so number cards and chart cards pluralise identically */
+const filterLabel = n => !n ? 'No Filters' : n + ' Filter' + (n > 1 ? 's' : '');
+
+function dcard(title, body, filters, wide) {
+  return `<div class="dcard ${wide ? 'dcard--wide' : ''}">
+    <div class="dcard__title">${esc(title)}</div>
+    <div class="dcard__body">${body}</div>
+    <div class="dcard__foot">
+      <span class="dcard__filter">${IC.filter}${filterLabel(filters)}</span>
+      <button class="btn btn--secondary btn--sm">See all</button>
+    </div>
+  </div>`;
+}
+
+/* Big-number card */
+function numCard(title, value, sub, filters) {
+  return `<div class="dcard dcard--num">
+    <div class="dcard__title">${esc(title)}</div>
+    <div class="dnum">${value}</div>
+    ${sub ? `<div class="dnum__sub">${sub}</div>` : ''}
+    <div class="dcard__foot">
+      <span class="dcard__filter">${IC.filter}${filterLabel(filters)}</span>
+    </div>
+  </div>`;
+}
+
+/* Donut with the total in the middle and a legend on the right.
+   Segments are drawn as dash-arrays on one circle, rotated so the first
+   slice starts at 12 o'clock. */
+function donut(data, centerVal, centerLab) {
+  const total = data.reduce((n, d) => n + d.value, 0) || 1;
+  const r = 52, C = 2 * Math.PI * r;
+  let acc = 0;
+  const rings = data.map((d, i) => {
+    const hue = d.hue || CHART_HUES[i % CHART_HUES.length];
+    const len = (d.value / total) * C;
+    const seg = `<circle cx="70" cy="70" r="${r}" fill="none"
+      stroke="${cz(hue,'bg')}" stroke-width="22"
+      stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}"
+      stroke-dashoffset="${(-acc).toFixed(2)}"
+      transform="rotate(-90 70 70)"></circle>`;
+    acc += len;
+    return seg;
+  }).join('');
+
+  const legend = data.map((d, i) => {
+    const hue = d.hue || CHART_HUES[i % CHART_HUES.length];
+    return `<div class="dlegend__row">
+      <span class="dlegend__sw" style="background:${cz(hue,'bg')}"></span>
+      <span class="dlegend__lab">${esc(d.label)}</span>
+      <span class="dlegend__val">${d.value}</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="ddonut">
+    <svg viewBox="0 0 140 140" class="ddonut__svg" role="img" aria-label="${esc(centerLab || '')}">
+      ${rings}
+      <text x="70" y="70" class="ddonut__total" text-anchor="middle" dominant-baseline="central">${centerVal}</text>
+    </svg>
+    <div class="dlegend">${legend}</div>
+  </div>`;
+}
+
+/* Vertical bars with value labels above and rotated x labels below */
+function barChart(data, opts) {
+  opts = opts || {};
+  const max = Math.max(...data.map(d => d.value), 1);
+  // Rotated -35deg with text-anchor:end, a label's far end lands
+  // width*sin(35) BELOW its anchor. Reserve that space, or .dcard's
+  // overflow:hidden shears the labels diagonally and eats their first
+  // characters — which looks like bad data rather than a clipped box.
+  const drop = Math.ceil(labelChars(data.length) * 5.4 * 0.574);
+  const W = 560, padT = 24, plotH = 112, padB = 26 + drop, H = padT + plotH + padB, padL = 34;
+  const slot = (W - padL) / data.length;
+  const bw = Math.min(38, slot * 0.55);
+
+  const bars = data.map((d, i) => {
+    const h = ((d.value / max) * (H - padT - padB)) || 0;
+    const x = padL + i * slot + (slot - bw) / 2;
+    const y = H - padB - h;
+    const hue = d.hue || opts.hue || 'blue';
+    return `
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h,1).toFixed(1)}"
+            rx="3" fill="${cz(hue,'bg')}"></rect>
+      <text x="${(x + bw/2).toFixed(1)}" y="${(y - 7).toFixed(1)}" class="dval" text-anchor="middle">${opts.fmt ? opts.fmt(d.value) : d.value}</text>
+      <text x="${(x + bw/2).toFixed(1)}" y="${H - padB + 14}" class="dlab"
+            text-anchor="end" transform="rotate(-35 ${(x + bw/2).toFixed(1)} ${H - padB + 14})">${esc(trim(d.label, labelChars(data.length)))}</text>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="dchart" role="img">
+    <line x1="${padL}" y1="${H - padB}" x2="${W}" y2="${H - padB}" class="daxis"></line>
+    <text x="${padL - 8}" y="${H - padB}" class="dlab" text-anchor="end" dominant-baseline="middle">0</text>
+    ${bars}
+  </svg>`;
+}
+
+/* Lollipop — thin stem, dot on top. Optionally avatars as x labels. */
+function lollipop(data, opts) {
+  opts = opts || {};
+  const max = Math.max(...data.map(d => d.value), 1);
+  // Avatar labels sit upright under the axis, so only rotated text needs
+  // the diagonal allowance (see barChart).
+  const drop = opts.avatars ? 0 : Math.ceil(labelChars(data.length) * 5.4 * 0.574);
+  const W = 560, padT = 24, plotH = 112, padB = opts.avatars ? 46 : 26 + drop,
+        H = padT + plotH + padB, padL = 34;
+  const slot = (W - padL) / data.length;
+
+  const stems = data.map((d, i) => {
+    const h = ((d.value / max) * (H - padT - padB)) || 0;
+    const cx = padL + i * slot + slot / 2;
+    const y = H - padB - h;
+    const hue = d.hue || opts.hue || 'indigo';
+    return `
+      <line x1="${cx.toFixed(1)}" y1="${(H - padB).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${y.toFixed(1)}"
+            stroke="${cz(hue,'bg')}" stroke-width="7" stroke-linecap="round" opacity="0.45"></line>
+      <circle cx="${cx.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="${cz(hue,'bg')}"></circle>
+      <text x="${cx.toFixed(1)}" y="${(y - 12).toFixed(1)}" class="dval" text-anchor="middle">${d.value}</text>
+      ${opts.avatars
+        ? `<circle cx="${cx.toFixed(1)}" cy="${H - padB + 18}" r="11" fill="${cz(hue,'bg')}"></circle>
+           <text x="${cx.toFixed(1)}" y="${H - padB + 18}" class="davatar" text-anchor="middle" dominant-baseline="central">${esc(d.label)}</text>`
+        : `<text x="${cx.toFixed(1)}" y="${H - padB + 14}" class="dlab" text-anchor="end"
+                 transform="rotate(-35 ${cx.toFixed(1)} ${H - padB + 14})">${esc(trim(d.label, labelChars(data.length)))}</text>`}`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="dchart" role="img">
+    <line x1="${padL}" y1="${H - padB}" x2="${W}" y2="${H - padB}" class="daxis"></line>
+    <text x="${padL - 8}" y="${H - padB}" class="dlab" text-anchor="end" dominant-baseline="middle">0</text>
+    ${stems}
+  </svg>`;
+}
+
+/* Area + line, for the occupancy trend */
+function areaChart(data, opts) {
+  opts = opts || {};
+  const vals = data.map(d => d.value);
+  const min = Math.floor(Math.min(...vals) - 3), max = Math.ceil(Math.max(...vals) + 3);
+  const W = 560, H = 190, padB = 34, padT = 22, padL = 40;
+  const sx = i => padL + (i / (data.length - 1)) * (W - padL - 10);
+  const sy = v => H - padB - ((v - min) / (max - min)) * (H - padT - padB);
+
+  const pts = data.map((d, i) => `${sx(i).toFixed(1)},${sy(d.value).toFixed(1)}`).join(' ');
+  const area = `${padL},${H - padB} ${pts} ${sx(data.length - 1).toFixed(1)},${H - padB}`;
+  const hue = opts.hue || 'blue';
+
+  const gridlines = [min, (min + max) / 2, max].map(v =>
+    `<line x1="${padL}" y1="${sy(v).toFixed(1)}" x2="${W - 10}" y2="${sy(v).toFixed(1)}" class="dgrid"></line>
+     <text x="${padL - 8}" y="${sy(v).toFixed(1)}" class="dlab" text-anchor="end" dominant-baseline="middle">${Math.round(v)}%</text>`).join('');
+
+  const labels = data.map((d, i) =>
+    `<text x="${sx(i).toFixed(1)}" y="${H - padB + 15}" class="dlab" text-anchor="middle">${esc(d.label)}</text>`).join('');
+
+  const last = data[data.length - 1];
+  return `<svg viewBox="0 0 ${W} ${H}" class="dchart" role="img">
+    ${gridlines}
+    <polygon points="${area}" fill="${cz(hue,'bg')}" opacity="0.16"></polygon>
+    <polyline points="${pts}" fill="none" stroke="${cz(hue,'bg')}" stroke-width="2.5"
+              stroke-linejoin="round" stroke-linecap="round"></polyline>
+    <circle cx="${sx(data.length - 1).toFixed(1)}" cy="${sy(last.value).toFixed(1)}" r="5"
+            fill="${cz(hue,'bg')}" stroke="#fff" stroke-width="2"></circle>
+    <text x="${sx(data.length - 1).toFixed(1)}" y="${(sy(last.value) - 13).toFixed(1)}" class="dval" text-anchor="end">${pct(last.value)}</text>
+    ${labels}
+  </svg>`;
+}
+
+const trim = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+
+/* Rotated x-labels collide once the slot gets narrow, which reads as
+   clipped text rather than overlap. Budget characters by how many bars
+   share the axis — Asana truncates hard here too. */
+const labelChars = n => Math.max(7, Math.min(16, Math.floor(90 / n) + 3));
+
+/* ═══════════════════════════════════════════════════════════════════════
+   THE THREE DASHBOARDS
+   One per audience: leadership, leasing, operations.
+   ═══════════════════════════════════════════════════════════════════════ */
+const DASHBOARDS = {
+  'db-health': {
+    crumb: 'Dashboards / Leadership',
+    cards: () => [
+      numCard('Properties', M.properties(), 'under management'),
+      numCard('Units managed', M.units().toLocaleString(), `${M.occupied().toLocaleString()} occupied`, 1),
+      numCard('Portfolio occupancy', pct(M.occupancy()), 'unit-weighted', 1),
+      numCard('Below 90% target', M.belowTarget(), 'excludes new builds', 2),
+    ],
+    charts: () => [
+      dcard('Total properties by lifecycle', donut(M.byLifecycle(), M.properties(), 'Properties by lifecycle'), 1),
+      dcard('Occupancy by property', barChart(M.occByProperty(), { hue:'blue', fmt: v => v + '%' }), 1),
+      dcard('Open work by department', lollipop(M.openByDept()), 2, true),
+    ],
+  },
+
+  'db-leasing': {
+    crumb: 'Dashboards / Leasing',
+    cards: () => [
+      numCard('Portfolio occupancy', pct(M.occupancy()), 'unit-weighted', 1),
+      numCard('Vacant units', M.vacant().toLocaleString(), `of ${M.units().toLocaleString()}`, 1),
+      numCard('Leases expiring', M.expiringSoon(), 'in the next 90 days', 2),
+      numCard('Stabilized', M.stabilized(), 'properties at target'),
+    ],
+    charts: () => [
+      dcard('Portfolio occupancy trend', areaChart(M.occTrend(), { hue:'blue-green' }), 1, true),
+      dcard('Vacant units by property', barChart(M.vacantByProp(), { hue:'hot-pink' }), 1),
+      dcard('Lease expirations by quarter', donut(M.leasesByQtr(), LEASES.length, 'Lease expirations'), 0),
+    ],
+  },
+
+  'db-ops': {
+    crumb: 'Dashboards / Operations',
+    cards: () => [
+      numCard('Open work orders', M.workOrders(), 'across the portfolio'),
+      numCard('Overdue', M.woOverdue(), 'open over 10 days', 1),
+      numCard('Avg open age', M.woAvgAge().toFixed(1) + 'd', 'time since raised', 1),
+      numCard('Vendor spend', money(M.vendorSpend()), 'contracted YTD', 1),
+    ],
+    charts: () => [
+      dcard('Open work orders by property', barChart(M.woByProperty(), { hue:'orange' }), 1),
+      dcard('Work orders by priority', donut(M.woByPriority(), M.workOrders(), 'Work orders by priority'), 1),
+      dcard('Work orders by assignee', lollipop(M.woByAssignee(), { avatars:true }), 2),
+      dcard('Vendor spend by category', barChart(M.spendByCategory(), { hue:'indigo', fmt: v => '$' + Math.round(v/1000) + 'K' }), 1),
+    ],
+  },
+};
+
+/* Same page chrome as portfolios and tables */
+function dashboardHtml(o) {
+  const d = DASHBOARDS[o.id] || DASHBOARDS['db-health'];
+  return `
+    <div class="pf-head">
+      <div class="pf-head__crumb">${esc(d.crumb)}</div>
+      <div class="pf-head__top">
+        <span class="pf-head__icon" style="background:${TYPES.dashboard.bg};color:${TYPES.dashboard.fg}">
+          <span class="ico ico--16" style="color:inherit">${IC.dashboard}</span></span>
+        <span class="pf-head__name">${esc(o.name)}</span>
+        <button class="icon-btn icon-btn--sm" aria-label="Dashboard menu">${IC.caret}</button>
+        <button class="icon-btn icon-btn--sm" aria-label="Star">${IC.star}</button>
+        <span class="pf-head__actions">
+          <span class="facepile">${PF_FACES.map(([i, h]) => face(i, h)).join('')}</span>
+          <button class="btn btn--secondary btn--sm">Share</button>
+          <span class="pf-head__sep"></span>
+          <button class="icon-btn" aria-label="Customize">${IC.brush}</button>
+        </span>
+      </div>
+      <div class="pf-head__tabs">
+        <button class="db-tab db-tab--active">Dashboard</button>
+        <button class="db-tab" aria-label="Add view">${IC.plus}</button>
+      </div>
+    </div>
+    <div class="pf-toolbar">
+      <button class="btn btn--secondary btn--sm">${IC.plus}Add chart</button>
+      <span class="pf-toolbar__right">
+        ${['Filter','Date range','Options'].map(x => `<span class="pf-toolbar__item">${x}</span>`).join('')}
+      </span>
+    </div>
+    <div class="pf-body dash">
+      <div class="dash__nums">${d.cards().join('')}</div>
+      <div class="dash__grid">${d.charts().join('')}</div>
+    </div>`;
+}
 
 /* Same chrome as portfolioHtml — the page title is the TABLE, and the
    grouping the user picked is simply the active tab. */
@@ -1887,28 +2331,28 @@ const LOC_HUE = {
 
 const PF_VIEWS = {
   'pf-ops': { crumb:'Portfolios / Real Estate', rows:[
-    { name:'Marlow Renovation',       loc:'Oakland, CA',    budget:'$420,000.00', launch:'8 weeks',  who:['JW','aqua'] },
-    { name:'Beacon Hill Unit Turns',  loc:'Sacramento, CA', budget:'$310,000.00', launch:'4 weeks',  who:['SC','magenta'] },
-    { name:'Sunset Commons Lease-Up', loc:'San Jose, CA',   budget:'$180,000.00', launch:'12 weeks', who:['JW','aqua'], status:['At risk','orange'] },
-    { name:'Vendor Onboarding',       loc:'Portland, OR',   budget:'$95,000.00',  launch:'ongoing',  who:['PP','yellow-orange'] },
+    { name:'Marlow Renovation',       open:42, loc:'Oakland, CA',    budget:'$420,000.00', launch:'8 weeks',  who:['JW','aqua'] },
+    { name:'Beacon Hill Unit Turns',  open:18, loc:'Sacramento, CA', budget:'$310,000.00', launch:'4 weeks',  who:['SC','magenta'] },
+    { name:'Sunset Commons Lease-Up', open:23, loc:'San Jose, CA',   budget:'$180,000.00', launch:'12 weeks', who:['JW','aqua'], status:['At risk','orange'] },
+    { name:'Vendor Onboarding',       open:11, loc:'Portland, OR',   budget:'$95,000.00',  launch:'ongoing',  who:['PP','yellow-orange'] },
   ]},
   'pf-mkt': { crumb:'Portfolios / Growth', rows:[
-    { name:'Fall Leasing Campaign',      loc:'Bay Area',       budget:'$240,000.00', launch:'6 weeks', who:['HM','pink'] },
-    { name:'Marlow Brand Launch',        loc:'Oakland, CA',    budget:'$155,000.00', launch:'5 weeks', who:['HM','pink'] },
-    { name:'Photography Refresh',        loc:'Sacramento, CA', budget:'$68,000.00',  launch:'3 weeks', who:['SC','magenta'] },
-    { name:'Listing Syndication Revamp', loc:'National',       budget:'$92,000.00',  launch:'9 weeks', who:['DK','indigo'], status:['At risk','orange'] },
+    { name:'Fall Leasing Campaign',      open:16, loc:'Bay Area',       budget:'$240,000.00', launch:'6 weeks', who:['HM','pink'] },
+    { name:'Marlow Brand Launch',        open:12, loc:'Oakland, CA',    budget:'$155,000.00', launch:'5 weeks', who:['HM','pink'] },
+    { name:'Photography Refresh',        open:6, loc:'Sacramento, CA', budget:'$68,000.00',  launch:'3 weeks', who:['SC','magenta'] },
+    { name:'Listing Syndication Revamp', open:9, loc:'National',       budget:'$92,000.00',  launch:'9 weeks', who:['DK','indigo'], status:['At risk','orange'] },
   ]},
   'pf-legal': { crumb:'Portfolios / Corporate', rows:[
-    { name:'Lease Template Overhaul',    loc:'National',       budget:'$130,000.00', launch:'7 weeks',  who:['SC','magenta'] },
-    { name:'Fair Housing Audit',         loc:'Bay Area',       budget:'$85,000.00',  launch:'4 weeks',  who:['DK','indigo'] },
-    { name:'Beacon Hill Title Transfer', loc:'Sacramento, CA', budget:'$210,000.00', launch:'10 weeks', who:['SC','magenta'], status:['At risk','orange'] },
-    { name:'Vendor Contract Renewals',   loc:'National',       budget:'$54,000.00',  launch:'ongoing',  who:['PP','yellow-orange'] },
+    { name:'Lease Template Overhaul',    open:14, loc:'National',       budget:'$130,000.00', launch:'7 weeks',  who:['SC','magenta'] },
+    { name:'Fair Housing Audit',         open:8, loc:'Bay Area',       budget:'$85,000.00',  launch:'4 weeks',  who:['DK','indigo'] },
+    { name:'Beacon Hill Title Transfer', open:21, loc:'Sacramento, CA', budget:'$210,000.00', launch:'10 weeks', who:['SC','magenta'], status:['At risk','orange'] },
+    { name:'Vendor Contract Renewals',   open:5, loc:'National',       budget:'$54,000.00',  launch:'ongoing',  who:['PP','yellow-orange'] },
   ]},
   'pf-fac': { crumb:'Portfolios / Operations', rows:[
-    { name:'Elevator Modernization',        loc:'Boston, MA', budget:'$780,000.00', launch:'14 weeks', who:['MR','indigo'] },
-    { name:'Roof Replacement — Cedar Park', loc:'Denver, CO', budget:'$540,000.00', launch:'9 weeks',  who:['MR','indigo'], status:['At risk','orange'] },
-    { name:'HVAC Retrofit',                 loc:'Austin, TX', budget:'$410,000.00', launch:'7 weeks',  who:['PP','yellow-orange'] },
-    { name:'Water Intrusion Repairs',       loc:'Seattle, WA', budget:'$265,000.00', launch:'6 weeks', who:['MR','indigo'] },
+    { name:'Elevator Modernization',        open:31, loc:'Boston, MA', budget:'$780,000.00', launch:'14 weeks', who:['MR','indigo'] },
+    { name:'Roof Replacement — Cedar Park', open:19, loc:'Denver, CO', budget:'$540,000.00', launch:'9 weeks',  who:['MR','indigo'], status:['At risk','orange'] },
+    { name:'HVAC Retrofit',                 open:14, loc:'Austin, TX', budget:'$410,000.00', launch:'7 weeks',  who:['PP','yellow-orange'] },
+    { name:'Water Intrusion Repairs',       open:12, loc:'Seattle, WA', budget:'$265,000.00', launch:'6 weeks', who:['MR','indigo'] },
   ]},
 };
 
@@ -1976,6 +2420,7 @@ function objectHtml(o, isPreview) {
   // Portfolios and tables own their whole page chrome, not just a body
   if (o.type === 'portfolio') return portfolioHtml(o);
   if (o.type === 'table')     return tableHtml(o);
+  if (o.type === 'dashboard') return dashboardHtml(o);
 
   const head = `
     <div class="cv__head">
@@ -1990,17 +2435,6 @@ function objectHtml(o, isPreview) {
 
 function bodyFor(o) {
   switch (o.type) {
-    case 'dashboard':
-      return `<div class="metrics">
-        ${[['Active work','27','+4 this week','up'],
-           ['Open tasks','505','of 723','' ],
-           ['Vendors','86','12 pending','' ],
-           ['Overdue','9','−3 vs last week','up']]
-          .map(([l,v,d,dir]) => `<div class="metric">
-            <span class="metric__label">${l}</span>
-            <span class="metric__value">${v}</span>
-            <span class="metric__delta ${dir}">${d}</span></div>`).join('')}
-      </div>`;
     case 'project':
       return `<div class="tasklist">
         ${[['Final walkthrough — units 1–12','Aug 22','done'],
