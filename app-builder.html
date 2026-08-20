@@ -1140,10 +1140,10 @@ const TYPES = {
    not a place where new content is authored.
    ═══════════════════════════════════════════════════════════════════════ */
 const CATALOG = [
-  { id:'pf-ops',    type:'portfolio', name:'Property Ops Portfolio', meta:'12 projects · Property Ops' },
-  { id:'pf-lead',   type:'portfolio', name:'Leadership Portfolio',   meta:'6 projects · Executive' },
-  { id:'pf-trans',  type:'portfolio', name:'Transitions',            meta:'8 projects · Real Estate' },
-  { id:'pf-cap',    type:'portfolio', name:'Capital Projects',        meta:'5 projects · Facilities' },
+  { id:'pf-ops',   type:'portfolio', name:'Property Ops', meta:'4 projects · Real Estate' },
+  { id:'pf-mkt',   type:'portfolio', name:'Marketing',    meta:'4 projects · Growth' },
+  { id:'pf-legal', type:'portfolio', name:'Legal',        meta:'4 projects · Corporate' },
+  { id:'pf-fac',   type:'portfolio', name:'Facilities',   meta:'4 projects · Operations' },
 
   { id:'pj-marlow', type:'project', name:'Marlow Renovation',        meta:'42 tasks · due Nov 14' },
   { id:'pj-beacon', type:'project', name:'Beacon Hill Takeover',     meta:'67 tasks · due Sep 30' },
@@ -1735,28 +1735,40 @@ function statusPill(s) {
 const PF_TABS  = ['List', 'Timeline', 'Dashboard', 'Progress', 'Workload', 'Messages'];
 const PF_FACES = [['HM','pink'], ['JW','aqua'], ['DK','indigo'], ['SC','magenta']];
 
+/* One hue per location, shared across every portfolio — a select field's
+   colour belongs to the VALUE, so the same city can't be purple here and
+   blue there. */
+const LOC_HUE = {
+  'Oakland, CA':'purple', 'Sacramento, CA':'blue', 'San Jose, CA':'aqua',
+  'Portland, OR':'green', 'Seattle, WA':'indigo',  'Boston, MA':'hot-pink',
+  'Denver, CO':'orange',  'Austin, TX':'yellow-orange',
+  'Bay Area':'blue-green','National':'none',
+};
+
 const PF_VIEWS = {
-  // Exactly builder-mvp's Transitions data (Figma 40:30162)
-  'pf-trans': { crumb:'Portfolios / Real Estate', rows:[
-    { name:'The Marlow',             loc:['Oakland, CA','purple'],    budget:'$690,000.00', launch:'6 weeks', who:['SA','yellow-orange'] },
-    { name:'Beacon Hill Apartments', loc:['Sacramento, CA','blue'],   budget:'$890,000.00', launch:'6 weeks', who:['SA','yellow-orange'] },
-    { name:'Sunset Commons',         loc:['San Jose, CA','aqua'],     budget:'$860,000.00', launch:'6 weeks', who:['SA','yellow-orange'] },
+  'pf-ops': { crumb:'Portfolios / Real Estate', rows:[
+    { name:'Marlow Renovation',       loc:'Oakland, CA',    budget:'$420,000.00', launch:'8 weeks',  who:['JW','aqua'] },
+    { name:'Beacon Hill Unit Turns',  loc:'Sacramento, CA', budget:'$310,000.00', launch:'4 weeks',  who:['SC','magenta'] },
+    { name:'Sunset Commons Lease-Up', loc:'San Jose, CA',   budget:'$180,000.00', launch:'12 weeks', who:['JW','aqua'], status:['At risk','orange'] },
+    { name:'Vendor Onboarding',       loc:'Portland, OR',   budget:'$95,000.00',  launch:'ongoing',  who:['PP','yellow-orange'] },
   ]},
-  'pf-ops': { crumb:'Portfolios / Property Ops', rows:[
-    { name:'Marlow Renovation',        loc:['Oakland, CA','purple'],    budget:'$420,000.00', launch:'8 weeks',  who:['JW','aqua'] },
-    { name:'Beacon Hill Turns',        loc:['Sacramento, CA','blue'],   budget:'$310,000.00', launch:'4 weeks',  who:['SC','magenta'] },
-    { name:'Sunset Commons Lease-Up',  loc:['San Jose, CA','aqua'],     budget:'$180,000.00', launch:'12 weeks', who:['JW','aqua'], status:['At risk','orange'] },
-    { name:'Vendor Onboarding',        loc:['Portland, OR','green'],    budget:'$95,000.00',  launch:'ongoing',  who:['PP','yellow-orange'] },
+  'pf-mkt': { crumb:'Portfolios / Growth', rows:[
+    { name:'Fall Leasing Campaign',      loc:'Bay Area',       budget:'$240,000.00', launch:'6 weeks', who:['HM','pink'] },
+    { name:'Marlow Brand Launch',        loc:'Oakland, CA',    budget:'$155,000.00', launch:'5 weeks', who:['HM','pink'] },
+    { name:'Photography Refresh',        loc:'Sacramento, CA', budget:'$68,000.00',  launch:'3 weeks', who:['SC','magenta'] },
+    { name:'Listing Syndication Revamp', loc:'National',       budget:'$92,000.00',  launch:'9 weeks', who:['DK','indigo'], status:['At risk','orange'] },
   ]},
-  'pf-lead': { crumb:'Portfolios / Executive', rows:[
-    { name:'Q4 Occupancy Push',    loc:['Bay Area','green'],           budget:'$1,250,000.00', launch:'6 weeks',  who:['HM','pink'] },
-    { name:'Portfolio Rebrand',    loc:['National','indigo'],          budget:'$640,000.00',   launch:'10 weeks', who:['DK','indigo'] },
-    { name:'Capital Reallocation', loc:['National','yellow-orange'],   budget:'$2,100,000.00', launch:'8 weeks',  who:['SC','magenta'] },
+  'pf-legal': { crumb:'Portfolios / Corporate', rows:[
+    { name:'Lease Template Overhaul',    loc:'National',       budget:'$130,000.00', launch:'7 weeks',  who:['SC','magenta'] },
+    { name:'Fair Housing Audit',         loc:'Bay Area',       budget:'$85,000.00',  launch:'4 weeks',  who:['DK','indigo'] },
+    { name:'Beacon Hill Title Transfer', loc:'Sacramento, CA', budget:'$210,000.00', launch:'10 weeks', who:['SC','magenta'], status:['At risk','orange'] },
+    { name:'Vendor Contract Renewals',   loc:'National',       budget:'$54,000.00',  launch:'ongoing',  who:['PP','yellow-orange'] },
   ]},
-  'pf-cap': { crumb:'Portfolios / Facilities', rows:[
-    { name:'Elevator Modernization',       loc:['Boston, MA','hot-pink'],   budget:'$780,000.00', launch:'14 weeks', who:['MR','indigo'] },
-    { name:'Roof Replacement — Cedar Park', loc:['Denver, CO','orange'],    budget:'$540,000.00', launch:'9 weeks',  who:['MR','indigo'], status:['At risk','orange'] },
-    { name:'HVAC Retrofit',                loc:['Austin, TX','blue-green'], budget:'$410,000.00', launch:'7 weeks',  who:['PP','yellow-orange'] },
+  'pf-fac': { crumb:'Portfolios / Operations', rows:[
+    { name:'Elevator Modernization',        loc:'Boston, MA', budget:'$780,000.00', launch:'14 weeks', who:['MR','indigo'] },
+    { name:'Roof Replacement — Cedar Park', loc:'Denver, CO', budget:'$540,000.00', launch:'9 weeks',  who:['MR','indigo'], status:['At risk','orange'] },
+    { name:'HVAC Retrofit',                 loc:'Austin, TX', budget:'$410,000.00', launch:'7 weeks',  who:['PP','yellow-orange'] },
+    { name:'Water Intrusion Repairs',       loc:'Seattle, WA', budget:'$265,000.00', launch:'6 weeks', who:['MR','indigo'] },
   ]},
 };
 
@@ -1764,7 +1776,7 @@ const face   = (i, hue) => `<span class="avatar-24" style="background:${cz(hue,'
 const pfPill = (text, hue) => `<span class="pf-pill" style="background:${cz(hue,'bg')};color:${cz(hue,'fg')}">${esc(text)}</span>`;
 
 function portfolioHtml(o) {
-  const v = PF_VIEWS[o.id] || PF_VIEWS['pf-trans'];
+  const v = PF_VIEWS[o.id] || PF_VIEWS['pf-ops'];
   const tabs = PF_TABS.map((t, i) =>
     `<button class="db-tab ${i === 0 ? 'db-tab--active' : ''}">${t}</button>`).join('') +
     `<button class="db-tab" aria-label="Add view">${IC.plus}</button>`;
@@ -1773,7 +1785,7 @@ function portfolioHtml(o) {
     const st = r.status || ['On track', 'green'];
     return `<tr>
       <td>${esc(r.name)}</td>
-      <td>${pfPill(r.loc[0], r.loc[1])}</td>
+      <td>${pfPill(r.loc, LOC_HUE[r.loc] || 'none')}</td>
       <td>${r.budget}</td>
       <td>${pfPill(st[0], st[1])}</td>
       <td>${face(r.who[0], r.who[1])}</td>
