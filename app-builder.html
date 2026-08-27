@@ -2259,17 +2259,21 @@ function paintBaiChips() {
    Matched against the original text, not a lowercased copy, so the new
    name keeps the casing the user typed. Table rename is tested before the
    general rename, or "the table" would be read as a target to look up. */
-const RE_ADD_PF  = /^\s*add\s+(?:a\s+)?(?:new\s+)?portfolio\s*(?:for|called|named|:)?\s*(.+?)\s*$/i;
-const RE_REN_TBL = /^\s*rename\s+(?:the\s+)?table\s+to\s+(.+?)\s*$/i;
-const RE_RENAME  = /^\s*rename\s+(?:the\s+)?(.+?)\s+to\s+(.+?)\s*$/i;
+/* Generous on phrasing, because the user shouldn't have to guess the
+   magic words. Accepts rename/change/relabel/retitle/call, "to/as/into",
+   optional quotes, and a trailing noun ("the Content section"). */
+const RE_ADD_PF = /^\s*add\s+(?:a\s+)?(?:new\s+)?portfolio\s*(?:for|called|named|:)?\s*(.+?)\s*$/i;
+const RE_RENAME = /^\s*(?:rename|re-name|change|relabel|retitle|update|call)\s+(?:the\s+)?(.+?)\s+(?:to|as|into|->)\s+(.+?)\s*$/i;
 
-const unquote = s => s.replace(/^['"“‘]+|['"”’]+$/g, '').trim();
+const unquote = s => s.replace(/^['"“‘\u2018]+|['"”’\u2019]+$/g, '').trim();
+/* Drop a trailing object noun so "the Content section" targets "Content". */
+const NOUNS = /\s+(section|table|view|tab|portfolio|dashboard|page|object|group)s?$/i;
+const stripNoun = s => s.replace(NOUNS, '').trim();
+const norm = s => stripNoun(unquote(String(s))).toLowerCase();
 
 function baiIntent(text) {
   let m = text.match(RE_ADD_PF);
   if (m) return { op: 'addPortfolio', name: unquote(m[1]) };
-  m = text.match(RE_REN_TBL);
-  if (m) return { op: 'renameTable', name: unquote(m[1]) };
   m = text.match(RE_RENAME);
   if (m) return { op: 'rename', target: unquote(m[1]), name: unquote(m[2]) };
   return null;
@@ -2299,40 +2303,59 @@ function baiApply(intent) {
             It's empty until work lands in it.`;
   }
 
-  if (intent.op === 'renameTable') {
-    const obj = inApp().map(byId).find(o => o && o.type === 'table');
-    if (!obj) return null;
-    const from = tableLabel(obj.table);
-    TABLE_LABEL[obj.table] = intent.name;
-    return `Renamed the table from <strong>${esc(from)}</strong> to
-            <strong>${esc(intent.name)}</strong>. Its views are unchanged.`;
-  }
-
   if (intent.op === 'rename') {
-    const target = intent.target.toLowerCase();
+    const t = norm(intent.target);
+    const to = intent.name;
+    const hits = [];
 
-    const sec = CFG.sections.find(s => s.name.toLowerCase() === target);
-    if (sec) {
-      const from = sec.name; sec.name = intent.name;
-      return `Renamed the <strong>${esc(from)}</strong> section to <strong>${esc(intent.name)}</strong>.`;
+    // "rename the table to X" — no name given, so resolve to this app's table
+    if (t === 'table' || t === '') {
+      const obj = inApp().map(byId).find(o => o && o.type === 'table');
+      if (obj) { hits.push('the ' + tableLabel(obj.table) + ' table'); TABLE_LABEL[obj.table] = to; }
+    } else {
+      // A name can appear as a section, as a table's label, and as an object.
+      // Rename ALL of them — the name is one concept, not one widget.
+      CFG.sections.forEach(s => {
+        if (norm(s.name) === t) { hits.push('the ' + s.name + ' section'); s.name = to; }
+      });
+
+      [...new Set(inApp().map(byId).filter(o => o && o.type === 'table').map(o => o.table))]
+        .forEach(key => {
+          if (norm(tableLabel(key)) === t) { hits.push('the ' + tableLabel(key) + ' table'); TABLE_LABEL[key] = to; }
+        });
+
+      inApp().forEach(id => {
+        const o = byId(id);
+        if (!o || norm(o.name) !== t) return;
+        hits.push(o.name);
+        o.name = to;
+        // A view's sidebar label and its sub-tab are the same thing, so the
+        // tab moves with it or the two stop mirroring each other.
+        if (o.tab && TABLE_DEFS[o.table]) {
+          const tabs = TABLE_DEFS[o.table].tabs;
+          const i = tabs.indexOf(o.tab);
+          if (i >= 0) tabs[i] = to;
+          o.tab = to;
+        }
+      });
     }
 
-    const id = inApp().find(i => (byId(i) || {}).name?.toLowerCase() === target);
-    if (id) {
-      const o = byId(id), from = o.name;
-      o.name = intent.name;
-      // A table view's sidebar label and its tab are the same thing, so
-      // rename the tab too — otherwise the two stop mirroring each other.
-      if (o.tab && TABLE_DEFS[o.table]) {
-        const tabs = TABLE_DEFS[o.table].tabs;
-        const ti = tabs.indexOf(o.tab);
-        if (ti >= 0) tabs[ti] = intent.name;
-        o.tab = intent.name;
-      }
-      return `Renamed <strong>${esc(from)}</strong> to <strong>${esc(intent.name)}</strong>.`;
+    if (!hits.length) {
+      // Never a dead end: say what IS renameable here.
+      const names = [...new Set([
+        ...CFG.sections.map(s => s.name),
+        ...[...new Set(inApp().map(byId).filter(o => o && o.type === 'table').map(o => tableLabel(o.table)))],
+        ...inApp().map(i => (byId(i) || {}).name).filter(Boolean),
+      ])];
+      return `I couldn't find <strong>${esc(intent.target)}</strong> in this app.
+        You can rename: ${names.map(n => `<strong>${esc(n)}</strong>`).join(', ')}.`;
     }
-    return null;
+
+    const what = hits.length === 1 ? hits[0]
+      : hits.slice(0, -1).join(', ') + ' and ' + hits[hits.length - 1];
+    return `Renamed ${esc(what)} to <strong>${esc(to)}</strong>.`;
   }
+
   return null;
 }
 
