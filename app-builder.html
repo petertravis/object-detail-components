@@ -2058,6 +2058,7 @@ function renderApps() {
    ═══════════════════════════════════════════════════════════════════════ */
 function openModal() {
   CFG = freshCfg();
+  clearBaiLog();
   $('#app-name').value = '';
   paintModal();
   $('#scrim').classList.add('scrim--on');
@@ -2229,6 +2230,16 @@ const BAI_CHIPS = [
   { label: 'Rename a section',    prompt: 'Rename Content to Episodes' },
   { label: 'Rename the table',    prompt: 'Rename the table to All episodes' },
 ];
+
+/* The transcript lives in the DOM, so resetting state doesn't touch it.
+   Cleared wherever a new app session begins — Start over, and creating
+   another app, which would otherwise inherit the previous app's history. */
+function clearBaiLog() {
+  const log = $('#bai-log');
+  if (log) log.innerHTML = '';
+  const el = $('#bai-input');
+  if (el) el.value = '';
+}
 
 function paintBaiChips() {
   $('#bai-chips').innerHTML = BAI_CHIPS.map(c =>
@@ -3897,6 +3908,7 @@ function hardReset() {
   S = { aiPanel:false, screen:'workspace', railMode:'work', published:false, sel:null, bldTab:'build' };
   CFG = freshCfg();
   restoreCatalog();
+  clearBaiLog();
   closeTA();
   closeAI();
   $('#scrim').classList.remove('scrim--on');
