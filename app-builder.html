@@ -593,6 +593,103 @@
       background-size: var(--dot-gap) var(--dot-gap);
     }
 
+    /* ── AI chat surface on the Build tab ─────────────────────────────
+       A flex sibling of the stage, so opening it narrows the preview
+       rather than covering it. */
+    .bai {
+      width: 348px; flex-shrink: 0;
+      display: none; flex-direction: column;
+      background: var(--background-weak);
+      border-left: 1px solid var(--border);
+    }
+    .builder--ai .bai { display: flex; }
+    /* Trigger and close swap: only one is ever available */
+    /* The X only makes sense where the panel actually renders. The panel
+       lives in the Build pane, so on Settings there is nothing to close. */
+    .bai-close { display: none; }
+    .builder--ai.builder--build .bai-close { display: inline-flex; }
+    .bai-open {
+      margin-left: var(--spacing-8);
+      width: 28px; height: 28px; padding: 0; flex-shrink: 0;
+      border: none; border-radius: 6px; background: none; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background 120ms ease;
+    }
+    .bai-open:hover { background: var(--background-active); }
+    .bai-open svg { width: 18px; height: 18px; }
+    .builder--ai .bai-open { display: none; }
+
+    .bai__body {
+      flex: 1; min-height: 0; overflow-y: auto;
+      padding: var(--spacing-24);
+      display: flex; flex-direction: column; align-items: flex-start;
+    }
+    .bai__mark { display: inline-flex; }
+    .bai__mark svg { width: 26px; height: 26px; }
+    .bai__title {
+      margin-top: var(--spacing-16);
+      font-family: var(--font-display);
+      font-size: var(--type-xl-size); line-height: var(--type-xl-line);
+      letter-spacing: var(--type-xl-track); font-weight: 500; color: var(--text);
+    }
+    .bai__chips {
+      margin-top: var(--spacing-16);
+      display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-8);
+    }
+    .bai-chip {
+      padding: 7px var(--spacing-12);
+      border: 1px solid var(--border-strong); border-radius: 500px;
+      background: var(--background-weak); cursor: pointer;
+      font-family: inherit; font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track); color: var(--text); text-align: left;
+      transition: background 120ms ease, border-color 120ms ease;
+    }
+    .bai-chip:hover { background: var(--background-medium); border-color: var(--border-active); }
+
+    .bai__log { width: 100%; display: flex; flex-direction: column; gap: var(--spacing-12); }
+    .bai__log:not(:empty) { margin-top: var(--spacing-24); }
+    .bai__you {
+      align-self: flex-end; max-width: 88%;
+      padding: var(--spacing-8) var(--spacing-12);
+      border-radius: var(--spacing-12) var(--spacing-12) 4px var(--spacing-12);
+      background: var(--background-strong); color: var(--text);
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track);
+    }
+    .bai__ai {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text-weak);
+    }
+    .bai__ai strong { color: var(--text); font-weight: 500; }
+
+    .bai__composer {
+      flex-shrink: 0; margin: 0 var(--spacing-16) var(--spacing-16);
+      border: 1px solid var(--border-strong); border-radius: var(--spacing-12);
+      background: var(--background-weak);
+    }
+    .bai__composer:focus-within { border-color: var(--border-active); }
+    .bai__input {
+      width: 100%; border: none; outline: none; resize: none; background: none;
+      padding: var(--spacing-12) var(--spacing-12) var(--spacing-4);
+      font-family: inherit; font-size: var(--type-m-size);
+      line-height: var(--type-m-line); letter-spacing: var(--type-m-track); color: var(--text);
+    }
+    .bai__input::placeholder { color: var(--text-weak); }
+    .bai__composer-foot {
+      display: flex; align-items: center;
+      padding: 0 var(--spacing-8) var(--spacing-8);
+    }
+    .bai__send {
+      margin-left: auto;
+      width: 26px; height: 26px; border-radius: 500px; border: none;
+      background: none; color: var(--icon);
+      display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .bai__send svg { width: 15px; height: 15px; }
+    .bai__send:hover { background: var(--background-hover); color: var(--icon-active); }
+
+    @media (max-width: 1120px) { .bai { width: 300px; } }
+
     .bld__panes { flex: 1; min-height: 0; position: relative; }
     .bld__pane { position: absolute; inset: 0; display: none; }
     .bld__pane--on { display: flex; }
@@ -1348,6 +1445,9 @@
     <div class="bld__actions">
       <button class="btn btn--subtle btn--sm" id="bld-cancel">Cancel</button>
       <button class="btn btn--primary btn--sm" id="bld-publish" disabled>Publish app</button>
+      <button class="icon-btn bai-close" id="bai-close" aria-label="Close AI panel">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg>
+      </button>
     </div>
   </div>
 
@@ -1358,6 +1458,9 @@
         <div class="bld__stage-bar">
           <span class="bld__stage-label">Preview</span>
           <span class="bld__stage-hint" id="bld-hint">Add a section, then add objects into it</span>
+          <button class="bai-open" id="bai-open" title="Ask AI" aria-label="Ask AI">
+            <svg viewBox="0 0 32 32" fill="none"><ellipse cx="16" cy="21.6" rx="6.6" ry="6.4" fill="#ff584a"/><ellipse cx="8.2" cy="9.4" rx="6.6" ry="6.4" fill="#ff584a"/><ellipse cx="23.8" cy="9.4" rx="6.6" ry="6.4" fill="#ff584a"/></svg>
+          </button>
         </div>
         <div class="preview">
           <div class="topbar">
@@ -1383,6 +1486,31 @@
           </div>
         </div>
       </div>
+
+      <!-- AI chat surface. Open by default when the app was generated from a
+           prompt, closed when the user chose Start from scratch. -->
+      <aside class="bai" id="bai">
+        <div class="bai__body" id="bai-body">
+          <span class="bai__mark">
+            <svg viewBox="0 0 32 32" fill="none"><ellipse cx="16" cy="21.6" rx="6.6" ry="6.4" fill="#ff584a"/><ellipse cx="8.2" cy="9.4" rx="6.6" ry="6.4" fill="#ff584a"/><ellipse cx="23.8" cy="9.4" rx="6.6" ry="6.4" fill="#ff584a"/></svg>
+          </span>
+          <div class="bai__title">What do you want to build?</div>
+          <div class="bai__chips" id="bai-chips"></div>
+          <div class="bai__log" id="bai-log"></div>
+        </div>
+        <div class="bai__composer">
+          <textarea class="bai__input" id="bai-input" rows="2"
+            placeholder="Describe what you want to customize"></textarea>
+          <div class="bai__composer-foot">
+            <button class="icon-btn icon-btn--sm" aria-label="Add">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+            </button>
+            <button class="bai__send" id="bai-send" aria-label="Send">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.8V3.6"/><polyline points="4.2 7.4 8 3.4 11.8 7.4"/></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
     </section>
 
     <!-- SETTINGS -->
@@ -1662,6 +1790,7 @@ const COLOR_CHOICES = ['indigo','blue','blue-green','aqua','green','yellow-orang
    ═══════════════════════════════════════════════════════════════════════ */
 const SCREENS = ['workspace','apps','prompt','builder','app'];
 let S = {
+  aiPanel: false,        // AI chat open? true only when the app was generated
   screen: 'workspace',
   railMode: 'work',
   published: false,
@@ -2050,6 +2179,7 @@ function runGenerate() {
 
   const finish = () => {
     seedMeridian();
+    S.aiPanel = true;      // generated apps land with the chat open
     work.classList.remove('ai__working--on');
     closeAI();
     openBuilder();
@@ -2079,10 +2209,51 @@ function openBuilder() {
   renderSteps();
 }
 
+/* ── Builder AI chat ──────────────────────────────────────────────────
+   A surface, not a second builder: it acknowledges requests and names
+   what it would change, but does NOT restructure the app. Composition
+   still happens by direct manipulation in the sidebar, which is the
+   point this prototype is making. */
+const BAI_CHIPS = ['Add a new portfolio', 'Add fields', 'Create dashboards'];
+
+function paintBaiChips() {
+  $('#bai-chips').innerHTML = BAI_CHIPS
+    .map(c => `<button class="bai-chip" data-bai-chip>${esc(c)}</button>`).join('');
+}
+
+function baiSubmit() {
+  const el = $('#bai-input');
+  const text = el.value.trim();
+  if (!text) { el.focus(); return; }
+  const log = $('#bai-log');
+  log.insertAdjacentHTML('beforeend', `<div class="bai__you">${esc(text)}</div>`);
+  el.value = '';
+  const id = 'bai-r' + Date.now();
+  log.insertAdjacentHTML('beforeend', `<div class="bai__ai" id="${id}">Thinking…</div>`);
+  $('#bai-body').scrollTop = $('#bai-body').scrollHeight;
+  setTimeout(() => {
+    const r = document.getElementById(id);
+    if (!r) return;
+    const n = CFG.sections.reduce((a, s) => a + s.items.length, 0);
+    r.innerHTML = `I can do that. This app has <strong>${CFG.sections.length} sections</strong> and
+      <strong>${n} objects</strong> — for now, add or rearrange them in the sidebar and
+      I'll keep the preview in step.`;
+    $('#bai-body').scrollTop = $('#bai-body').scrollHeight;
+  }, 900);
+}
+
+$('#bai-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); baiSubmit(); }
+});
+
 function paintBuilder() {
   $('#bld-name').textContent = CFG.name;
   $('#bld-av').outerHTML = avatarHtml(CFG.glyph, CFG.color, 'sm').replace('class="obj-av obj-av--sm"', 'class="obj-av obj-av--sm" id="bld-av"');
   $('#bld-badge').textContent = S.published ? 'Live' : 'Draft';
+
+  $('#builder').classList.toggle('builder--ai', S.aiPanel);
+  $('#builder').classList.toggle('builder--build', S.bldTab === 'build');
+  paintBaiChips();
 
   // tabs
   $$('.segmented__btn').forEach(t => t.classList.toggle('segmented__btn--active', t.dataset.bt === S.bldTab));
@@ -3331,7 +3502,7 @@ document.addEventListener('click', (e) => {
   // ── AI prompt screen ──
   if (t.closest('#ai-back'))    { closeAI(); go('apps'); return; }
   // Northline's path: an existing user composes by hand
-  if (t.closest('#ai-scratch')) { closeAI(); openBuilder(); return; }
+  if (t.closest('#ai-scratch')) { closeAI(); S.aiPanel = false; openBuilder(); return; }
   if (t.closest('#ai-send'))    { submitPrompt(); return; }
   const aiCard = t.closest('[data-ai-card]');
   if (aiCard) {
@@ -3341,6 +3512,13 @@ document.addEventListener('click', (e) => {
     runGenerate();
     return;
   }
+
+  // AI chat panel on the builder
+  if (t.closest('#bai-open'))  { S.aiPanel = true;  paintBuilder(); setTimeout(()=>$('#bai-input').focus(), 40); return; }
+  if (t.closest('#bai-close')) { S.aiPanel = false; paintBuilder(); return; }
+  if (t.closest('#bai-send'))  { baiSubmit(); return; }
+  const baiChip = t.closest('[data-bai-chip]');
+  if (baiChip) { $('#bai-input').value = baiChip.textContent.trim(); $('#bai-input').focus(); return; }
 
   // builder tabs
   const bt = t.closest('[data-bt]');
@@ -3590,7 +3768,7 @@ document.addEventListener('drop', (e) => {
    RESET
    ═══════════════════════════════════════════════════════════════════════ */
 function hardReset() {
-  S = { screen:'workspace', railMode:'work', published:false, sel:null, bldTab:'build' };
+  S = { aiPanel:false, screen:'workspace', railMode:'work', published:false, sel:null, bldTab:'build' };
   CFG = freshCfg();
   closeTA();
   closeAI();
