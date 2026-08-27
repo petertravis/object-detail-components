@@ -460,7 +460,7 @@
       line-height: 22px; letter-spacing: var(--type-m-track); color: var(--text);
       min-height: 62px;
     }
-    .ai__input::placeholder { color: var(--text-disabled); }
+    .ai__input::placeholder { color: var(--text-weak); }
     .ai__composer-foot {
       display: flex; align-items: center;
       padding: 0 var(--spacing-12) var(--spacing-12);
@@ -1955,6 +1955,55 @@ const AI_CARDS = [
     hue:'indigo', icon:'briefcase' },
 ];
 
+/* ── Animated helper text ─────────────────────────────────────────────
+   One example prompt per featured process, in the same order as the cards.
+   These type into the textarea's real `placeholder`, not its value, so the
+   send button still treats the field as empty and nothing can be submitted
+   by accident. */
+const AI_EXAMPLES = [
+  'Content production — production, post-production, legal and distribution each see their own slice of the pipeline',
+  'Campaign design — CMO, strategy, creative lead and designers each see what they need',
+  'Product launch — exec, PM, engineering and marketing working from one cross-functional plan',
+];
+const PH_STATIC = 'Describe the work your team does…';
+
+/* A token, not a timer handle. Bumping it invalidates any chain still in
+   flight, so reopening the screen can't leave two cycles racing — the same
+   runaway-timer trap that hung the generate step. */
+let phToken = 0;
+function stopPlaceholderCycle(reset) {
+  phToken++;
+  if (reset) $('#ai-input').placeholder = PH_STATIC;
+}
+function startPlaceholderCycle() {
+  const el = $('#ai-input');
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.placeholder = PH_STATIC;
+    return;
+  }
+  const my = ++phToken;
+  // Bail if superseded, if the screen closed, or once the user has typed
+  const alive = () => my === phToken
+    && $('#ai-screen').classList.contains('ai--on')
+    && !el.value;
+
+  let idx = 0;
+  const typeIn = (s, i) => {
+    if (!alive()) return;
+    el.placeholder = s.slice(0, i);
+    if (i < s.length) { setTimeout(() => typeIn(s, i + 1), 26); return; }
+    setTimeout(() => wipe(s, s.length), 1900);
+  };
+  const wipe = (s, i) => {
+    if (!alive()) return;
+    el.placeholder = s.slice(0, i);
+    if (i > 0) { setTimeout(() => wipe(s, i - 1), 12); return; }
+    idx = (idx + 1) % AI_EXAMPLES.length;
+    setTimeout(() => typeIn(AI_EXAMPLES[idx], 0), 320);
+  };
+  typeIn(AI_EXAMPLES[0], 0);
+}
+
 /* Words that route a typed prompt to the Content-production build. */
 const CONTENT_WORDS = ['content','video','episode','media','production','post','edit','channel',
   'studio','film','show','publish','distribut','rights','creative','asset','shoot','script'];
@@ -1972,9 +2021,13 @@ function openAI() {
     </div>`).join('');
   $('#ai-screen').classList.add('ai--on');
   renderSteps();
+  startPlaceholderCycle();
   setTimeout(() => $('#ai-input').focus(), 60);
 }
-function closeAI() { $('#ai-screen').classList.remove('ai--on'); }
+function closeAI() {
+  $('#ai-screen').classList.remove('ai--on');
+  stopPlaceholderCycle();
+}
 
 /* Replaces whatever the user had with the generated structure. */
 function seedMeridian() {
@@ -3386,6 +3439,11 @@ function submitPrompt() {
 }
 $('#ai-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitPrompt(); }
+});
+// Focus alone leaves the hint cycling — it's still a hint until there's text
+$('#ai-input').addEventListener('input', (e) => {
+  if (e.target.value) stopPlaceholderCycle(true);
+  else startPlaceholderCycle();
 });
 
 /* section rename */
