@@ -2349,6 +2349,23 @@ function caseLike(sample, repl) {
 /* Returns the renamed string, or null when nothing changes. An exact match
    is replaced wholesale; otherwise the target is swapped as a whole WORD,
    which is what makes "Content -> Episodes" also fix "All content". */
+/* "Episodes" -> "episode", "Properties" -> "property". Only ever applied to
+   table names, so it doesn't need a full inflection dictionary — but it does
+   need to leave invariant nouns alone, or "Series" becomes "sery". */
+const INVARIANT = new Set(['series','species','media','content','news','data','info',
+                           'footage','audio','video','press','analytics']);
+function singular(word) {
+  const w0 = String(word).trim();
+  const last = w0.split(/\s+/).pop().toLowerCase();
+  if (INVARIANT.has(last)) return w0.toLowerCase();
+  let w = w0;
+  if (/[bcdfghjklmnpqrstvwxz]ies$/i.test(w))     w = w.replace(/ies$/i, 'y');
+  else if (/(ses|xes|zes|ches|shes)$/i.test(w))  w = w.replace(/es$/i, '');
+  else if (/[^s]s$/i.test(w))                    w = w.replace(/s$/i, '');
+  return w.toLowerCase();
+}
+const addLabelFor = tableName => 'Add ' + singular(tableName);
+
 function renameIn(current, target, to) {
   if (norm(current) === norm(target)) return to;
   const re = new RegExp('\\b' + escapeRe(unquote(target)) + '\\b', 'gi');
@@ -2421,6 +2438,15 @@ function baiApply(intent) {
           if (!v) return;
           changes.push({ from: cur + ' table', to: v });
           TABLE_LABEL[key] = v;
+          /* The Add button and the add-row are named after the table too. */
+          const def = TABLE_DEFS[key];
+          if (def) {
+            const newAdd = addLabelFor(v);
+            if (newAdd !== def.addLabel) {
+              changes.push({ from: def.addLabel, to: newAdd });
+              def.addLabel = newAdd;
+            }
+          }
           /* A table's views are named after the table, so they travel with
              it: renaming Content -> Episodes has to turn "All content" into
              "All episodes". Views whose names don't mention the table (In
@@ -3516,6 +3542,8 @@ function closePane(root) {
 const CATALOG_BASE = CATALOG.map(o => ({ name: o.name, tab: o.tab }));
 const TABS_BASE = Object.fromEntries(
   Object.entries(TABLE_DEFS).map(([k, d]) => [k, d.tabs.slice()]));
+const ADD_BASE = Object.fromEntries(
+  Object.entries(TABLE_DEFS).map(([k, d]) => [k, d.addLabel]));
 
 function restoreCatalog() {
   CATALOG.length = CATALOG_BASE.length;          // drop anything appended
@@ -3524,6 +3552,7 @@ function restoreCatalog() {
     if (b.tab !== undefined) CATALOG[i].tab = b.tab;
   });
   Object.entries(TABS_BASE).forEach(([k, tabs]) => { TABLE_DEFS[k].tabs = tabs.slice(); });
+  Object.entries(ADD_BASE).forEach(([k, label]) => { TABLE_DEFS[k].addLabel = label; });
   Object.keys(TABLE_LABEL).forEach(k => delete TABLE_LABEL[k]);
 }
 
