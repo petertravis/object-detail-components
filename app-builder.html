@@ -875,7 +875,10 @@
       border: 1px solid var(--border-strong);
       border-radius: var(--spacing-8);
       box-shadow: var(--shadow-large);
-      display: none; flex-direction: column; overflow: hidden;
+      display: none; flex-direction: column;
+      /* visible, not hidden: the Create-new submenu opens outside these
+         bounds. The list clips itself via its own overflow-y. */
+      overflow: visible;
     }
     .ta--on { display: flex; }
     .ta__inputwrap {
@@ -925,6 +928,37 @@
       font-weight: 500;
     }
     .ta__cta svg { width: 12px; height: 12px; }
+
+    /* Deliberately NOT positioned: with no positioned ancestor between it
+       and .ta (which is fixed), the submenu's 100% resolves to the popover's
+       width, so it opens beside the whole menu rather than on top of it. */
+    .ta__cta-wrap { display: inline-flex; }
+    .ta__cta-caret { width: 12px; height: 12px; margin-left: 2px; opacity: 0.75; }
+
+    /* Nested menu, opening to the right on hover. Inert for now — no
+       handler, and cursor stays default so it doesn't promise a click. */
+    .ta__sub {
+      position: absolute; bottom: -1px; left: calc(100% + 10px);
+      min-width: 194px;
+      background: var(--background-weak);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--spacing-8);
+      box-shadow: var(--shadow-large);
+      padding: var(--spacing-4);
+      display: none; flex-direction: column;
+      z-index: 80;
+    }
+    /* Hover the wrapper, not the label, so moving onto the submenu keeps it
+       open — they share an edge, so there's no gap to fall through. */
+    .ta__cta-wrap:hover .ta__sub { display: flex; }
+    .ta__sub-item {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: 6px var(--spacing-8); border-radius: 6px;
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+      cursor: default; white-space: nowrap;
+    }
+    .ta__sub-item:hover { background: var(--background-hover); }
 
     /* Highlighted match inside typeahead */
     .hl { background: var(--cz-yellow-bg); color: var(--cz-yellow-fg); border-radius: 2px; }
@@ -1681,7 +1715,14 @@
   </div>
   <div class="ta__list" id="ta-list"></div>
   <div class="ta__foot">
-    <span class="ta__cta"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>Create new</span>
+    <div class="ta__cta-wrap">
+      <span class="ta__cta">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+        Create new
+        <svg class="ta__cta-caret" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6.4 3.6 10.9 8 6.4 12.4"/></svg>
+      </span>
+      <div class="ta__sub" id="ta-sub"></div>
+    </div>
   </div>
 </div>
 
@@ -2768,9 +2809,21 @@ function renderSettings() {
    TYPEAHEAD
    ═══════════════════════════════════════════════════════════════════════ */
 let taSi = null, taCursor = 0, taResults = [];
+/* The submenu lists every object type the app knows, so it can't drift out
+   of step with what the typeahead can actually contain. */
+function paintTaSub() {
+  const el = $('#ta-sub');
+  if (!el) return;
+  el.innerHTML = Object.entries(TYPES).map(([, t]) =>
+    `<div class="ta__sub-item">
+       <span class="ico ico--16">${IC[t.icon]}</span>${esc(t.label)}
+     </div>`).join('');
+}
+
 function openTA(si, anchor) {
   taSi = si; taCursor = 0;
   $('#ta-input').value = '';
+  paintTaSub();
   paintTA();
   const ta = $('#ta');
   ta.classList.add('ta--on');
