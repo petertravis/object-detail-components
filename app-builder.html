@@ -670,7 +670,61 @@
     }
     .bai__ai strong { color: var(--text); font-weight: 500; }
 
+    /* Slash palette, anchored above the composer */
+    .bai__cmd {
+      position: absolute; bottom: 100%; left: 0; right: 0;
+      margin-bottom: var(--spacing-8);
+      background: var(--background-weak);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--spacing-12);
+      box-shadow: var(--shadow-large);
+      display: none; flex-direction: column; overflow: hidden;
+      max-height: 340px; z-index: 4;
+    }
+    .bai__cmd--on { display: flex; }
+    .bai__cmd-head {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: var(--spacing-8) var(--spacing-12);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .bai__cmd-slash {
+      width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--selected-background); color: var(--selected-text);
+      font-size: var(--type-s-size); font-weight: 600;
+    }
+    .bai__cmd-title { font-size: var(--type-m-size); font-weight: 500; color: var(--text); }
+    .bai__cmd-hint {
+      margin-left: auto; font-size: var(--type-s-size);
+      color: var(--text-weak); letter-spacing: 0; white-space: nowrap;
+    }
+    .bai__cmd-list { overflow-y: auto; padding: var(--spacing-4); }
+    .bai__cmd-group {
+      padding: var(--spacing-8) var(--spacing-8) var(--spacing-4);
+      font-size: var(--type-s-size); font-weight: 500; color: var(--text-weak);
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .bai__cmd-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: var(--spacing-8); border-radius: var(--spacing-8); cursor: pointer;
+    }
+    .bai__cmd-item--on { background: var(--selected-background); }
+    .bai__cmd-icon {
+      width: 32px; height: 32px; border-radius: var(--spacing-8); flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--background-strong); color: var(--icon);
+    }
+    .bai__cmd-body { min-width: 0; }
+    .bai__cmd-name { font-size: var(--type-m-size); color: var(--text); letter-spacing: var(--type-m-track); }
+    .bai__cmd-desc { font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; }
+    .bai__cmd-empty { padding: var(--spacing-16) var(--spacing-12); font-size: var(--type-s-size); color: var(--text-weak); text-align: center; }
+
+    /* Renamed-things list in a reply */
+    .bai__list { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; }
+    .bai__list li { font-size: var(--type-m-size); letter-spacing: var(--type-m-track); }
+
     .bai__composer {
+      position: relative;
       flex-shrink: 0; margin: 0 var(--spacing-16) var(--spacing-16);
       border: 1px solid var(--border-strong); border-radius: var(--spacing-12);
       background: var(--background-weak);
@@ -1507,8 +1561,16 @@
           <div class="bai__log" id="bai-log"></div>
         </div>
         <div class="bai__composer">
+          <div class="bai__cmd" id="bai-cmd">
+            <div class="bai__cmd-head">
+              <span class="bai__cmd-slash">/</span>
+              <span class="bai__cmd-title">Commands</span>
+              <span class="bai__cmd-hint">↑↓ · ↵ select · esc</span>
+            </div>
+            <div class="bai__cmd-list" id="bai-cmd-list"></div>
+          </div>
           <textarea class="bai__input" id="bai-input" rows="2"
-            placeholder="Describe what you want to customize"></textarea>
+            placeholder="Describe what you want to customize  ·  / for commands"></textarea>
           <div class="bai__composer-foot">
             <button class="icon-btn icon-btn--sm" aria-label="Add">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
@@ -2244,6 +2306,7 @@ const BAI_CHIPS = [
    Cleared wherever a new app session begins — Start over, and creating
    another app, which would otherwise inherit the previous app's history. */
 function clearBaiLog() {
+  closeCmd();
   const log = $('#bai-log');
   if (log) log.innerHTML = '';
   const el = $('#bai-input');
@@ -2263,7 +2326,9 @@ function paintBaiChips() {
    magic words. Accepts rename/change/relabel/retitle/call, "to/as/into",
    optional quotes, and a trailing noun ("the Content section"). */
 const RE_ADD_PF = /^\s*add\s+(?:a\s+)?(?:new\s+)?portfolio\s*(?:for|called|named|:)?\s*(.+?)\s*$/i;
-const RE_RENAME = /^\s*(?:rename|re-name|change|relabel|retitle|update|call)\s+(?:the\s+)?(.+?)\s+(?:to|as|into|->)\s+(.+?)\s*$/i;
+const SCOPES = 'section|table|view|tab|portfolio|dashboard|page';
+const RE_RENAME = new RegExp('^\\s*(?:rename|re-name|change|relabel|retitle|update)\\s+(?:the\\s+)?'
+  + '(?:(' + SCOPES + ')s?\\s+)?(?:from\\s+)?(.+?)\\s+(?:to|as|into|->)\\s+(.+?)\\s*$', 'i');
 
 const unquote = s => s.replace(/^['"“‘\u2018]+|['"”’\u2019]+$/g, '').trim();
 /* Drop a trailing object noun so "the Content section" targets "Content". */
@@ -2271,11 +2336,39 @@ const NOUNS = /\s+(section|table|view|tab|portfolio|dashboard|page|object|group)
 const stripNoun = s => s.replace(NOUNS, '').trim();
 const norm = s => stripNoun(unquote(String(s))).toLowerCase();
 
+const escapeRe = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/* Mirror the case pattern of the text being replaced, so "All content"
+   becomes "All episodes" rather than "All Episodes". */
+function caseLike(sample, repl) {
+  if (sample === sample.toUpperCase() && sample !== sample.toLowerCase()) return repl.toUpperCase();
+  if (sample[0] === sample[0].toUpperCase()) return repl[0].toUpperCase() + repl.slice(1);
+  return repl[0].toLowerCase() + repl.slice(1);
+}
+
+/* Returns the renamed string, or null when nothing changes. An exact match
+   is replaced wholesale; otherwise the target is swapped as a whole WORD,
+   which is what makes "Content -> Episodes" also fix "All content". */
+function renameIn(current, target, to) {
+  if (norm(current) === norm(target)) return to;
+  const re = new RegExp('\\b' + escapeRe(unquote(target)) + '\\b', 'gi');
+  if (!re.test(current)) return null;
+  return current.replace(re, m => caseLike(m, to));
+}
+
 function baiIntent(text) {
   let m = text.match(RE_ADD_PF);
   if (m) return { op: 'addPortfolio', name: unquote(m[1]) };
   m = text.match(RE_RENAME);
-  if (m) return { op: 'rename', target: unquote(m[1]), name: unquote(m[2]) };
+  if (m) {
+    // Scope may be stated before the name ("rename section from X to Y") or
+    // trail it ("rename the X section to Y"). Either pins the rename to one
+    // kind; with no scope it cascades across everything matching.
+    const raw = unquote(m[2]);
+    const trailing = (raw.match(NOUNS) || [])[1];
+    return { op: 'rename', scope: (m[1] || trailing || '').toLowerCase(),
+             target: stripNoun(raw), name: unquote(m[3]) };
+  }
   return null;
 }
 
@@ -2304,59 +2397,127 @@ function baiApply(intent) {
   }
 
   if (intent.op === 'rename') {
-    const t = norm(intent.target);
-    const to = intent.name;
-    const hits = [];
+    const target = intent.target, to = intent.name;
+    const changes = [];
 
-    // "rename the table to X" — no name given, so resolve to this app's table
-    if (t === 'table' || t === '') {
+    /* Bare "the table" carries no name to match, so resolve it positionally. */
+    if (norm(target) === 'table' || norm(target) === '') {
       const obj = inApp().map(byId).find(o => o && o.type === 'table');
-      if (obj) { hits.push('the ' + tableLabel(obj.table) + ' table'); TABLE_LABEL[obj.table] = to; }
+      if (obj) { changes.push({ from: tableLabel(obj.table), to }); TABLE_LABEL[obj.table] = to; }
     } else {
-      // A name can appear as a section, as a table's label, and as an object.
-      // Rename ALL of them — the name is one concept, not one widget.
-      CFG.sections.forEach(s => {
-        if (norm(s.name) === t) { hits.push('the ' + s.name + ' section'); s.name = to; }
+      const rename = cur => renameIn(cur, target, to);
+      // No scope means the name is one concept: rename it everywhere.
+      const scope = intent.scope || '';
+      const wants = kind => !scope || scope === kind;
+
+      if (wants('section')) CFG.sections.forEach(s => {
+        const v = rename(s.name);
+        if (v) { changes.push({ from: s.name + ' section', to: v }); s.name = v; }
       });
 
-      [...new Set(inApp().map(byId).filter(o => o && o.type === 'table').map(o => o.table))]
+      if (wants('table')) [...new Set(inApp().map(byId).filter(o => o && o.type === 'table').map(o => o.table))]
         .forEach(key => {
-          if (norm(tableLabel(key)) === t) { hits.push('the ' + tableLabel(key) + ' table'); TABLE_LABEL[key] = to; }
+          const cur = tableLabel(key), v = rename(cur);
+          if (v) { changes.push({ from: cur + ' table', to: v }); TABLE_LABEL[key] = v; }
         });
 
-      inApp().forEach(id => {
+      if (!scope || ['view','tab','portfolio','dashboard','page'].includes(scope)) inApp().forEach(id => {
         const o = byId(id);
-        if (!o || norm(o.name) !== t) return;
-        hits.push(o.name);
-        o.name = to;
-        // A view's sidebar label and its sub-tab are the same thing, so the
-        // tab moves with it or the two stop mirroring each other.
+        if (!o) return;
+        const v = rename(o.name);
+        if (!v) return;
+        changes.push({ from: o.name, to: v });
+        o.name = v;
+        // A view's sidebar label and its sub-tab are one thing; move both or
+        // they stop mirroring each other.
         if (o.tab && TABLE_DEFS[o.table]) {
           const tabs = TABLE_DEFS[o.table].tabs;
           const i = tabs.indexOf(o.tab);
-          if (i >= 0) tabs[i] = to;
-          o.tab = to;
+          if (i >= 0) tabs[i] = v;
+          o.tab = v;
         }
       });
     }
 
-    if (!hits.length) {
-      // Never a dead end: say what IS renameable here.
+    if (!changes.length) {
       const names = [...new Set([
         ...CFG.sections.map(s => s.name),
         ...[...new Set(inApp().map(byId).filter(o => o && o.type === 'table').map(o => tableLabel(o.table)))],
         ...inApp().map(i => (byId(i) || {}).name).filter(Boolean),
       ])];
-      return `I couldn't find <strong>${esc(intent.target)}</strong> in this app.
+      return `I couldn't find <strong>${esc(target)}</strong> in this app.
         You can rename: ${names.map(n => `<strong>${esc(n)}</strong>`).join(', ')}.`;
     }
 
-    const what = hits.length === 1 ? hits[0]
-      : hits.slice(0, -1).join(', ') + ' and ' + hits[hits.length - 1];
-    return `Renamed ${esc(what)} to <strong>${esc(to)}</strong>.`;
+    return `Renamed ${changes.length} thing${changes.length > 1 ? 's' : ''}:
+      <ul class="bai__list">${changes
+        .map(c => `<li>${esc(c.from)} → <strong>${esc(c.to)}</strong></li>`).join('')}</ul>`;
   }
 
   return null;
+}
+
+/* ── Slash commands ───────────────────────────────────────────────────
+   Stored actions, one click each. `prompt` is the text actually sent, so
+   a command and a typed sentence travel the identical path and land in
+   the transcript the same way — no second execution route to drift. */
+const BAI_COMMANDS = [
+  { group:'Rename', icon:'page',   name:'Rename section',
+    desc:'Content → Episodes',
+    prompt:'Rename section from Content to Episodes' },
+  { group:'Rename', icon:'table',  name:'Rename table',
+    desc:'Content → Episodes',
+    prompt:'Rename table from Content to Episodes' },
+  { group:'Add',    icon:'folder', name:'Add Finance portfolio',
+    desc:'A new, empty department',
+    prompt:'Add a new portfolio for Finance' },
+];
+
+let cmdOpen = false, cmdIdx = 0, cmdHits = [];
+
+/* Open only on a leading slash, so "/" mid-sentence is just a character. */
+function cmdQuery() {
+  const v = $('#bai-input').value;
+  return v.startsWith('/') ? v.slice(1).trim().toLowerCase() : null;
+}
+
+function paintCmd() {
+  const q = cmdQuery();
+  if (q === null) { closeCmd(); return; }
+  cmdHits = BAI_COMMANDS.filter(c =>
+    !q || (c.name + ' ' + c.desc + ' ' + c.prompt).toLowerCase().includes(q));
+  if (cmdIdx >= cmdHits.length) cmdIdx = Math.max(0, cmdHits.length - 1);
+
+  const list = $('#bai-cmd-list');
+  if (!cmdHits.length) {
+    list.innerHTML = `<div class="bai__cmd-empty">No commands match “${esc(q)}”.</div>`;
+  } else {
+    let last = null, n = -1;
+    list.innerHTML = cmdHits.map(c => {
+      n++;
+      const head = c.group !== last ? `<div class="bai__cmd-group">${esc(c.group)}</div>` : '';
+      last = c.group;
+      return head + `<div class="bai__cmd-item ${n === cmdIdx ? 'bai__cmd-item--on' : ''}" data-cmd="${n}">
+        <span class="bai__cmd-icon"><span class="ico ico--16" style="color:inherit">${IC[c.icon]}</span></span>
+        <span class="bai__cmd-body">
+          <div class="bai__cmd-name">${esc(c.name)}</div>
+          <div class="bai__cmd-desc">${esc(c.desc)}</div>
+        </span>
+      </div>`;
+    }).join('');
+  }
+  $('#bai-cmd').classList.add('bai__cmd--on');
+  cmdOpen = true;
+}
+
+function closeCmd() { $('#bai-cmd').classList.remove('bai__cmd--on'); cmdOpen = false; cmdIdx = 0; }
+
+function runCmd(i) {
+  const c = cmdHits[i];
+  if (!c) return;
+  closeCmd();
+  $('#bai-input').value = c.prompt;   // same path as typing it
+  baiSubmit();
 }
 
 function baiSubmit() {
@@ -2390,8 +2551,15 @@ function baiSubmit() {
 }
 
 $('#bai-input').addEventListener('keydown', (e) => {
+  if (cmdOpen) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); cmdIdx = Math.min(cmdIdx + 1, cmdHits.length - 1); paintCmd(); return; }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); cmdIdx = Math.max(cmdIdx - 1, 0); paintCmd(); return; }
+    if (e.key === 'Enter')     { e.preventDefault(); runCmd(cmdIdx); return; }
+    if (e.key === 'Escape')    { e.preventDefault(); closeCmd(); $('#bai-input').value = ''; return; }
+  }
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); baiSubmit(); }
 });
+$('#bai-input').addEventListener('input', () => { cmdQuery() === null ? closeCmd() : paintCmd(); });
 
 function paintBuilder() {
   $('#bld-name').textContent = CFG.name;
@@ -3686,6 +3854,9 @@ document.addEventListener('click', (e) => {
   if (t.closest('#bai-open'))  { S.aiPanel = true;  paintBuilder(); setTimeout(()=>$('#bai-input').focus(), 40); return; }
   if (t.closest('#bai-close')) { S.aiPanel = false; paintBuilder(); return; }
   if (t.closest('#bai-send'))  { baiSubmit(); return; }
+  const cmdItem = t.closest('[data-cmd]');
+  if (cmdItem) { runCmd(+cmdItem.dataset.cmd); return; }
+  if (cmdOpen && !t.closest('#bai-cmd') && !t.closest('#bai-input')) closeCmd();
   const baiChip = t.closest('[data-bai-chip]');
   if (baiChip) { $('#bai-input').value = baiChip.dataset.baiChip; $('#bai-input').focus(); return; }
 
