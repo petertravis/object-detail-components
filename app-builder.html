@@ -913,27 +913,28 @@
     .ta__opt--dis { opacity: 0.5; cursor: default; }
     .ta__opt--dis:hover { background: none; }
     .ta__empty { padding: var(--spacing-16) var(--spacing-12); font-size: var(--type-s-size); color: var(--text-weak); text-align: center; }
+    /* Padding lives on the row, not here, so the whole row is hoverable
+       right up to the popover's inner edge. */
     .ta__foot {
-      display: flex; align-items: center;
-      padding: var(--spacing-8) var(--spacing-12);
+      display: block; padding: var(--spacing-4);
       border-top: 1px solid var(--border);
     }
-    /* Blue "Create new" CTA. Inert in this prototype, so the cursor stays
-       default rather than promising a click it can't honour. Keyboard
-       navigation still works — only the shortcut hints went away. */
+    .ta__cta-wrap { display: block; }
+
+    /* Full-width menu row: plus and label left, chevron pushed to the right
+       edge. Inert, so the cursor stays default. */
     .ta__cta {
-      display: inline-flex; align-items: center; gap: 6px;
+      position: relative;
+      display: flex; align-items: center; gap: 6px;
+      width: 100%; padding: 7px var(--spacing-8);
+      border-radius: 6px;
       color: var(--primary-background-strong);
       font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
-      font-weight: 500;
+      font-weight: 500; cursor: default;
     }
-    .ta__cta svg { width: 12px; height: 12px; }
-
-    /* Deliberately NOT positioned: with no positioned ancestor between it
-       and .ta (which is fixed), the submenu's 100% resolves to the popover's
-       width, so it opens beside the whole menu rather than on top of it. */
-    .ta__cta-wrap { display: inline-flex; }
-    .ta__cta-caret { width: 12px; height: 12px; margin-left: 2px; opacity: 0.75; }
+    .ta__cta:hover { background: var(--selected-background); }
+    .ta__cta > svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .ta__cta-caret { margin-left: auto; opacity: 0.8; }
 
     /* Nested menu, opening to the right on hover. Inert for now — no
        handler, and cursor stays default so it doesn't promise a click. */
@@ -948,9 +949,11 @@
       display: none; flex-direction: column;
       z-index: 80;
     }
-    /* Hover the wrapper, not the label, so moving onto the submenu keeps it
-       open — they share an edge, so there's no gap to fall through. */
-    .ta__cta-wrap:hover .ta__sub { display: flex; }
+    /* Driven by JS with a close delay rather than :hover. A CSS bridge only
+       covers the row's vertical band, but this submenu is ~250px tall and
+       opens upward, so reaching its top item leaves the bridge and the menu
+       vanishes mid-move. A grace period forgives the whole diagonal. */
+    .ta__sub--on { display: flex; }
     .ta__sub-item {
       display: flex; align-items: center; gap: var(--spacing-8);
       padding: 6px var(--spacing-8); border-radius: 6px;
@@ -1715,7 +1718,7 @@
   </div>
   <div class="ta__list" id="ta-list"></div>
   <div class="ta__foot">
-    <div class="ta__cta-wrap">
+    <div class="ta__cta-wrap" id="ta-cta-wrap">
       <span class="ta__cta">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
         Create new
@@ -2811,6 +2814,18 @@ function renderSettings() {
 let taSi = null, taCursor = 0, taResults = [];
 /* The submenu lists every object type the app knows, so it can't drift out
    of step with what the typeahead can actually contain. */
+let subTimer = null;
+function showTaSub() {
+  clearTimeout(subTimer);
+  $('#ta-sub').classList.add('ta__sub--on');
+}
+function hideTaSub(now) {
+  clearTimeout(subTimer);
+  if (now) { $('#ta-sub').classList.remove('ta__sub--on'); return; }
+  // Long enough to cross the gap at any angle, short enough not to linger.
+  subTimer = setTimeout(() => $('#ta-sub').classList.remove('ta__sub--on'), 260);
+}
+
 function paintTaSub() {
   const el = $('#ta-sub');
   if (!el) return;
@@ -2819,6 +2834,14 @@ function paintTaSub() {
        <span class="ico ico--16">${IC[t.icon]}</span>${esc(t.label)}
      </div>`).join('');
 }
+
+/* Row and submenu each keep it open; leaving either starts the countdown. */
+['#ta-cta-wrap', '#ta-sub'].forEach(sel => {
+  const el = document.querySelector(sel);
+  if (!el) return;
+  el.addEventListener('mouseenter', showTaSub);
+  el.addEventListener('mouseleave', () => hideTaSub());
+});
 
 function openTA(si, anchor) {
   taSi = si; taCursor = 0;
@@ -2835,7 +2858,7 @@ function openTA(si, anchor) {
   ta.style.left = Math.max(12, left) + 'px';
   setTimeout(() => $('#ta-input').focus(), 20);
 }
-function closeTA() { $('#ta').classList.remove('ta--on'); taSi = null; }
+function closeTA() { $('#ta').classList.remove('ta--on'); taSi = null; hideTaSub(true); }
 
 const usedIds = () => CFG.sections.flatMap(s => s.items);
 
