@@ -2170,7 +2170,11 @@ function closeAI() {
 /* Replaces whatever the user had with the generated structure. */
 function seedMeridian() {
   CFG.sections = MERIDIAN_SECTIONS.map(s => ({ name: s.name, items: s.items.slice() }));
-  S.sel = null;
+  // Land on the first object rather than "Select an object to preview it".
+  // A generated app has something to show, so showing nothing wastes the
+  // moment. Derived from the structure so it follows any reordering.
+  const first = CFG.sections.find(s => s.items.length);
+  S.sel = first ? first.items[0] : null;
 }
 
 const AI_STEPS = ['Reading your process…', 'Identifying roles…', 'Creating sections and objects…'];
@@ -2212,7 +2216,12 @@ function runGenerate() {
 function openBuilder() {
   S.screen = 'builder';
   S.bldTab = 'build';
-  S.sel = null;
+  // Don't clobber a selection that's still valid — seedMeridian sets one
+  // deliberately, and reopening an app shouldn't lose your place. Falls back
+  // to the first object, so the blank state appears only when the app really
+  // is empty (the Start-from-scratch case).
+  const inApp = CFG.sections.flatMap(s => s.items);
+  if (!S.sel || !inApp.includes(S.sel)) S.sel = inApp[0] || null;
   $('#builder').classList.add('builder--on');
   paintBuilder();
   renderSteps();
@@ -3591,7 +3600,7 @@ function go(screen) {
   if (screen === 'workspace') { S.railMode = 'work'; renderWorkspace(); }
   if (screen === 'apps')      renderApps();
   if (screen === 'prompt')    { openAI(); return; }
-  if (screen === 'builder')   { $('#builder').classList.add('builder--on'); paintBuilder(); }
+  if (screen === 'builder')   { openBuilder(); }
   if (screen === 'app')       renderEndUser();
   renderSteps();
 }
@@ -3621,7 +3630,7 @@ document.addEventListener('click', (e) => {
   if (t.closest('#new-app') || t.closest('#new-app-card')) { openModal(); return; }
   // The apps index lives under Build, so it's a management surface: clicking
   // your app opens the EDITOR. The rail icon is how you enter it as a user.
-  if (t.closest('[data-edit-app]')) { S.bldTab = 'build'; S.sel = null; go('builder'); return; }
+  if (t.closest('[data-edit-app]')) { S.bldTab = 'build'; go('builder'); return; }
   const sample = t.closest('[data-sample]');
   if (sample) { toast(`${sample.dataset.sample} is sample data — create your own app to edit one`); return; }
 
