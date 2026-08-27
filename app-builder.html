@@ -2418,7 +2418,25 @@ function baiApply(intent) {
       if (wants('table')) [...new Set(inApp().map(byId).filter(o => o && o.type === 'table').map(o => o.table))]
         .forEach(key => {
           const cur = tableLabel(key), v = rename(cur);
-          if (v) { changes.push({ from: cur + ' table', to: v }); TABLE_LABEL[key] = v; }
+          if (!v) return;
+          changes.push({ from: cur + ' table', to: v });
+          TABLE_LABEL[key] = v;
+          /* A table's views are named after the table, so they travel with
+             it: renaming Content -> Episodes has to turn "All content" into
+             "All episodes". Views whose names don't mention the table (In
+             Review, Scheduled) are left alone by the word match. */
+          inApp().map(byId).filter(o => o && o.table === key).forEach(o => {
+            const nv = rename(o.name);
+            if (!nv) return;
+            changes.push({ from: o.name, to: nv });
+            o.name = nv;
+            if (o.tab && TABLE_DEFS[key]) {
+              const tabs = TABLE_DEFS[key].tabs;
+              const i = tabs.indexOf(o.tab);
+              if (i >= 0) tabs[i] = nv;
+              o.tab = nv;
+            }
+          });
         });
 
       if (!scope || ['view','tab','portfolio','dashboard','page'].includes(scope)) inApp().forEach(id => {
