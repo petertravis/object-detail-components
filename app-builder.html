@@ -415,6 +415,122 @@
     .glyph--on { border-color: var(--selected-border); background: var(--selected-background); color: var(--selected-text); }
 
     /* ══════════════════════════════════════════════════════════════════
+       AI PROMPT SCREEN — full-bleed, no Asana chrome
+       ══════════════════════════════════════════════════════════════════ */
+    .ai {
+      position: fixed; inset: 0; z-index: 55;
+      background: var(--background-weak);
+      display: none; flex-direction: column;
+    }
+    .ai--on { display: flex; }
+    .ai__bar {
+      height: 56px; flex-shrink: 0; display: flex; align-items: center;
+      padding: 0 var(--spacing-16); border-bottom: 1px solid var(--border);
+    }
+    .ai__scroll { flex: 1; min-height: 0; overflow-y: auto; }
+    .ai__col {
+      max-width: 672px; margin: 0 auto;
+      padding: 56px var(--spacing-24) 72px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .ai__mark {
+      width: 64px; height: 64px; border-radius: 500px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #ffecea; color: var(--button-creation-background);
+    }
+    .ai__mark svg { width: 26px; height: 26px; }
+    .ai__title {
+      margin-top: var(--spacing-24); text-align: center;
+      font-family: var(--font-display);
+      font-size: 28px; line-height: 36px; letter-spacing: 0.35px;
+      font-weight: 600; color: var(--text);
+    }
+
+    .ai__composer {
+      width: 100%; margin-top: var(--spacing-24);
+      border: 1px solid var(--border-strong); border-radius: var(--spacing-12);
+      background: var(--background-weak);
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .ai__composer:focus-within { border-color: var(--border-active); box-shadow: var(--shadow-medium); }
+    .ai__input {
+      width: 100%; border: none; outline: none; resize: none; background: none;
+      padding: var(--spacing-16) var(--spacing-16) var(--spacing-8);
+      font-family: inherit; font-size: var(--type-m-size);
+      line-height: 22px; letter-spacing: var(--type-m-track); color: var(--text);
+      min-height: 62px;
+    }
+    .ai__input::placeholder { color: var(--text-disabled); }
+    .ai__composer-foot {
+      display: flex; align-items: center;
+      padding: 0 var(--spacing-12) var(--spacing-12);
+    }
+    .ai__tools { display: inline-flex; align-items: center; gap: var(--spacing-4); }
+    .ai__send {
+      margin-left: auto;
+      width: 32px; height: 32px; border-radius: 500px; border: none;
+      background: var(--inverse-background-strong); color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; transition: filter 120ms ease;
+    }
+    .ai__send svg { width: 16px; height: 16px; }
+    .ai__send:hover { filter: brightness(1.35); }
+
+    .ai__hint {
+      margin-top: var(--spacing-12); text-align: center; max-width: 620px;
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text-weak);
+    }
+    .ai__or {
+      width: 100%; margin: var(--spacing-24) 0 var(--spacing-16);
+      display: flex; align-items: center; gap: var(--spacing-12);
+      color: var(--text-weak); font-size: var(--type-s-size); letter-spacing: 0.06em;
+    }
+    .ai__or::before, .ai__or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .ai__featured { width: 100%; margin-top: 56px; }
+    .ai__featured-label {
+      font-size: var(--type-m-size); font-weight: 500; color: var(--text);
+      letter-spacing: var(--type-m-track); margin-bottom: var(--spacing-12);
+    }
+    .ai__cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--spacing-12); }
+    @media (max-width: 700px) { .ai__cards { grid-template-columns: minmax(0, 1fr); } }
+    .ai-card {
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      gap: var(--spacing-8); padding: var(--spacing-24) var(--spacing-16);
+      border: 1px solid var(--border); border-radius: var(--spacing-12);
+      background: var(--background-weak); cursor: pointer;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .ai-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-medium); }
+    .ai-card__icon {
+      width: 44px; height: 44px; border-radius: 500px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .ai-card__icon svg { width: 20px; height: 20px; }
+    .ai-card__title { font-size: var(--type-m-size); font-weight: 500; color: var(--text); letter-spacing: var(--type-m-track); }
+    .ai-card__desc { font-size: var(--type-s-size); line-height: 18px; color: var(--text-weak); }
+
+    /* Generating overlay */
+    .ai__working {
+      position: absolute; inset: 0; z-index: 5;
+      background: rgba(255, 255, 255, 0.92);
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      gap: var(--spacing-16);
+    }
+    .ai__working--on { display: flex; }
+    .ai__spinner {
+      width: 26px; height: 26px; border-radius: 500px;
+      border: 2.5px solid var(--border-strong);
+      border-top-color: var(--button-creation-background);
+      animation: aiSpin 700ms linear infinite;
+    }
+    @keyframes aiSpin { to { transform: rotate(360deg); } }
+    .ai__working-text {
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track); color: var(--text-weak);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
        BUILDER — full-screen overlay. Build | Settings.
        ══════════════════════════════════════════════════════════════════ */
     .builder {
@@ -1276,6 +1392,60 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════════
+     AI PROMPT SCREEN — between naming the app and the builder.
+     Full-bleed with no Asana chrome, per the reference.
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="ai" id="ai-screen">
+  <div class="ai__bar">
+    <button class="icon-btn" id="ai-back" aria-label="Back">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="9.8 3.5 5.3 8 9.8 12.5"/></svg>
+    </button>
+  </div>
+
+  <div class="ai__scroll">
+    <div class="ai__col">
+      <span class="ai__mark">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="1.6" y="1.6" width="5.2" height="5.2" rx="1"/><rect x="9.2" y="1.6" width="5.2" height="5.2" rx="1"/><rect x="1.6" y="9.2" width="5.2" height="5.2" rx="1"/><rect x="9.2" y="9.2" width="5.2" height="5.2" rx="1"/></svg>
+      </span>
+      <h1 class="ai__title">Map your process.<br>Build for everyone in it.</h1>
+
+      <div class="ai__composer">
+        <textarea class="ai__input" id="ai-input" rows="2"
+          placeholder="Describe the work your team does…"></textarea>
+        <div class="ai__composer-foot">
+          <span class="ai__tools">
+            <button class="icon-btn icon-btn--sm" aria-label="Attach">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.6 4.3 4.9 8a2.3 2.3 0 0 0 3.2 3.2l4.2-4.2a3.4 3.4 0 0 0-4.8-4.8L3.1 6.6a4.5 4.5 0 0 0 6.4 6.4l2.3-2.3"/></svg>
+            </button>
+            <button class="icon-btn icon-btn--sm" aria-label="Mention">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="2.4"/><path d="M10.4 8v.9a1.9 1.9 0 0 0 3.4 1.1A6.4 6.4 0 1 0 11 13.6"/></svg>
+            </button>
+          </span>
+          <button class="ai__send" id="ai-send" aria-label="Generate">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.8V3.6"/><polyline points="4.2 7.4 8 3.4 11.8 7.4"/></svg>
+          </button>
+        </div>
+      </div>
+      <p class="ai__hint">Describe your workflow. We'll identify the roles and build tailored views for each person.</p>
+
+      <div class="ai__or"><span>OR</span></div>
+      <button class="btn btn--secondary" id="ai-scratch">Start from scratch</button>
+
+      <div class="ai__featured">
+        <div class="ai__featured-label">Featured processes</div>
+        <div class="ai__cards" id="ai-cards"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generating overlay -->
+  <div class="ai__working" id="ai-working">
+    <span class="ai__spinner"></span>
+    <span class="ai__working-text" id="ai-working-text">Reading your process…</span>
+  </div>
+</div>
+
 <!-- Name modal -->
 <div class="scrim" id="scrim">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -1444,6 +1614,36 @@ const CATALOG = [
 
   { id:'gl-occ',   type:'goal', name:'95% Occupancy',      meta:'Q4 · on track' },
   { id:'gl-turn',  type:'goal', name:'Reduce Turn Time',   meta:'Q4 · at risk' },
+
+  /* ── MERIDIAN ────────────────────────────────────────────────────────
+     Objects the AI creates for a brand-new content-production workspace.
+     `empty: true` is load-bearing: these are first-run objects, so every
+     one renders its empty state rather than sample rows. A structural
+     mirror of Northline, relabeled — no extra views or columns. */
+  { id:'md-db-prod',  type:'dashboard', empty:true, name:'Production Health',   meta:'New · no data yet' },
+  { id:'md-db-chan',  type:'dashboard', empty:true, name:'Channel Performance', meta:'New · no data yet' },
+  { id:'md-db-rev',   type:'dashboard', empty:true, name:'Review & Approvals',  meta:'New · no data yet' },
+
+  { id:'md-pf-prod',  type:'portfolio', empty:true, hue:'yellow-orange', name:'Production',      meta:'New · no projects yet' },
+  { id:'md-pf-post',  type:'portfolio', empty:true, hue:'hot-pink',      name:'Post-Production', meta:'New · no projects yet' },
+  { id:'md-pf-legal', type:'portfolio', empty:true, hue:'indigo',        name:'Legal & Rights',  meta:'New · no projects yet' },
+  { id:'md-pf-dist',  type:'portfolio', empty:true, hue:'blue-green',    name:'Distribution',    meta:'New · no projects yet' },
+
+  // Six views of ONE Content table, same deep-link model as Properties
+  { id:'md-tb-all',   type:'table', empty:true, table:'Content', tab:'All content',    name:'All content',    meta:'Content table · no records yet' },
+  { id:'md-tb-inprod',type:'table', empty:true, table:'Content', tab:'In Production',  name:'In Production',  meta:'Content table · no records yet' },
+  { id:'md-tb-inrev', type:'table', empty:true, table:'Content', tab:'In Review',      name:'In Review',      meta:'Content table · no records yet' },
+  { id:'md-tb-sched', type:'table', empty:true, table:'Content', tab:'Scheduled',      name:'Scheduled',      meta:'Content table · no records yet' },
+  { id:'md-tb-pub',   type:'table', empty:true, table:'Content', tab:'Published',      name:'Published',      meta:'Content table · no records yet' },
+  { id:'md-tb-arch',  type:'table', empty:true, table:'Content', tab:'Archived',       name:'Archived',       meta:'Content table · no records yet' },
+];
+
+/* The structure the Content-production prompt produces. Sections and their
+   objects, in order — nothing more. */
+const MERIDIAN_SECTIONS = [
+  { name: 'Overview',    items: ['md-db-prod','md-db-chan','md-db-rev'] },
+  { name: 'Departments', items: ['md-pf-prod','md-pf-post','md-pf-legal','md-pf-dist'] },
+  { name: 'Content',     items: ['md-tb-all','md-tb-inprod','md-tb-inrev','md-tb-sched','md-tb-pub','md-tb-arch'] },
 ];
 const byId = id => CATALOG.find(o => o.id === id);
 
@@ -1460,7 +1660,7 @@ const COLOR_CHOICES = ['indigo','blue','blue-green','aqua','green','yellow-orang
 /* ═══════════════════════════════════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════════════════════════════════ */
-const SCREENS = ['workspace','apps','builder','app'];
+const SCREENS = ['workspace','apps','prompt','builder','app'];
 let S = {
   screen: 'workspace',
   railMode: 'work',
@@ -1524,7 +1724,7 @@ function toast(msg) {
 /* ═══════════════════════════════════════════════════════════════════════
    PROTOTYPE STEP TRAIL
    ═══════════════════════════════════════════════════════════════════════ */
-const STEP_LABELS = { workspace:'Workspace', apps:'Apps', builder:'Build', app:'End user' };
+const STEP_LABELS = { workspace:'Workspace', apps:'Apps', prompt:'Describe', builder:'Build', app:'End user' };
 function renderSteps() {
   const idx = SCREENS.indexOf(S.screen);
   $('#steps').innerHTML = SCREENS.map((s, i) => {
@@ -1739,7 +1939,83 @@ function paintModal() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   SCREEN 3 — BUILDER
+   SCREEN 3 — AI PROMPT
+   Only Content production is built out; the other two say so rather than
+   quietly producing the same app.
+   ═══════════════════════════════════════════════════════════════════════ */
+const AI_CARDS = [
+  { key:'content', title:'Content production',
+    desc:'Production · Post-Production · Legal & Rights · Distribution — one content pipeline',
+    hue:'hot-pink', icon:'activity', live:true },
+  { key:'campaign', title:'Campaign design',
+    desc:'CMO · Strategy · Creative Lead · Designer — 4 roles, 4 views',
+    hue:'yellow-orange', icon:'flag' },
+  { key:'launch', title:'Product launch',
+    desc:'Exec · PM · Engineering · Marketing — cross-functional launch plan',
+    hue:'indigo', icon:'briefcase' },
+];
+
+/* Words that route a typed prompt to the Content-production build. */
+const CONTENT_WORDS = ['content','video','episode','media','production','post','edit','channel',
+  'studio','film','show','publish','distribut','rights','creative','asset','shoot','script'];
+
+function openAI() {
+  S.screen = 'prompt';
+  $('#ai-input').value = '';
+  $('#ai-working').classList.remove('ai__working--on');
+  $('#ai-cards').innerHTML = AI_CARDS.map(c => `
+    <div class="ai-card" data-ai-card="${c.key}">
+      <span class="ai-card__icon" style="background:${cz(c.hue,'bg')};color:${cz(c.hue,'fg')}">
+        <span class="ico ico--16" style="color:inherit">${IC[c.icon]}</span></span>
+      <span class="ai-card__title">${esc(c.title)}</span>
+      <span class="ai-card__desc">${esc(c.desc)}</span>
+    </div>`).join('');
+  $('#ai-screen').classList.add('ai--on');
+  renderSteps();
+  setTimeout(() => $('#ai-input').focus(), 60);
+}
+function closeAI() { $('#ai-screen').classList.remove('ai--on'); }
+
+/* Replaces whatever the user had with the generated structure. */
+function seedMeridian() {
+  CFG.sections = MERIDIAN_SECTIONS.map(s => ({ name: s.name, items: s.items.slice() }));
+  S.sel = null;
+}
+
+const AI_STEPS = ['Reading your process…', 'Identifying roles…', 'Creating sections and objects…'];
+
+/* A self-terminating setTimeout chain rather than setInterval. An interval
+   here has to clear itself from inside its own callback; if that clear is
+   ever missed the callback keeps firing and re-runs the whole seed-and-open
+   sequence every tick, which locks up the renderer. A chain simply ends. */
+let generating = false;
+function runGenerate() {
+  if (generating) return;              // ignore a second trigger mid-run
+  generating = true;
+  const work = $('#ai-working'), text = $('#ai-working-text');
+  work.classList.add('ai__working--on');
+
+  const finish = () => {
+    seedMeridian();
+    work.classList.remove('ai__working--on');
+    closeAI();
+    openBuilder();
+    const n = CFG.sections.reduce((a, s) => a + s.items.length, 0);
+    toast(`Created ${CFG.sections.length} sections and ${n} objects`);
+    generating = false;
+  };
+
+  let i = 0;
+  const step = () => {
+    text.textContent = AI_STEPS[i];
+    i++;
+    setTimeout(i < AI_STEPS.length ? step : finish, 620);
+  };
+  step();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCREEN 4 — BUILDER
    ═══════════════════════════════════════════════════════════════════════ */
 function openBuilder() {
   S.screen = 'builder';
@@ -2174,6 +2450,13 @@ const TABLE_DEFS = {
       ] }));
     },
   },
+  /* Meridian's core object. Seven columns, six views, and deliberately no
+     rows — a brand-new table is empty, and the empty state IS the point. */
+  Content: {
+    addLabel: 'Add content', tabs: ['All content','In Production','In Review','Scheduled','Published','Archived'],
+    cols: [['Title',220], ['Channel',130], ['Format',120], ['Status',130], ['Runtime',100], ['Producer',140], ['Release Date',130]],
+    rows() { return []; },
+  },
   Units: {
     addLabel: 'Add unit', tabs: ['All records'],
     cols: [['Unit',90], ['Property',220], ['Type',110], ['Rent',110], ['Status',130]],
@@ -2453,8 +2736,52 @@ const DASHBOARDS = {
   },
 };
 
+/* First-run dashboard: same chrome, but nothing has been charted yet. No
+   widgets are invented here — the spec names the dashboards, not their
+   contents, so inventing widget configurations would be inventing data. */
+function dashboardEmptyHtml(o) {
+  return dashHead(o, 'Dashboards / ' + esc(o.name)) + `
+    <div class="pf-body dash">
+      <div class="empty">
+        <span class="empty__art">${IC.dashboard}</span>
+        <span class="empty__title">No charts yet</span>
+        <span class="empty__sub">Add a chart to start tracking ${esc(o.name.toLowerCase())}.
+        Charts fill in as work lands in this app.</span>
+        <button class="btn btn--secondary btn--sm" style="margin-top:8px">${IC.plus}Add chart</button>
+      </div>
+    </div>`;
+}
+
+/* Shared dashboard header so the empty and populated states can't drift */
+function dashHead(o, crumb) {
+  return `
+    <div class="pf-head pf-head--flush">
+      <div class="pf-head__crumb">${crumb}</div>
+      <div class="pf-head__top">
+        <span class="pf-head__icon" style="background:${TYPES.dashboard.bg};color:${TYPES.dashboard.fg}">
+          <span class="ico ico--16" style="color:inherit">${IC.dashboard}</span></span>
+        <span class="pf-head__name">${esc(o.name)}</span>
+        <button class="icon-btn icon-btn--sm" aria-label="Dashboard menu">${IC.caret}</button>
+        <button class="icon-btn icon-btn--sm" aria-label="Star">${IC.star}</button>
+        <span class="pf-head__actions">
+          <span class="facepile">${PF_FACES.map(([i, h]) => face(i, h)).join('')}</span>
+          <button class="btn btn--secondary btn--sm">Share</button>
+          <span class="pf-head__sep"></span>
+          <button class="icon-btn" aria-label="Customize">${IC.brush}</button>
+        </span>
+      </div>
+    </div>
+    <div class="pf-toolbar">
+      <button class="btn btn--secondary btn--sm">${IC.plus}Add chart</button>
+      <span class="pf-toolbar__right">
+        ${['Filter','Date range','Options'].map(x => `<span class="pf-toolbar__item">${x}</span>`).join('')}
+      </span>
+    </div>`;
+}
+
 /* Same page chrome as portfolios and tables */
 function dashboardHtml(o) {
+  if (o.empty) return dashboardEmptyHtml(o);
   const d = DASHBOARDS[o.id] || DASHBOARDS['db-health'];
   return `
     <div class="pf-head pf-head--flush">
@@ -2735,7 +3062,10 @@ const face   = (i, hue) => `<span class="avatar-24" style="background:${cz(hue,'
 const pfPill = (text, hue) => `<span class="pf-pill" style="background:${cz(hue,'bg')};color:${cz(hue,'fg')}">${esc(text)}</span>`;
 
 function portfolioHtml(o) {
-  const v = PF_VIEWS[o.id] || PF_VIEWS['pf-ops'];
+  // A brand-new department has no projects. Same chrome, same column
+  // headers, no rows — not a different layout.
+  const v = o.empty ? { crumb: 'Portfolios / ' + esc(o.name), rows: [] }
+                    : (PF_VIEWS[o.id] || PF_VIEWS['pf-ops']);
   const tabs = PF_TABS.map((t, i) =>
     `<button class="db-tab ${i === 0 ? 'db-tab--active' : ''}">${t}</button>`).join('') +
     `<button class="db-tab" aria-label="Add view">${IC.plus}</button>`;
@@ -2896,8 +3226,10 @@ function go(screen) {
   // survives a screen change and reappears when you come back.
   document.querySelectorAll('.canvas').forEach(closePane);
   if (screen !== 'builder') $('#builder').classList.remove('builder--on');
+  if (screen !== 'prompt')  closeAI();
   if (screen === 'workspace') { S.railMode = 'work'; renderWorkspace(); }
   if (screen === 'apps')      renderApps();
+  if (screen === 'prompt')    { openAI(); return; }
   if (screen === 'builder')   { $('#builder').classList.add('builder--on'); paintBuilder(); }
   if (screen === 'app')       renderEndUser();
   renderSteps();
@@ -2939,7 +3271,21 @@ document.addEventListener('click', (e) => {
   if (t.closest('#modal-create')) {
     CFG.name = $('#app-name').value.trim() || 'Untitled app';
     $('#scrim').classList.remove('scrim--on');
-    openBuilder();
+    openAI();
+    return;
+  }
+
+  // ── AI prompt screen ──
+  if (t.closest('#ai-back'))    { closeAI(); go('apps'); return; }
+  // Northline's path: an existing user composes by hand
+  if (t.closest('#ai-scratch')) { closeAI(); openBuilder(); return; }
+  if (t.closest('#ai-send'))    { submitPrompt(); return; }
+  const aiCard = t.closest('[data-ai-card]');
+  if (aiCard) {
+    const c = AI_CARDS.find(x => x.key === aiCard.dataset.aiCard);
+    if (!c.live) { toast(`${c.title} isn't built out in this prototype — try Content production`); return; }
+    $('#ai-input').value = c.desc;
+    runGenerate();
     return;
   }
 
@@ -3026,6 +3372,20 @@ document.addEventListener('click', (e) => {
 
   // click-away closes the typeahead
   if (!t.closest('#ta')) closeTA();
+});
+
+/* A typed prompt routes to the Content build when it reads like content
+   work. Anything else says so plainly rather than silently producing
+   Meridian, which would misrepresent what the prototype covers. */
+function submitPrompt() {
+  const text = $('#ai-input').value.trim();
+  if (!text) { $('#ai-input').focus(); return; }
+  const t = text.toLowerCase();
+  if (CONTENT_WORDS.some(w => t.includes(w))) { runGenerate(); return; }
+  toast('This prototype only builds the content-production process — try the Content production card');
+}
+$('#ai-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitPrompt(); }
 });
 
 /* section rename */
@@ -3175,6 +3535,7 @@ function hardReset() {
   S = { screen:'workspace', railMode:'work', published:false, sel:null, bldTab:'build' };
   CFG = freshCfg();
   closeTA();
+  closeAI();
   $('#scrim').classList.remove('scrim--on');
   $('#builder').classList.remove('builder--on');
   go('workspace');
