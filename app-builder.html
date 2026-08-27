@@ -597,25 +597,33 @@
        A flex sibling of the stage, so opening it narrows the preview
        rather than covering it. */
     .bai {
+      position: relative;
       width: 348px; flex-shrink: 0;
       display: none; flex-direction: column;
       background: var(--background-weak);
       border-left: 1px solid var(--border);
     }
     .builder--ai .bai { display: flex; }
-    /* Trigger and close swap: only one is ever available */
-    /* The X only makes sense where the panel actually renders. The panel
-       lives in the Build pane, so on Settings there is nothing to close. */
-    .bai-close { display: none; }
-    .builder--ai.builder--build .bai-close { display: inline-flex; }
+    /* Absolute rather than its own header row, so the Asana mark keeps its
+       position instead of being pushed down by a bar holding one button.
+       Living inside the panel means the Build pane's visibility governs it,
+       so no separate tab scoping is needed. */
+    .bai__x { position: absolute; top: var(--spacing-12); right: var(--spacing-12); z-index: 2; }
+
+    /* Trigger and panel swap: only one is ever available.
+       Floating rectangle — white fill, hairline border, soft lift. */
     .bai-open {
       margin-left: var(--spacing-8);
-      width: 28px; height: 28px; padding: 0; flex-shrink: 0;
-      border: none; border-radius: 6px; background: none; cursor: pointer;
+      width: 32px; height: 32px; padding: 0; flex-shrink: 0;
+      background: var(--background-weak);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--spacing-8);
+      box-shadow: var(--shadow-medium);
+      cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
-      transition: background 120ms ease;
+      transition: box-shadow 120ms ease, border-color 120ms ease;
     }
-    .bai-open:hover { background: var(--background-active); }
+    .bai-open:hover { border-color: var(--border-active); box-shadow: var(--shadow-large); }
     .bai-open svg { width: 18px; height: 18px; }
     .builder--ai .bai-open { display: none; }
 
@@ -1445,9 +1453,6 @@
     <div class="bld__actions">
       <button class="btn btn--subtle btn--sm" id="bld-cancel">Cancel</button>
       <button class="btn btn--primary btn--sm" id="bld-publish" disabled>Publish app</button>
-      <button class="icon-btn bai-close" id="bai-close" aria-label="Close AI panel">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg>
-      </button>
     </div>
   </div>
 
@@ -1490,6 +1495,9 @@
       <!-- AI chat surface. Open by default when the app was generated from a
            prompt, closed when the user chose Start from scratch. -->
       <aside class="bai" id="bai">
+        <button class="icon-btn bai__x" id="bai-close" aria-label="Close AI panel">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg>
+        </button>
         <div class="bai__body" id="bai-body">
           <span class="bai__mark">
             <svg viewBox="0 0 32 32" fill="none"><ellipse cx="16" cy="21.6" rx="6.6" ry="6.4" fill="#ff584a"/><ellipse cx="8.2" cy="9.4" rx="6.6" ry="6.4" fill="#ff584a"/><ellipse cx="23.8" cy="9.4" rx="6.6" ry="6.4" fill="#ff584a"/></svg>
@@ -2252,7 +2260,6 @@ function paintBuilder() {
   $('#bld-badge').textContent = S.published ? 'Live' : 'Draft';
 
   $('#builder').classList.toggle('builder--ai', S.aiPanel);
-  $('#builder').classList.toggle('builder--build', S.bldTab === 'build');
   paintBaiChips();
 
   // tabs
