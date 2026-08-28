@@ -1229,64 +1229,14 @@
       letter-spacing: var(--type-m-track); cursor: pointer;
     }
     /* ══════════════════════════════════════════════════════════════════
-       NEW TABLE — the first-run screens for a table created from the
-       Create-new menu. Its own chrome because this header carries a Pilot
-       badge, a filled Share and Customize, none of which the other object
-       pages have.
+       NEW TABLE — the first-run body for a table created from the
+       Create-new menu. The header is shared with every other table via
+       tableHead(); only what sits below it differs.
        ══════════════════════════════════════════════════════════════════ */
-    .nt { display: flex; flex-direction: column; min-height: 0; flex: 1; }
-    .nt__head { padding: var(--pf-inset) var(--pf-inset) 0; flex-shrink: 0; }
-    /* Clip rather than wrap: the preview narrows when the AI panel opens, and
-       a two-line title with a chopped Share button reads worse than an
-       edge-cropped row. */
-    .nt__titlerow {
-      display: flex; align-items: center; gap: var(--spacing-8);
-      flex-wrap: nowrap; min-width: 0; overflow: hidden;
-    }
-    .nt__titlerow > * { flex-shrink: 0; }
-    .nt__title {
-      font-family: var(--font-display);
-      font-size: var(--type-h3-size); line-height: var(--type-h3-line);
-      letter-spacing: var(--type-h3-track); font-weight: 500; color: var(--text);
-      white-space: nowrap;
-    }
-    .nt__pilot {
-      font-size: var(--type-s-size); font-weight: 500; letter-spacing: 0;
-      color: #8b5cf6;
-    }
-    .nt__feedback {
-      white-space: nowrap;
-      font-size: var(--type-s-size); letter-spacing: 0;
-      color: var(--text); text-decoration: underline; cursor: default;
-    }
-    .nt__actions { margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-8); }
-    .nt__share {
-      white-space: nowrap;
-      display: inline-flex; align-items: center; gap: 6px;
-      height: 28px; padding: 0 12px; border: none; border-radius: 6px;
-      background: var(--primary-background-strong); color: #fff;
-      font-family: inherit; font-size: var(--type-m-size);
-      letter-spacing: var(--type-m-track); font-weight: 500; cursor: default;
-    }
-    .nt__share svg { width: 12px; height: 12px; }
-    .nt__tabs { display: flex; align-items: center; gap: var(--spacing-4); margin-top: var(--spacing-12); }
-    .nt__tab {
-      height: 26px; padding: 0 var(--spacing-8); border: none; border-radius: 6px;
-      background: var(--selected-background); color: var(--selected-text);
-      font-family: inherit; font-size: var(--type-m-size);
-      letter-spacing: var(--type-m-track); font-weight: 500; cursor: default;
-    }
-    .nt__toolbar {
-      display: flex; align-items: center; gap: var(--spacing-8);
-      height: 56px; padding: 0 var(--pf-inset); flex-shrink: 0;
-    }
-    .nt__toolbar-right { margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-16); }
     .nt__body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--pf-inset) var(--pf-inset); }
-
-    /* Empty state: two choices, then the import helper */
     .nt__choices {
       display: grid; grid-template-columns: repeat(2, minmax(0, 260px));
-      gap: var(--spacing-16); justify-content: center; margin-top: 64px;
+      gap: var(--spacing-16); justify-content: center; margin-top: 56px;
     }
     .nt-card {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -3763,40 +3713,14 @@ const NT_IMPORTS = [
 const IC_CUSTOMIZE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.8" y="1.8" width="5" height="5" rx="1"/><rect x="9.2" y="1.8" width="5" height="5" rx="1"/><rect x="1.8" y="9.2" width="5" height="5" rx="1"/><path d="M11.7 9.6v4.8M9.3 12h4.8"/></svg>';
 const IC_SEARCH = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.6"/><path d="M10.6 10.6 14 14"/></svg>';
 
-function ntHead(o) {
-  return `
-    <div class="nt__head">
-      <div class="nt__titlerow">
-        <span class="nt__title">${esc(tableLabel(o.table))}</span>
-        <button class="icon-btn icon-btn--sm" aria-label="Table menu">${IC.caret}</button>
-        <button class="icon-btn icon-btn--sm" aria-label="Star">${IC.star}</button>
-        <span class="nt__pilot">Pilot</span>
-        <span class="nt__feedback">Send feedback</span>
-        <span class="nt__actions">
-          <span class="avatar-24" style="background:${cz('yellow','bg')};color:${cz('yellow','fg')}">TK</span>
-          <button class="nt__share">${IC.lock}Share</button>
-          <button class="btn btn--secondary btn--sm">${IC_CUSTOMIZE}Customize</button>
-        </span>
-      </div>
-      <div class="nt__tabs">
-        <button class="nt__tab">List</button>
-        <button class="icon-btn icon-btn--sm" aria-label="Add view">${IC.plus}</button>
-      </div>
-    </div>
-    <div class="nt__toolbar">
-      <button class="btn btn--secondary btn--sm" data-nt-add="${esc(o.table)}">${IC.plus}Add</button>
-      <span class="nt__toolbar-right">
-        ${['Filter','Sort','Group','Options'].map(x => `<span class="pf-toolbar__item">${x}</span>`).join('')}
-        <span class="pf-toolbar__item">${IC_SEARCH}</span>
-      </span>
-    </div>`;
-}
-
 function newTableHtml(o) {
+  const def = TABLE_DEFS[o.table] || { addLabel:'Add record', tabs:['List'], cols:NT_COLS };
   const state = NT_STATE[o.table] || 'empty';
+  // Same chrome as every other table; only the body differs.
+  const head = tableHead(o, def, def.tabs[0], ` data-nt-add="${esc(o.table)}"`);
 
   if (state === 'empty') {
-    return `<div class="nt">${ntHead(o)}
+    return head + `
       <div class="nt__body">
         <div class="nt__choices">
           <div class="nt-card" data-nt-records="${esc(o.table)}">
@@ -3820,8 +3744,7 @@ function newTableHtml(o) {
             ${NT_IMPORTS.map(i => `<div class="nt__import-row">${i.svg}${esc(i.name)}</div>`).join('')}
           </div>
         </div>
-      </div>
-    </div>`;
+      </div>`;
   }
 
   // One blank record, name cell focused and waiting
@@ -3830,7 +3753,7 @@ function newTableHtml(o) {
     `<span class="nt__namecell"><span class="nt__nameplaceholder">Write a record name</span>${IC.caret}</span>`,
     'Today', 'Peter Travis', 'Today',
   ];
-  return `<div class="nt">${ntHead(o)}
+  return head + `
     <div class="nt__body">
       <div class="pfg-wrap" style="padding:0">
         <table class="pfg">
@@ -3840,8 +3763,7 @@ function newTableHtml(o) {
         </table>
         <div class="pfg__add">Add record…</div>
       </div>
-    </div>
-  </div>`;
+    </div>`;
 }
 
 /* Creating one from the menu: a fresh TABLE_DEFS entry plus a catalog
@@ -3869,21 +3791,13 @@ function createTableFromMenu() {
 
 /* Same chrome as portfolioHtml — the page title is the TABLE, and the
    grouping the user picked is simply the active tab. */
-function tableHtml(o) {
-  const def = TABLE_DEFS[o.table] || TABLE_DEFS.Properties;
-  const tab = o.tab || def.tabs[0];
+/* One header for every table, new or established, so a brand-new table
+   can't drift from the rest. `addAttr` lets the new-table screen hang its
+   own behaviour off the Add button. */
+function tableHead(o, def, tab, addAttr) {
   const tabs = def.tabs.map(t =>
     `<button class="db-tab ${t === tab ? 'db-tab--active' : ''}">${esc(t)}</button>`).join('') +
     `<button class="db-tab" aria-label="Add view">${IC.plus}</button>`;
-
-  // rows() may return plain cell arrays, or { key, cells } when a row is
-  // clickable — the key is what opens the record pane.
-  const rows = def.rows(tab).map(r => {
-    const cells = Array.isArray(r) ? r : r.cells;
-    const attr  = Array.isArray(r) || !r.key ? '' : ` data-prop="${esc(r.key)}"`;
-    return `<tr${attr}>${cells.map(c => `<td>${c}</td>`).join('')}<td></td></tr>`;
-  }).join('');
-
   return `
     <div class="pf-head">
       <div class="pf-head__crumb">Tables / ${esc(tableLabel(o.table))}</div>
@@ -3903,11 +3817,26 @@ function tableHtml(o) {
       <div class="pf-head__tabs">${tabs}</div>
     </div>
     <div class="pf-toolbar">
-      <button class="btn btn--secondary btn--sm">${IC.plus}${esc(def.addLabel)}</button>
+      <button class="btn btn--secondary btn--sm"${addAttr || ''}>${IC.plus}${esc(def.addLabel)}</button>
       <span class="pf-toolbar__right">
         ${['Filter','Sort','Group','Options'].map(x => `<span class="pf-toolbar__item">${x}</span>`).join('')}
       </span>
-    </div>
+    </div>`;
+}
+
+function tableHtml(o) {
+  const def = TABLE_DEFS[o.table] || TABLE_DEFS.Properties;
+  const tab = o.tab || def.tabs[0];
+
+  // rows() may return plain cell arrays, or { key, cells } when a row is
+  // clickable — the key is what opens the record pane.
+  const rows = def.rows(tab).map(r => {
+    const cells = Array.isArray(r) ? r : r.cells;
+    const attr  = Array.isArray(r) || !r.key ? '' : ` data-prop="${esc(r.key)}"`;
+    return `<tr${attr}>${cells.map(c => `<td>${c}</td>`).join('')}<td></td></tr>`;
+  }).join('');
+
+  return tableHead(o, def, tab) + `
     <div class="pf-body">
       <div class="pfg-wrap">
         <table class="pfg">
