@@ -962,6 +962,8 @@
       cursor: default; white-space: nowrap;
     }
     .ta__sub-item:hover { background: var(--background-hover); }
+    /* Only the wired one gets a pointer; the rest stay inert-looking. */
+    .ta__sub-item--live { cursor: pointer; }
 
     /* Highlighted match inside typeahead */
     .hl { background: var(--cz-yellow-bg); color: var(--cz-yellow-fg); border-radius: 2px; }
@@ -1226,6 +1228,112 @@
       color: var(--text-weak); font-size: var(--type-m-size);
       letter-spacing: var(--type-m-track); cursor: pointer;
     }
+    /* ══════════════════════════════════════════════════════════════════
+       NEW TABLE — the first-run screens for a table created from the
+       Create-new menu. Its own chrome because this header carries a Pilot
+       badge, a filled Share and Customize, none of which the other object
+       pages have.
+       ══════════════════════════════════════════════════════════════════ */
+    .nt { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+    .nt__head { padding: var(--pf-inset) var(--pf-inset) 0; flex-shrink: 0; }
+    /* Clip rather than wrap: the preview narrows when the AI panel opens, and
+       a two-line title with a chopped Share button reads worse than an
+       edge-cropped row. */
+    .nt__titlerow {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      flex-wrap: nowrap; min-width: 0; overflow: hidden;
+    }
+    .nt__titlerow > * { flex-shrink: 0; }
+    .nt__title {
+      font-family: var(--font-display);
+      font-size: var(--type-h3-size); line-height: var(--type-h3-line);
+      letter-spacing: var(--type-h3-track); font-weight: 500; color: var(--text);
+      white-space: nowrap;
+    }
+    .nt__pilot {
+      font-size: var(--type-s-size); font-weight: 500; letter-spacing: 0;
+      color: #8b5cf6;
+    }
+    .nt__feedback {
+      white-space: nowrap;
+      font-size: var(--type-s-size); letter-spacing: 0;
+      color: var(--text); text-decoration: underline; cursor: default;
+    }
+    .nt__actions { margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-8); }
+    .nt__share {
+      white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 28px; padding: 0 12px; border: none; border-radius: 6px;
+      background: var(--primary-background-strong); color: #fff;
+      font-family: inherit; font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track); font-weight: 500; cursor: default;
+    }
+    .nt__share svg { width: 12px; height: 12px; }
+    .nt__tabs { display: flex; align-items: center; gap: var(--spacing-4); margin-top: var(--spacing-12); }
+    .nt__tab {
+      height: 26px; padding: 0 var(--spacing-8); border: none; border-radius: 6px;
+      background: var(--selected-background); color: var(--selected-text);
+      font-family: inherit; font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track); font-weight: 500; cursor: default;
+    }
+    .nt__toolbar {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 56px; padding: 0 var(--pf-inset); flex-shrink: 0;
+    }
+    .nt__toolbar-right { margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-16); }
+    .nt__body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--pf-inset) var(--pf-inset); }
+
+    /* Empty state: two choices, then the import helper */
+    .nt__choices {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 260px));
+      gap: var(--spacing-16); justify-content: center; margin-top: 64px;
+    }
+    .nt-card {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: var(--spacing-8); padding: var(--spacing-24);
+      min-height: 168px;
+      border: 1px solid var(--border); border-radius: var(--spacing-12);
+      background: var(--background-weak); cursor: pointer;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .nt-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-medium); }
+    .nt-card__art { color: #ec4899; }
+    .nt-card__art svg { width: 46px; height: 46px; }
+    .nt-card__title { font-size: var(--type-m-size); font-weight: 500; color: var(--text); }
+    .nt-card__sub { font-size: var(--type-s-size); color: var(--text-weak); }
+
+    .nt__import {
+      max-width: 552px; margin: var(--spacing-24) auto 0;
+      background: var(--background-medium);
+      border-radius: var(--spacing-12); padding: var(--spacing-16);
+    }
+    .nt__import-title { font-size: var(--type-m-size); color: var(--text-weak); margin-bottom: var(--spacing-12); }
+    .nt__import-list {
+      background: var(--background-weak); border-radius: var(--spacing-8);
+      padding: var(--spacing-4);
+    }
+    .nt__import-row {
+      display: flex; align-items: center; gap: var(--spacing-12);
+      padding: var(--spacing-8) var(--spacing-12); border-radius: 6px;
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      color: var(--text); cursor: default;
+    }
+    .nt__import-row:hover { background: var(--background-hover); }
+    .nt__import-row svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* Records state: the blank first row */
+    .nt__namecell {
+      display: flex; align-items: center;
+      margin: -7px calc(var(--spacing-8) * -1);
+      padding: 6px var(--spacing-8);
+      border: 1px solid var(--selected-border); border-radius: 3px;
+      background: var(--background-weak);
+    }
+    .nt__nameplaceholder { flex: 1; color: var(--text-disabled); }
+    .nt__namecell svg { width: 12px; height: 12px; color: var(--icon); flex-shrink: 0; }
+    .pfg tbody tr.nt__row td { background: var(--selected-background); }
+    .pfg tbody tr.nt__row td:nth-child(2) { background: var(--background-weak); }
+
     /* ══════════════════════════════════════════════════════════════════
        DASHBOARDS — number cards on top, chart cards below
        ══════════════════════════════════════════════════════════════════ */
@@ -2829,8 +2937,8 @@ function hideTaSub(now) {
 function paintTaSub() {
   const el = $('#ta-sub');
   if (!el) return;
-  el.innerHTML = Object.entries(TYPES).map(([, t]) =>
-    `<div class="ta__sub-item">
+  el.innerHTML = Object.entries(TYPES).map(([key, t]) =>
+    `<div class="ta__sub-item ${key === 'table' ? 'ta__sub-item--live' : ''}" data-create="${key}">
        <span class="ico ico--16">${IC[t.icon]}</span>${esc(t.label)}
      </div>`).join('');
 }
@@ -3629,7 +3737,134 @@ function restoreCatalog() {
   });
   Object.entries(TABS_BASE).forEach(([k, tabs]) => { TABLE_DEFS[k].tabs = tabs.slice(); });
   Object.entries(ADD_BASE).forEach(([k, label]) => { TABLE_DEFS[k].addLabel = label; });
+  // Tables created from the Create-new menu aren't in the baseline
+  Object.keys(TABLE_DEFS).forEach(k => { if (!(k in TABS_BASE)) delete TABLE_DEFS[k]; });
+  Object.keys(NT_STATE).forEach(k => delete NT_STATE[k]);
   Object.keys(TABLE_LABEL).forEach(k => delete TABLE_LABEL[k]);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NEW TABLE — created from the Create-new menu.
+   Two states: the first-run chooser, then a grid holding one blank record.
+   Kept apart from tableHtml because this header is different (Pilot badge,
+   filled Share, Customize) and because a brand-new table has no views.
+   ═══════════════════════════════════════════════════════════════════════ */
+const NT_STATE = {};        // table key -> 'empty' | 'records'
+
+const NT_COLS = [['#', 48], ['Name', 340], ['Created on', 120], ['Created by', 140], ['Last modified', 130]];
+
+/* Brand marks are deliberately simplified stand-ins, not the real logos. */
+const NT_IMPORTS = [
+  { name:'Airtable', svg:'<svg viewBox="0 0 18 18" fill="none"><path d="M8.6 1.4 1.6 4.2c-.5.2-.5.9 0 1.1l7 2.7c.3.1.6.1.8 0l7-2.7c.5-.2.5-.9 0-1.1L9.4 1.4a1 1 0 0 0-.8 0Z" fill="#FCB400"/><path d="M9.8 9.5v6.6c0 .4.4.7.8.5l6.2-2.4c.2-.1.4-.4.4-.6V7.3c0-.4-.4-.7-.8-.5l-6.2 2.4c-.2.1-.4.3-.4.3Z" fill="#18BFFF"/><path d="M8.2 9.7 2 7.3c-.4-.2-.8.1-.8.5v6.2c0 .3.2.5.4.6l6.2 2.4c.4.2.8-.1.8-.5V10c0-.1-.2-.3-.4-.3Z" fill="#F82B60"/></svg>' },
+  { name:'Smartsheet', svg:'<svg viewBox="0 0 18 18" fill="none"><rect x="1.5" y="1.5" width="15" height="15" rx="3" fill="#003059"/><path d="M5.2 9.3l2.6 2.6 5-5.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>' },
+  { name:'Google Sheets', svg:'<svg viewBox="0 0 18 18" fill="none"><path d="M4.4 1.5h6l4.1 4.1v10.9a1 1 0 0 1-1 1H4.4a1 1 0 0 1-1-1V2.5a1 1 0 0 1 1-1Z" fill="#0F9D58"/><path d="M10.4 1.5 14.5 5.6h-4.1V1.5Z" fill="#87CEAC"/><path d="M6.2 8.4h5.6v5.6H6.2V8.4Zm1 1v1.3h1.6V9.4H7.2Zm2.6 0v1.3h1.4V9.4H9.8Zm-2.6 2.3v1.3h1.6v-1.3H7.2Zm2.6 0v1.3h1.4v-1.3H9.8Z" fill="#fff"/></svg>' },
+];
+
+const IC_CUSTOMIZE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.8" y="1.8" width="5" height="5" rx="1"/><rect x="9.2" y="1.8" width="5" height="5" rx="1"/><rect x="1.8" y="9.2" width="5" height="5" rx="1"/><path d="M11.7 9.6v4.8M9.3 12h4.8"/></svg>';
+const IC_SEARCH = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.6"/><path d="M10.6 10.6 14 14"/></svg>';
+
+function ntHead(o) {
+  return `
+    <div class="nt__head">
+      <div class="nt__titlerow">
+        <span class="nt__title">${esc(tableLabel(o.table))}</span>
+        <button class="icon-btn icon-btn--sm" aria-label="Table menu">${IC.caret}</button>
+        <button class="icon-btn icon-btn--sm" aria-label="Star">${IC.star}</button>
+        <span class="nt__pilot">Pilot</span>
+        <span class="nt__feedback">Send feedback</span>
+        <span class="nt__actions">
+          <span class="avatar-24" style="background:${cz('yellow','bg')};color:${cz('yellow','fg')}">TK</span>
+          <button class="nt__share">${IC.lock}Share</button>
+          <button class="btn btn--secondary btn--sm">${IC_CUSTOMIZE}Customize</button>
+        </span>
+      </div>
+      <div class="nt__tabs">
+        <button class="nt__tab">List</button>
+        <button class="icon-btn icon-btn--sm" aria-label="Add view">${IC.plus}</button>
+      </div>
+    </div>
+    <div class="nt__toolbar">
+      <button class="btn btn--secondary btn--sm" data-nt-add="${esc(o.table)}">${IC.plus}Add</button>
+      <span class="nt__toolbar-right">
+        ${['Filter','Sort','Group','Options'].map(x => `<span class="pf-toolbar__item">${x}</span>`).join('')}
+        <span class="pf-toolbar__item">${IC_SEARCH}</span>
+      </span>
+    </div>`;
+}
+
+function newTableHtml(o) {
+  const state = NT_STATE[o.table] || 'empty';
+
+  if (state === 'empty') {
+    return `<div class="nt">${ntHead(o)}
+      <div class="nt__body">
+        <div class="nt__choices">
+          <div class="nt-card" data-nt-records="${esc(o.table)}">
+            <span class="nt-card__art">
+              <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="15" fill="currentColor"/><path d="M24 17v14M17 24h14" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="24" cy="24" r="21" stroke="currentColor" stroke-width="1.6" stroke-dasharray="4 4" opacity=".5"/></svg>
+            </span>
+            <span class="nt-card__title">Add new records</span>
+            <span class="nt-card__sub">Start from scratch</span>
+          </div>
+          <div class="nt-card" data-nt-import>
+            <span class="nt-card__art">
+              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 8h14l8 8v24a2 2 0 0 1-2 2H15a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z"/><path d="M27 8v8h8"/><path d="M24 34V22" stroke-linecap="round"/><path d="M19.5 26.5 24 22l4.5 4.5" stroke-linecap="round"/></svg>
+            </span>
+            <span class="nt-card__title">Select a file to import</span>
+          </div>
+        </div>
+
+        <div class="nt__import">
+          <div class="nt__import-title">Learn how to import data from other tools</div>
+          <div class="nt__import-list">
+            ${NT_IMPORTS.map(i => `<div class="nt__import-row">${i.svg}${esc(i.name)}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // One blank record, name cell focused and waiting
+  const cells = [
+    '<span class="pfg__n">1</span>',
+    `<span class="nt__namecell"><span class="nt__nameplaceholder">Write a record name</span>${IC.caret}</span>`,
+    'Today', 'Peter Travis', 'Today',
+  ];
+  return `<div class="nt">${ntHead(o)}
+    <div class="nt__body">
+      <div class="pfg-wrap" style="padding:0">
+        <table class="pfg">
+          <thead><tr>${NT_COLS.map(([c, w]) => `<th style="width:${w}px">${esc(c)}</th>`).join('')}
+            <th style="width:40px">${IC.plus}</th></tr></thead>
+          <tbody><tr class="nt__row">${cells.map(c => `<td>${c}</td>`).join('')}<td></td></tr></tbody>
+        </table>
+        <div class="pfg__add">Add record…</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* Creating one from the menu: a fresh TABLE_DEFS entry plus a catalog
+   object, dropped into whichever section's + was clicked. */
+function createTableFromMenu() {
+  let key = 'New table', n = 2;
+  while (TABLE_DEFS[key]) key = 'New table ' + n++;
+  TABLE_DEFS[key] = {
+    addLabel: 'Add record', tabs: ['List'],
+    cols: NT_COLS, rows() { return []; },
+  };
+  NT_STATE[key] = 'empty';
+
+  const id = 'tb-' + key.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  CATALOG.push({ id, type:'table', table:key, name:key,
+                 newTable:true, empty:true, meta:'New · no records yet' });
+
+  const si = taSi != null ? taSi : CFG.sections.length - 1;
+  if (CFG.sections[si]) CFG.sections[si].items.push(id);
+  S.sel = id;
+  closeTA();
+  paintBuilder();
+  toast(`Created ${key}`);
 }
 
 /* Same chrome as portfolioHtml — the page title is the TABLE, and the
@@ -3808,6 +4043,7 @@ function portfolioHtml(o) {
 function objectHtml(o, isPreview) {
   // Portfolios and tables own their whole page chrome, not just a body
   if (o.type === 'portfolio') return portfolioHtml(o);
+  if (o.newTable)             return newTableHtml(o);
   if (o.type === 'table')     return tableHtml(o);
   if (o.type === 'dashboard') return dashboardHtml(o);
 
@@ -4030,6 +4266,21 @@ document.addEventListener('click', (e) => {
   if (item) { S.sel = item.dataset.obj; renderPreview(); return; }
   const open = t.closest('[data-open]');
   if (open) { S.sel = open.dataset.open; renderEndUser(); return; }
+
+  // Create-new submenu — Table is wired, the rest say they aren't
+  const create = t.closest('[data-create]');
+  if (create) {
+    const k = create.dataset.create;
+    if (k === 'table') { createTableFromMenu(); return; }
+    toast(`Creating a ${TYPES[k].label.toLowerCase()} isn't built out yet — try Table`);
+    return;
+  }
+  // New-table first-run choices
+  const ntRec = t.closest('[data-nt-records]');
+  if (ntRec) { NT_STATE[ntRec.dataset.ntRecords] = 'records'; paintBuilder(); return; }
+  if (t.closest('[data-nt-import]')) { toast('File import isn\'t built out in this prototype'); return; }
+  const ntAdd = t.closest('[data-nt-add]');
+  if (ntAdd) { NT_STATE[ntAdd.dataset.ntAdd] = 'records'; paintBuilder(); return; }
 
   // typeahead pick
   const p = t.closest('[data-pick]');
