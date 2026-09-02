@@ -321,6 +321,8 @@
       background: var(--background-weak); cursor: pointer;
       transition: border-color 120ms ease, box-shadow 120ms ease;
     }
+    .app-card { cursor: default; }
+    .app-card[data-edit-app], .app-card[data-open-preset], .app-card--new { cursor: pointer; }
     .app-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-medium); }
     .app-card__top { display: flex; align-items: center; gap: var(--spacing-8); }
     .app-card__name { font-weight: 500; color: var(--text); }
@@ -1938,7 +1940,23 @@ const MERIDIAN_SECTIONS = [
 const byId = id => CATALOG.find(o => o.id === id);
 
 /* Apps that already exist — the index the Build entry lands on */
+/* ── Northline: a preloaded app ────────────────────────────────────────
+   Ships with the prototype so it can be opened at any time instead of
+   rebuilt. Every id here is a baseline catalog object, so it survives
+   Start over. Copied on open, never handed out by reference, or editing
+   the app would rewrite the preset. */
+const NORTHLINE_APP = {
+  name: 'Northline', glyph: 'building', color: 'indigo',
+  sections: [
+    { name: 'Overview',    items: ['db-health','db-leasing','db-ops'] },
+    { name: 'Departments', items: ['pf-ops','pf-mkt','pf-legal','pf-fac','md-pf-prod','md-pf-post'] },
+    { name: 'Properties',  items: ['tb-prop-all','tb-prop-take','tb-prop-new','tb-prop-stab','tb-prop-sep'] },
+  ],
+};
+
 const EXISTING_APPS = [
+  { name:'Northline', glyph:'building', color:'indigo', preset: NORTHLINE_APP,
+    meta:'Real Estate · 3 sections · 14 objects', by:'You' },
   { name:'Facilities Requests', glyph:'activity',     color:'blue-green', meta:'Facilities · 4 sections', by:'Dana Ruiz' },
   { name:'Vendor Compliance',   glyph:'briefcase',     color:'purple',     meta:'Legal · 3 sections',      by:'Sam Cole' },
   { name:'Capital Planning',    glyph:'flag', color:'yellow-orange', meta:'Finance · 2 sections', by:'You' },
@@ -1963,7 +1981,7 @@ let CFG = null;       // APP_CONFIG under construction
 
 function freshCfg() {
   return {
-    name: '', glyph: 'building', color: 'indigo',
+    name: '', preset: null, glyph: 'building', color: 'indigo',
     sections: [],
     access: {
       general: 'workspace',           // workspace | invited | public
@@ -2164,12 +2182,12 @@ function renderApps() {
   $('#sidebar').innerHTML = `
     <div class="sb__section">Build</div>
     <div class="sb__group">
-      <div class="sb__row sb__row--active"><span class="ico ico--16">${IC.build}</span><span class="sb__row-label">Apps</span><span class="sb__row-count">${EXISTING_APPS.length + (CFG && CFG.name ? 1 : 0)}</span></div>
+      <div class="sb__row sb__row--active"><span class="ico ico--16">${IC.build}</span><span class="sb__row-label">Apps</span><span class="sb__row-count">${EXISTING_APPS.length + (CFG && CFG.name && !CFG.preset ? 1 : 0)}</span></div>
     </div>`;
 
   // The app appears here once created — as a Draft until published, and it
   // stays listed for as long as it exists.
-  const mine = (CFG && CFG.name) ? [{
+  const mine = (CFG && CFG.name && !CFG.preset) ? [{
     name: CFG.name, glyph: CFG.glyph, color: CFG.color,
 
     meta: `${CFG.sections.length} section${CFG.sections.length === 1 ? '' : 's'} · ${CFG.sections.reduce((n,s)=>n+s.items.length,0)} objects`,
@@ -2192,7 +2210,8 @@ function renderApps() {
           <span class="app-card__meta">Start from a blank app</span>
         </button>
         ${mine.concat(EXISTING_APPS).map(a => `
-          <div class="app-card" ${a.isMine ? 'data-edit-app="1" title="Open in the editor"' : `data-sample="${esc(a.name)}"`}>
+          <div class="app-card" ${a.isMine ? 'data-edit-app="1" title="Open in the editor"'
+              : (a.preset ? `data-open-preset="${esc(a.name)}" title="Open in the editor"` : `data-sample="${esc(a.name)}"`)}>
             <div class="app-card__top">
               ${avatarHtml(a.glyph, a.color)}
               <span class="app-card__name">${esc(a.name)}</span>
@@ -2227,6 +2246,27 @@ function paintModal() {
       style="background:${cz(c,'bg')}" aria-label="${c}"></button>`).join('');
   const ok = $('#app-name').value.trim().length > 0;
   $('#modal-create').disabled = !ok;
+}
+
+/* Loads a preloaded app as the current one. Sections are deep-copied so
+   editing the app can't rewrite the preset it came from, and it opens as an
+   app that already exists — so the action reads Done, not Create. */
+function openPreset(app) {
+  CFG = freshCfg();
+  CFG.name  = app.preset.name;
+  CFG.glyph = app.preset.glyph;
+  CFG.color = app.preset.color;
+  CFG.sections = app.preset.sections.map(sec => ({ name: sec.name, items: sec.items.slice() }));
+  // Remember where it came from: the preset already has a card on the index,
+  // so the in-session card must not render a second one for the same app.
+  CFG.preset = app.name;
+  S.created = true;
+  S.aiPanel = false;
+  S.bldTab  = 'build';
+  S.sel     = null;
+  clearBaiLog();
+  go('builder');
+  toast(`Opened ${app.preset.name}`);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -4081,6 +4121,12 @@ document.addEventListener('click', (e) => {
   // The apps index lives under Build, so it's a management surface: clicking
   // your app opens the EDITOR. The rail icon is how you enter it as a user.
   if (t.closest('[data-edit-app]')) { S.bldTab = 'build'; go('builder'); return; }
+  const preset = t.closest('[data-open-preset]');
+  if (preset) {
+    const app = EXISTING_APPS.find(a => a.name === preset.dataset.openPreset);
+    if (app && app.preset) { openPreset(app); }
+    return;
+  }
   const sample = t.closest('[data-sample]');
   if (sample) { toast(`${sample.dataset.sample} is sample data — create your own app to edit one`); return; }
 
