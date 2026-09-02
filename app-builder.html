@@ -55,18 +55,8 @@
       letter-spacing: 0; cursor: pointer; white-space: nowrap;
       transition: background 120ms ease, color 120ms ease;
     }
-    .proto-step:hover:not(:disabled) { background: rgba(255,255,255,0.12); color: #fff; }
-    .proto-step:disabled { cursor: default; opacity: 0.45; }
-    .proto-step--done { color: rgba(242,243,244,0.8); }
+    .proto-step:hover:not(.proto-step--active) { background: rgba(255,255,255,0.12); color: #fff; }
     .proto-step--active { background: var(--background-weak); color: var(--text); font-weight: 500; }
-    .proto-step__n {
-      width: 16px; height: 16px; border-radius: 500px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 9px; font-weight: 700;
-      background: rgba(255,255,255,0.18); color: inherit;
-    }
-    .proto-step--active .proto-step__n { background: var(--text); color: #fff; }
-    .proto-nav__sep { color: rgba(242,243,244,0.25); font-size: 11px; }
     .proto-nav__reset {
       margin-left: auto;
       height: 26px; padding: 0 10px;
@@ -1968,7 +1958,6 @@ const COLOR_CHOICES = ['indigo','blue','blue-green','aqua','green','yellow-orang
 /* ═══════════════════════════════════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════════════════════════════════ */
-const SCREENS = ['workspace','apps','prompt','builder','app'];
 let S = {
   aiPanel: false,        // AI chat open? true only when the app was generated
   screen: 'workspace',
@@ -2033,17 +2022,13 @@ function toast(msg) {
 /* ═══════════════════════════════════════════════════════════════════════
    PROTOTYPE STEP TRAIL
    ═══════════════════════════════════════════════════════════════════════ */
-const STEP_LABELS = { workspace:'Workspace', apps:'Apps', prompt:'Describe', builder:'Build', app:'End user' };
+/* Two modes, not a stepper: the exec demo only needs builder vs end user. */
+const PROTO_TABS = [{ key:'builder', label:'App builder' }, { key:'enduser', label:'End user' }];
 function renderSteps() {
-  const idx = SCREENS.indexOf(S.screen);
-  $('#steps').innerHTML = SCREENS.map((s, i) => {
-    const cls = s === S.screen ? 'proto-step--active' : (i < idx ? 'proto-step--done' : '');
-    // Only let the reviewer jump back to a screen the flow has reached
-    const reachable = i <= idx || (s === 'app' && S.created);
-    return `<button class="proto-step ${cls}" data-step="${s}" ${reachable ? '' : 'disabled'}>
-      <span class="proto-step__n">${i + 1}</span>${STEP_LABELS[s]}</button>` +
-      (i < SCREENS.length - 1 ? '<span class="proto-nav__sep">›</span>' : '');
-  }).join('');
+  const active = S.screen === 'app' ? 'enduser' : 'builder';
+  $('#steps').innerHTML = PROTO_TABS.map(t =>
+    `<button class="proto-step ${t.key === active ? 'proto-step--active' : ''}"
+       data-mode="${t.key}">${esc(t.label)}</button>`).join('');
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -2251,7 +2236,7 @@ function paintModal() {
 /* Loads a preloaded app as the current one. Sections are deep-copied so
    editing the app can't rewrite the preset it came from, and it opens as an
    app that already exists — so the action reads Done, not Create. */
-function openPreset(app) {
+function loadPreset(app) {
   CFG = freshCfg();
   CFG.name  = app.preset.name;
   CFG.glyph = app.preset.glyph;
@@ -2265,8 +2250,22 @@ function openPreset(app) {
   S.bldTab  = 'build';
   S.sel     = null;
   clearBaiLog();
+}
+
+function openPreset(app) {
+  loadPreset(app);
   go('builder');
   toast(`Opened ${app.preset.name}`);
+}
+
+/* End user always lands in the prebuilt Northline app, whatever was open. */
+function enterEndUser() {
+  const app = EXISTING_APPS.find(a => a.preset);
+  if (app) loadPreset(app);
+  closeAI();
+  $('#builder').classList.remove('builder--on');
+  S.sel = null;
+  go('app');
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -4101,9 +4100,15 @@ function go(screen) {
 document.addEventListener('click', (e) => {
   const t = e.target;
 
-  // prototype step trail
-  const step = t.closest('[data-step]');
-  if (step && !step.disabled) { go(step.dataset.step); return; }
+  // prototype mode switch
+  const mode = t.closest('[data-mode]');
+  if (mode) {
+    if (mode.dataset.mode === 'enduser') { enterEndUser(); return; }
+    closeAI();
+    $('#builder').classList.remove('builder--on');
+    go('apps');
+    return;
+  }
 
   // rail
   const rail = t.closest('[data-rail]');
