@@ -255,13 +255,6 @@
       background: none; border: 1px solid transparent; color: var(--text-weak);
     }
     .btn--subtle:hover { background: var(--background-hover); color: var(--text); }
-    /* Destructive-but-recoverable: unpublish takes the app away from people,
-       so it reads red, but nothing is deleted. */
-    .btn--danger {
-      background: var(--button-background-secondary);
-      border: 1px solid var(--button-border-secondary); color: #b4382e;
-    }
-    .btn--danger:hover { background: #fdf3f2; border-color: #e8b4ae; }
     .btn--sm { height: 28px; padding: 0 10px; font-size: var(--type-s-size); letter-spacing: 0; }
 
     .icon-btn {
@@ -338,8 +331,6 @@
       height: 20px; padding: 0 8px; border-radius: 500px;
       font-size: var(--type-s-size); letter-spacing: 0; white-space: nowrap;
     }
-    .pill--live  { background: var(--cz-green-bg);  color: var(--cz-green-fg); }
-    .pill--draft { background: var(--cz-none-bg);   color: var(--cz-none-fg); }
     .pill--new   { background: var(--cz-blue-bg);   color: var(--cz-blue-fg); }
 
     .app-card--new {
@@ -1593,7 +1584,6 @@
     <div class="bld__id">
       <span class="obj-av obj-av--sm" id="bld-av"></span>
       <span class="bld__name" id="bld-name">Untitled app</span>
-      <span class="bld__badge" id="bld-badge">Draft</span>
     </div>
     <div class="segmented">
       <button class="segmented__btn segmented__btn--active" data-bt="build">Build</button>
@@ -1949,9 +1939,9 @@ const byId = id => CATALOG.find(o => o.id === id);
 
 /* Apps that already exist — the index the Build entry lands on */
 const EXISTING_APPS = [
-  { name:'Facilities Requests', glyph:'activity',     color:'blue-green', status:'live',  meta:'Facilities · 4 sections', by:'Dana Ruiz' },
-  { name:'Vendor Compliance',   glyph:'briefcase',     color:'purple',     status:'live',  meta:'Legal · 3 sections',      by:'Sam Cole' },
-  { name:'Capital Planning',    glyph:'flag', color:'yellow-orange', status:'draft', meta:'Finance · 2 sections', by:'You' },
+  { name:'Facilities Requests', glyph:'activity',     color:'blue-green', meta:'Facilities · 4 sections', by:'Dana Ruiz' },
+  { name:'Vendor Compliance',   glyph:'briefcase',     color:'purple',     meta:'Legal · 3 sections',      by:'Sam Cole' },
+  { name:'Capital Planning',    glyph:'flag', color:'yellow-orange', meta:'Finance · 2 sections', by:'You' },
 ];
 
 const GLYPH_CHOICES = ['building','briefcase','smiley','leaf','food','activity','travel','flag'];
@@ -1965,7 +1955,7 @@ let S = {
   aiPanel: false,        // AI chat open? true only when the app was generated
   screen: 'workspace',
   railMode: 'work',
-  published: false,
+  created: false,      // has the app been created yet? drives Create vs Done
   sel: null,          // selected object id in the end-user app / preview
   bldTab: 'build',
 };
@@ -2031,7 +2021,7 @@ function renderSteps() {
   $('#steps').innerHTML = SCREENS.map((s, i) => {
     const cls = s === S.screen ? 'proto-step--active' : (i < idx ? 'proto-step--done' : '');
     // Only let the reviewer jump back to a screen the flow has reached
-    const reachable = i <= idx || (s === 'app' && S.published);
+    const reachable = i <= idx || (s === 'app' && S.created);
     return `<button class="proto-step ${cls}" data-step="${s}" ${reachable ? '' : 'disabled'}>
       <span class="proto-step__n">${i + 1}</span>${STEP_LABELS[s]}</button>` +
       (i < SCREENS.length - 1 ? '<span class="proto-nav__sep">›</span>' : '');
@@ -2122,7 +2112,7 @@ function modeSidebarHtml() {
 }
 
 function renderWorkspace() {
-  $('#rail').innerHTML = railHtml({ nudge: true, appEntry: S.published, appActive: false });
+  $('#rail').innerHTML = railHtml({ nudge: true, appEntry: S.created, appActive: false });
   $('#sidebar').innerHTML = modeSidebarHtml();
 
   // Only Work has a built-out canvas; other modes say so rather than
@@ -2168,7 +2158,7 @@ function renderWorkspace() {
    SCREEN 2 — APPS INDEX
    ═══════════════════════════════════════════════════════════════════════ */
 function renderApps() {
-  $('#rail').innerHTML = railHtml({ appEntry: S.published });
+  $('#rail').innerHTML = railHtml({ appEntry: S.created });
   $$('#rail [data-rail="build"]').forEach(b => b.classList.add('rail__mode--active'));
 
   $('#sidebar').innerHTML = `
@@ -2178,10 +2168,10 @@ function renderApps() {
     </div>`;
 
   // The app appears here once created — as a Draft until published, and it
-  // stays listed after unpublishing rather than vanishing.
+  // stays listed for as long as it exists.
   const mine = (CFG && CFG.name) ? [{
     name: CFG.name, glyph: CFG.glyph, color: CFG.color,
-    status: S.published ? 'live' : 'draft',
+
     meta: `${CFG.sections.length} section${CFG.sections.length === 1 ? '' : 's'} · ${CFG.sections.reduce((n,s)=>n+s.items.length,0)} objects`,
     by: 'You', isMine: true,
   }] : [];
@@ -2209,7 +2199,6 @@ function renderApps() {
             </div>
             <span class="app-card__meta">${esc(a.meta)}</span>
             <div class="app-card__foot">
-              <span class="pill pill--${a.status === 'live' ? 'live' : 'draft'}">${a.status === 'live' ? 'Live' : 'Draft'}</span>
               <span class="app-card__meta">${esc(a.by)}</span>
             </div>
           </div>`).join('')}
@@ -2710,7 +2699,6 @@ $('#bai-input').addEventListener('input', () => { cmdQuery() === null ? closeCmd
 function paintBuilder() {
   $('#bld-name').textContent = CFG.name;
   $('#bld-av').outerHTML = avatarHtml(CFG.glyph, CFG.color, 'sm').replace('class="obj-av obj-av--sm"', 'class="obj-av obj-av--sm" id="bld-av"');
-  $('#bld-badge').textContent = S.published ? 'Live' : 'Draft';
 
   $('#builder').classList.toggle('builder--ai', S.aiPanel);
   paintBaiChips();
@@ -2721,8 +2709,11 @@ function paintBuilder() {
 
   const count = CFG.sections.reduce((n, s) => n + s.items.length, 0);
   $('#bld-publish').disabled = count === 0;
-  // Re-editing a live app isn't a first publish
-  $('#bld-publish').textContent = S.published ? 'Publish changes' : 'Publish app';
+  // A new app is Created; an existing one autosaves, so the action is Done.
+  $('#bld-publish').textContent = S.created ? 'Done' : 'Create';
+  // Cancel only means something before the app exists — after that there is
+  // nothing to discard, so offering it would be a lie.
+  $('#bld-cancel').style.display = S.created ? 'none' : '';
   $('#bld-hint').textContent = CFG.sections.length === 0
     ? 'Add a section to begin'
     : count === 0
@@ -2845,25 +2836,7 @@ function renderSettings() {
       <strong>not</strong> grant access to it — people who lack access simply won't see that row.</span>
     </div>
 
-    <div>
-      <div class="set__card">
-        <div class="set__cardhead">
-          <div class="set__cardtitle">App status</div>
-          <div class="set__cardsub">${S.published
-            ? 'This app is live. People with access can find it and open it from their sidebar.'
-            : 'This app is a draft. Only you can see it until you publish.'}</div>
-        </div>
-        <div class="acc-row">
-          <span class="pill pill--${S.published ? 'live' : 'draft'}">${S.published ? 'Live' : 'Draft'}</span>
-          <span class="acc-row__body">
-            <div class="acc-row__meta">${S.published
-              ? 'Unpublishing removes it from everyone\'s sidebar. Nothing you built is deleted — you can publish again any time.'
-              : 'Use Publish app in the top right when you\'re ready.'}</div>
-          </span>
-          ${S.published ? '<button class="btn btn--danger btn--sm" id="unpublish">Unpublish</button>' : ''}
-        </div>
-      </div>
-    </div>`;
+    `;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -4097,7 +4070,7 @@ document.addEventListener('click', (e) => {
   if (rail) {
     const k = rail.dataset.rail;
     if (k === 'build') { go('apps'); return; }
-    if (k === 'app')   { if (S.published) { S.sel = null; go('app'); } return; }
+    if (k === 'app')   { if (S.created) { S.sel = null; go('app'); } return; }
     S.railMode = k;
     if (S.screen !== 'workspace') go('workspace'); else renderWorkspace();
     return;
@@ -4216,27 +4189,22 @@ document.addEventListener('click', (e) => {
   // settings
   const gen = t.closest('[data-gen]');
   if (gen) { CFG.access.general = gen.dataset.gen; renderSettings(); return; }
-  if (t.closest('#unpublish')) {
-    S.published = false;
-    S.sel = null;
-    paintBuilder();   // re-renders the badge, publish label and settings card
-    renderSteps();    // "End user" is no longer reachable
-    toast(`${CFG.name} unpublished — it's a draft again`);
-    return;
-  }
 
   // builder actions
   if (t.closest('#bld-cancel')) {
     $('#builder').classList.remove('builder--on');
-    go(S.published ? 'apps' : 'apps');
+    go('apps');
     return;
   }
   if (t.closest('#bld-publish')) {
-    S.published = true;
+    const isNew = !S.created;
+    S.created = true;
     $('#builder').classList.remove('builder--on');
     S.sel = null;
-    go('app');
-    toast(`${CFG.name} published`);
+    // Creating drops you into the app; Done returns to the list you came from,
+    // since the work was already saved as you went.
+    go(isNew ? 'app' : 'apps');
+    toast(isNew ? `${CFG.name} created` : 'Changes saved');
     return;
   }
 
@@ -4409,7 +4377,7 @@ document.addEventListener('drop', (e) => {
    RESET
    ═══════════════════════════════════════════════════════════════════════ */
 function hardReset() {
-  S = { aiPanel:false, screen:'workspace', railMode:'work', published:false, sel:null, bldTab:'build' };
+  S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, sel:null, bldTab:'build' };
   CFG = freshCfg();
   restoreCatalog();
   clearBaiLog();
