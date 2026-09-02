@@ -1290,17 +1290,6 @@
     .mt-comment { font-size: var(--type-s-size); color: var(--text-weak); }
     .mt-comment strong { color: var(--text); font-weight: 500; }
 
-    .mt-line { display: flex; flex-direction: column; padding: var(--spacing-8) 0; gap: 2px; }
-    .mt-line + .mt-line { border-top: 1px solid var(--border); }
-    .mt-line__who { font-size: var(--type-s-size); font-weight: 500; color: var(--text); }
-    .mt-line__role { font-weight: 400; color: var(--text-weak); }
-    .mt-line__text {
-      font-size: var(--type-m-size); line-height: var(--type-m-line);
-      letter-spacing: var(--type-m-track); color: var(--text);
-    }
-    /* The line where the date actually changed */
-    .mt-line--change { border-left: 2px solid var(--primary-background-strong); padding-left: var(--spacing-8); }
-
     .mt-change {
       display: flex; align-items: flex-start; gap: var(--spacing-8);
       margin-top: var(--spacing-12); padding: var(--spacing-12);
@@ -2479,16 +2468,17 @@ function meetingPaneHtml() {
       <div class="pane__body">
         <div class="pane__title-wrap"><div class="pane__title">${esc(m.title)}</div></div>
 
-        <div class="pane__section-head">
-          <span class="pane__section-label">Meeting details</span>
-          <span class="count-pill">3</span>
-        </div>
-        <div class="cf">
-          ${field(IC.calendar, 'Date', 'Yesterday')}
-          ${field(IC.clock, 'Time', esc(m.time))}
-          ${field(IC.people, 'Participants', `<span class="mt-parts">
-            ${m.participants.map(n => `<span class="mt-part">${esc(n)}</span>`).join('')}
-            <span class="mt-part mt-part--more">+${m.extra}</span></span>`)}
+        <div class="pn-sec">
+          <div class="pn-sec__label mt-secrow">Meeting details <span class="count-pill">3</span></div>
+          <div class="pn-sec__body">
+            <div class="cf">
+              ${field(IC.calendar, 'Date', 'Yesterday')}
+              ${field(IC.clock, 'Time', esc(m.time))}
+              ${field(IC.people, 'Participants', `<span class="mt-parts">
+                ${m.participants.map(n => `<span class="mt-part">${esc(n)}</span>`).join('')}
+                <span class="mt-part mt-part--more">+${m.extra}</span></span>`)}
+            </div>
+          </div>
         </div>
 
         <div class="pn-sec">
@@ -2509,17 +2499,6 @@ function meetingPaneHtml() {
               <span><strong>${esc(m.change.field)}</strong> on ${esc(m.change.project)} changed
               ${esc(m.change.from)} → <strong>${esc(m.change.to)}</strong> during this call</span>
             </div>
-          </div>
-        </div>
-
-        <div class="pn-sec">
-          <div class="pn-sec__label">Transcript</div>
-          <div class="pn-sec__body">
-            ${m.transcript.map(l => `
-              <div class="mt-line ${l.change ? 'mt-line--change' : ''}">
-                <span class="mt-line__who">${esc(l.who)} <span class="mt-line__role">${esc(l.role)}</span></span>
-                <span class="mt-line__text">${esc(l.text)}</span>
-              </div>`).join('')}
           </div>
         </div>
 
@@ -2601,13 +2580,6 @@ const MEETING = {
   owner: 'Transitions manager',
   attendees: [['JW','aqua'], ['SC','magenta'], ['MR','indigo'], ['PP','yellow-orange'], ['DK','blue-green']],
   depts: '5 departments',
-  transcript: [
-    { who:'James Wu',   role:'Transitions', text:'Ownership wants to close a week early — the 14th, not the 21st.' },
-    { who:'Sarah Chen', role:'Property Ops', text:'That compresses the turn schedule. Staffing is the part I\'d worry about.' },
-    { who:'James Wu',   role:'Transitions', text:'Updating the close date on the Takeover project now.', change:true },
-    { who:'Marcus Reid', role:'Facilities',  text:'Then every downstream date on the checklist shifts. Someone needs to redo the whole schedule.' },
-    { who:'James Wu',   role:'Transitions', text:'Agreed — that\'s the action item.' },
-  ],
   change: { field:'Close date', from:'Sep 21', to:'Sep 14', project:'Marlow Renovation' },
   action: {
     title:'Reschedule dates',
