@@ -1646,7 +1646,7 @@
       opacity: 0; pointer-events: none; transition: opacity 180ms ease, transform 180ms ease;
     }
     .toast--on { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .toast svg { width: 14px; height: 14px; color: var(--cz-green-bg); }
+    .toast svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--cz-green-bg); }
 
     @media (max-width: 1100px) {
       .search { width: 320px; }
@@ -2533,7 +2533,7 @@ function meetingPaneHtml() {
           <div class="pn-sec__label mt-secrow">Tasks <button class="icon-btn icon-btn--sm" aria-label="Add task">${IC.plus}</button></div>
           <div class="pn-sec__body">
             ${MT_DRAFTS.filter(d => d.state === 'accepted').map(d => `
-              <div class="task">
+              <div class="task ${d.done ? 'task--done' : ''}">
                 <span class="check"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 8.4l3 3 5.8-6"/></svg></span>
                 <span class="task__name">${esc(d.title)}</span>
                 <span class="task__meta">
@@ -4452,8 +4452,9 @@ document.addEventListener('click', (e) => {
   if (t.closest('#meeting-close'))   { S.meetingOpen = false; renderWorkspace(); return; }
   const acc = t.closest('[data-draft-accept]');
   if (acc) { const d = MT_DRAFTS.find(x => x.id === acc.dataset.draftAccept);
-             if (d) d.state = 'accepted'; renderWorkspace();
-             toast(`${d.title} assigned to ${d.assignee}`); return; }
+             if (d) { d.state = 'accepted'; d.done = true; }
+             renderWorkspace();
+             toast(`${d.assignee} teammate has rescheduled the dates`); return; }
   const rej = t.closest('[data-draft-reject]');
   if (rej) { const d = MT_DRAFTS.find(x => x.id === rej.dataset.draftReject);
              if (d) d.state = 'dismissed'; renderWorkspace(); return; }
@@ -4791,7 +4792,7 @@ function hardReset() {
   CFG = freshCfg();
   restoreCatalog();
   clearBaiLog();
-  MT_DRAFTS.forEach(d => { d.state = 'draft'; });
+  MT_DRAFTS.forEach(d => { d.state = 'draft'; d.done = false; });
   closeTA();
   closeAI();
   $('#scrim').classList.remove('scrim--on');
