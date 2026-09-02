@@ -1212,6 +1212,67 @@
       letter-spacing: var(--type-m-track); cursor: pointer;
     }
     /* ══════════════════════════════════════════════════════════════════
+       MEETINGS — the end-user flow's starting point
+       ══════════════════════════════════════════════════════════════════ */
+    .mt-list { display: flex; flex-direction: column; }
+    .mt-row {
+      display: flex; align-items: center; gap: var(--spacing-12);
+      padding: var(--spacing-12); border-radius: var(--spacing-8);
+      cursor: pointer; border: 1px solid var(--border);
+    }
+    .mt-row--active { background: var(--selected-background); border-color: var(--selected-border); }
+    .mt-row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .mt-row__name { font-size: var(--type-m-size); letter-spacing: var(--type-m-track); color: var(--text); }
+    .mt-row__meta { font-size: var(--type-s-size); color: var(--text-weak); }
+
+    .mt-line { display: flex; flex-direction: column; padding: var(--spacing-8) 0; gap: 2px; }
+    .mt-line + .mt-line { border-top: 1px solid var(--border); }
+    .mt-line__who { font-size: var(--type-s-size); font-weight: 500; color: var(--text); }
+    .mt-line__role { font-weight: 400; color: var(--text-weak); }
+    .mt-line__text {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+    /* The line where the date actually changed */
+    .mt-line--change { border-left: 2px solid var(--primary-background-strong); padding-left: var(--spacing-8); }
+
+    .mt-change {
+      display: flex; align-items: flex-start; gap: var(--spacing-8);
+      margin-top: var(--spacing-12); padding: var(--spacing-12);
+      border-radius: var(--spacing-8);
+      background: var(--selected-background); color: var(--selected-text);
+      font-size: var(--type-s-size); line-height: 18px;
+    }
+    .mt-change .ico { color: currentColor; margin-top: 2px; }
+
+    .mt-action {
+      border: 1px solid var(--border); border-radius: var(--spacing-8);
+      padding: var(--spacing-12);
+    }
+    .mt-action__top { display: flex; align-items: center; gap: var(--spacing-8); }
+    .mt-action__title {
+      flex: 1; min-width: 0; font-size: var(--type-m-size); font-weight: 500;
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+    .mt-action__who {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: var(--type-s-size); color: var(--text); white-space: nowrap;
+    }
+    .mt-action__who .avatar-24 svg { width: 12px; height: 12px; }
+    .mt-ai {
+      height: 18px; padding: 0 6px; border-radius: 4px;
+      display: inline-flex; align-items: center;
+      background: var(--cz-indigo-bg); color: var(--cz-indigo-fg);
+      font-size: 10px; font-weight: 500; letter-spacing: 0;
+    }
+    .mt-action__note {
+      margin-top: var(--spacing-8); padding-top: var(--spacing-8);
+      border-top: 1px solid var(--border);
+      font-size: var(--type-s-size); line-height: 18px; color: var(--text-weak);
+    }
+    .mt-action__note strong { color: var(--text); font-weight: 500; }
+
+    /* ══════════════════════════════════════════════════════════════════
        NEW TABLE — the first-run body for a table created from the
        Create-new menu. The header is shared with every other table via
        tableHead(); only what sits below it differs.
@@ -1963,6 +2024,8 @@ let S = {
   screen: 'workspace',
   railMode: 'work',
   created: false,      // has the app been created yet? drives Create vs Done
+  knowledge: null,     // which Knowledge view is open
+  meetingOpen: false,
   sel: null,          // selected object id in the end-user app / preview
   bldTab: 'build',
 };
@@ -2091,7 +2154,7 @@ function modeSidebarHtml() {
       <div class="sb__section">Knowledge</div>
       <div class="sb__group">
         <div class="sb__row"><span class="ico ico--16">${IC.page}</span><span class="sb__row-label">Pages</span></div>
-        <div class="sb__row"><span class="ico ico--16">${IC.calendar}</span><span class="sb__row-label">Meetings</span></div>
+        <div class="sb__row ${S.knowledge === 'meetings' ? 'sb__row--active' : ''}" data-knowledge="meetings"><span class="ico ico--16">${IC.calendar}</span><span class="sb__row-label">Meetings</span></div>
         <div class="sb__row"><span class="ico ico--16">${IC.table}</span><span class="sb__row-label">Tables</span><span class="sb__row-count">6</span></div>
       </div>`;
   }
@@ -2117,6 +2180,30 @@ function modeSidebarHtml() {
 function renderWorkspace() {
   $('#rail').innerHTML = railHtml({ nudge: true, appEntry: S.created, appActive: false });
   $('#sidebar').innerHTML = modeSidebarHtml();
+
+  // Knowledge > Meetings is where the end-user flow starts.
+  if (S.railMode === 'knowledge' && S.knowledge === 'meetings') {
+    $('#canvas').innerHTML = `
+      <div class="cv__head">
+        <div class="cv__title-row"><span class="cv__title">Meetings</span></div>
+        <span class="cv__sub">Notes, transcripts and action items from your calls.</span>
+      </div>
+      <div class="cv__body">
+        <div class="mt-list">
+          <div class="mt-row ${S.meetingOpen ? 'mt-row--active' : ''}" data-meeting="1">
+            <span class="obj-av obj-av--sm" style="background:${cz('blue-green','bg')};color:${cz('blue-green','fg')}">
+              <span class="ico ico--12" style="color:inherit">${IC.calendar}</span></span>
+            <span class="mt-row__body">
+              <span class="mt-row__name">${esc(MEETING.title)}</span>
+              <span class="mt-row__meta">${esc(MEETING.when)} · ${esc(MEETING.depts)}</span>
+            </span>
+            <span class="facepile">${MEETING.attendees.map(([i,h]) => face(i,h)).join('')}</span>
+          </div>
+        </div>
+      </div>
+      ${S.meetingOpen ? meetingPaneHtml() : ''}`;
+    return;
+  }
 
   // Only Work has a built-out canvas; other modes say so rather than
   // showing invented content.
@@ -2258,14 +2345,106 @@ function openPreset(app) {
   toast(`Opened ${app.preset.name}`);
 }
 
+/* Reuses the record pane chrome, so the meeting reads as the same product. */
+function meetingPaneHtml() {
+  const m = MEETING;
+  return `
+    <aside class="pane pane--on">
+      <div class="pane__topbar">
+        <span class="pane__crumb">${IC.calendar}Meetings</span>
+        <span class="pane__actions">
+          <button class="icon-btn" aria-label="Expand">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2.5H13.5V6.5M6.5 13.5H2.5V9.5M13.5 2.5 9 7M2.5 13.5 7 9"/></svg>
+          </button>
+          <button class="icon-btn" id="meeting-close" aria-label="Close">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg>
+          </button>
+        </span>
+      </div>
+
+      <div class="pane__body">
+        <div class="pane__title-wrap"><div class="pane__title">${esc(m.title)}</div></div>
+        <div class="pane__meta">
+          <span class="meta-field"><span class="meta-field__label">When</span>
+            <span class="meta-field__pill" style="background:var(--cz-none-bg);color:var(--cz-none-fg)">${esc(m.when)}</span></span>
+          <span class="meta-field"><span class="meta-field__label">Led by</span>
+            <span class="meta-field__pill" style="background:${cz('aqua','bg')};color:${cz('aqua','fg')}">${esc(m.owner)}</span></span>
+        </div>
+
+        <div class="pn-sec">
+          <div class="pn-sec__label">Transcript</div>
+          <div class="pn-sec__body">
+            ${m.transcript.map(l => `
+              <div class="mt-line ${l.change ? 'mt-line--change' : ''}">
+                <span class="mt-line__who">${esc(l.who)} <span class="mt-line__role">${esc(l.role)}</span></span>
+                <span class="mt-line__text">${esc(l.text)}</span>
+              </div>`).join('')}
+            <div class="mt-change">
+              <span class="ico ico--12">${IC.table}</span>
+              <span><strong>${esc(m.change.field)}</strong> on ${esc(m.change.project)} changed
+              ${esc(m.change.from)} → <strong>${esc(m.change.to)}</strong> during this call</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pn-sec">
+          <div class="pn-sec__label">Action item</div>
+          <div class="pn-sec__body">
+            <div class="mt-action">
+              <div class="mt-action__top">
+                <span class="check"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 8.4l3 3 5.8-6"/></svg></span>
+                <span class="mt-action__title">${esc(m.action.title)}</span>
+                <span class="mt-action__who">
+                  <span class="avatar-24" style="background:${cz('indigo','bg')};color:${cz('indigo','fg')}">${IC.agents}</span>
+                  ${esc(m.action.assignee)}
+                  <span class="mt-ai">AI teammate</span>
+                </span>
+              </div>
+              <div class="mt-action__note">${m.action.note}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>`;
+}
+
+/* ── The kickoff call ─────────────────────────────────────────────────
+   Where the end-user flow starts: a takeover check-in that already
+   happened. The action item points at work already on the checklist
+   rather than spawning new tasks — that's the whole argument. */
+const MEETING = {
+  title: 'The Marlow — Takeover check-in',
+  when: 'Yesterday · 10:00–10:35',
+  owner: 'Transitions manager',
+  attendees: [['JW','aqua'], ['SC','magenta'], ['MR','indigo'], ['PP','yellow-orange'], ['DK','blue-green']],
+  depts: '5 departments',
+  transcript: [
+    { who:'James Wu',   role:'Transitions', text:'Ownership wants to close a week early — the 14th, not the 21st.' },
+    { who:'Sarah Chen', role:'Property Ops', text:'That compresses the turn schedule. Staffing is the part I\'d worry about.' },
+    { who:'James Wu',   role:'Transitions', text:'Updating the close date on the Takeover project now.', change:true },
+    { who:'Marcus Reid', role:'Facilities',  text:'Then every downstream date on the checklist shifts. Someone needs to redo the whole schedule.' },
+    { who:'James Wu',   role:'Transitions', text:'Agreed — that\'s the action item.' },
+  ],
+  change: { field:'Close date', from:'Sep 21', to:'Sep 14', project:'Marlow Renovation' },
+  action: {
+    title:'Reschedule dates',
+    assignee:'Scheduler',
+    note:'Found <strong>6 hiring and turn items</strong> already on the takeover checklist. Rescheduling those rather than creating new tasks.',
+    project:'Marlow Renovation',
+  },
+};
+
 /* End user always lands in the prebuilt Northline app, whatever was open. */
 function enterEndUser() {
   const app = EXISTING_APPS.find(a => a.preset);
-  if (app) loadPreset(app);
+  if (app) loadPreset(app);       // so the Northline app is there to move into
   closeAI();
   $('#builder').classList.remove('builder--on');
   S.sel = null;
-  go('app');
+  S.railMode = 'knowledge';
+  S.knowledge = 'meetings';
+  S.meetingOpen = true;
+  go('workspace');
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -4086,7 +4265,10 @@ function go(screen) {
   document.querySelectorAll('.canvas').forEach(closePane);
   if (screen !== 'builder') $('#builder').classList.remove('builder--on');
   if (screen !== 'prompt')  closeAI();
-  if (screen === 'workspace') { S.railMode = 'work'; renderWorkspace(); }
+  // Doesn't force railMode: callers choose the mode (the rail sets it, and
+  // End user opens Knowledge). Forcing 'work' here also meant clicking a
+  // rail mode from another screen silently bounced you back to Work.
+  if (screen === 'workspace') renderWorkspace();
   if (screen === 'apps')      renderApps();
   if (screen === 'prompt')    { openAI(); return; }
   if (screen === 'builder')   { openBuilder(); }
@@ -4100,12 +4282,19 @@ function go(screen) {
 document.addEventListener('click', (e) => {
   const t = e.target;
 
+  // Knowledge > Meetings
+  const kn = t.closest('[data-knowledge]');
+  if (kn) { S.knowledge = kn.dataset.knowledge; renderWorkspace(); return; }
+  if (t.closest('[data-meeting]'))   { S.meetingOpen = true;  renderWorkspace(); return; }
+  if (t.closest('#meeting-close'))   { S.meetingOpen = false; renderWorkspace(); return; }
+
   // prototype mode switch
   const mode = t.closest('[data-mode]');
   if (mode) {
     if (mode.dataset.mode === 'enduser') { enterEndUser(); return; }
     closeAI();
     $('#builder').classList.remove('builder--on');
+    S.railMode = 'work';
     go('apps');
     return;
   }
@@ -4428,7 +4617,7 @@ document.addEventListener('drop', (e) => {
    RESET
    ═══════════════════════════════════════════════════════════════════════ */
 function hardReset() {
-  S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, sel:null, bldTab:'build' };
+  S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, knowledge:null, meetingOpen:false, sel:null, bldTab:'build' };
   CFG = freshCfg();
   restoreCatalog();
   clearBaiLog();
