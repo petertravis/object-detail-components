@@ -4393,8 +4393,10 @@ function dashboardHtml(o) {
    ═══════════════════════════════════════════════════════════════════════ */
 const BRANDING = { 'The Marlow': 'marlow-branding.png' };
 
-/* A field value plus the decision it drives — the three facts that change
-   the req read off the fields that cause them, not a separate callout. */
+/* A field value plus the decision it drives. Unused for now: the record is
+   plain property context, and the facts that shape the req (PM level, comp
+   band, commercial scope) belong to a later beat. r.pmLevel / r.comp are
+   held on the record for that. */
 const note = (value, hint) => hint
   ? `${value}<span class="cf__note">${esc(hint)}</span>` : value;
 
@@ -4476,13 +4478,11 @@ function paneHtml(r) {
           <strong>Northline Link</strong> — synced, not entered by hand</span></div>
         <div class="cf">
         ${cfRow('Address',           IC.page,   esc(r.addr))}
-        ${cfRow('Units',             IC.number, note(r.units.toLocaleString(),
-          r.pmLevel && `sets ${r.pmLevel} and a ${r.ratio} staffing ratio`))}
+        ${cfRow('Units',             IC.number, r.units.toLocaleString())}
         ${cfRow('Ground-floor retail', IC.number, r.retail
-          ? note(r.retail.toLocaleString() + ' sq ft', 'commercial tenants in scope for this PM')
+          ? r.retail.toLocaleString() + ' sq ft'
           : '<span class="cf__empty">None</span>')}
-        ${cfRow('Market',            IC.building, note(esc(r.loc),
-          r.comp && `${r.comp} comp and ${r.loc.endsWith('CA') ? 'California' : 'state'} disclosure language`))}
+        ${cfRow('Market',            IC.building, esc(r.loc))}
         ${cfRow('Takeover date',     IC.calendar, takeoverDate(r.name)
           ? esc(takeoverDate(r.name)) : '<span class="cf__empty">—</span>')}
         ${cfRow('Year built',        IC.number, r.year)}
