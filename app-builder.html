@@ -1455,6 +1455,29 @@
     /* The date the Scheduler moved, and what it was before */
     .pj-due-changed { display: inline-flex; align-items: baseline; gap: 6px; color: #b04a26; font-weight: 500; }
     .pj-was { color: var(--text-weak); font-weight: 400; font-size: var(--type-s-size); text-decoration: line-through; }
+    /* Synced-source strip — "none of it typed" */
+    .sync-strip {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: var(--spacing-12); padding: 6px var(--spacing-8);
+      border-radius: 6px; background: var(--background-weak-hover, var(--background-strong));
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+    .sync-strip svg { width: 12px; height: 12px; flex-shrink: 0; color: var(--icon); }
+    .sync-strip strong { color: var(--text); font-weight: 500; }
+
+    /* The consequence that follows from a field value. .cf__value is a flex
+       row, so this sits beside the value rather than under it — which keeps
+       every field row at one height instead of three ragged ones. */
+    .cf__note { margin-left: var(--spacing-8); font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; }
+    .cf__empty { color: var(--text-disabled); }
+
+    /* Staffing by function */
+    .stf__n { font-variant-numeric: tabular-nums; }
+    .stf__total {
+      padding-top: var(--spacing-8);
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+
     /* Task description */
     .pj-desc p, .pj-desc li {
       font-size: var(--type-m-size); line-height: var(--type-m-line);
@@ -3468,7 +3491,11 @@ function pick(id) {
    One record set. The groupings filter it by Status; "All properties" is
    the unfiltered view. Locked rows are confidential, as in Northline. */
 const PROPERTY_RECORDS = [
-  { name:'The Marlow',             loc:'Oakland, CA',    units:84,  status:'Takeover',        occ:'68%', addr:'1725 Broadway, Oakland, CA 94612', year:2024, mgr:['JW','aqua'] },
+  { name:'The Marlow',             loc:'Oakland, CA',    units:288, status:'Takeover',        occ:'68%', addr:'1725 Broadway, Oakland, CA 94612', year:2024, mgr:['JW','aqua'],
+    retail:4200, pmLevel:'PM III', ratio:'1:24', comp:'Band 3', staffing:[
+      ['Property manager', 1], ['Assistant manager', 1], ['Leasing', 3],
+      ['Maintenance', 4], ['Groundskeeping', 2], ['Commercial / retail', 1],
+    ] },
   { name:'Beacon Hill Apartments', loc:'Sacramento, CA', units:156, status:'Stabilized',      occ:'96%', addr:'4800 Stockton Blvd, Sacramento, CA 95820', year:2019, mgr:['SC','magenta'], locked:true },
   { name:'Sunset Commons',         loc:'San Jose, CA',   units:42,  status:'Takeover',        occ:'52%', addr:'200 Park Ave, San Jose, CA 95113', year:2023, mgr:['JW','aqua'] },
   { name:'Riverside Lofts',        loc:'Portland, OR',   units:98,  status:'Stabilized',      occ:'94%', addr:'915 SE Water Ave, Portland, OR 97214', year:2017, mgr:['JW','aqua'] },
@@ -3489,10 +3516,10 @@ const PROPERTY_RECORDS = [
   { name:'Verde Springs',        loc:'Phoenix, AZ',        units:126, status:'Stabilized', occ:'93%', addr:'2201 E Camelback Rd, Phoenix, AZ 85016', year:2021, mgr:['HM','pink'] },
 
   // ── Takeover: newly acquired, still climbing ──
-  { name:'Fairmount Place',      loc:'Dallas, TX',         units:158, status:'Takeover',   occ:'61%', addr:'2440 Victory Park Ln, Dallas, TX 75219', year:2016, mgr:['PP','yellow-orange'], locked:true },
-  { name:'Cedar & Vine',         loc:'Tampa, FL',          units:92,  status:'Takeover',   occ:'58%', addr:'1001 Water St, Tampa, FL 33602', year:2020, mgr:['JW','aqua'] },
+  { name:'Fairmount Place',      loc:'Dallas, TX',         units:158, status:'Takeover',   occ:'61%', addr:'2440 Victory Park Ln, Dallas, TX 75219', year:2016, mgr:['PP','yellow-orange'], locked:true, retail:6800 },
+  { name:'Cedar & Vine',         loc:'Tampa, FL',          units:92,  status:'Takeover',   occ:'58%', addr:'1001 Water St, Tampa, FL 33602', year:2020, mgr:['JW','aqua'], retail:1800 },
   { name:'Stonegate Manor',      loc:'Kansas City, MO',    units:104, status:'Takeover',   occ:'66%', addr:'4750 Broadway Blvd, Kansas City, MO 64112', year:2012, mgr:['MR','indigo'] },
-  { name:'Harborview Flats',     loc:'Seattle, WA',        units:136, status:'Takeover',   occ:'71%', addr:'590 1st Ave S, Seattle, WA 98104', year:2019, mgr:['DK','blue-green'] },
+  { name:'Harborview Flats',     loc:'Seattle, WA',        units:136, status:'Takeover',   occ:'71%', addr:'590 1st Ave S, Seattle, WA 98104', year:2019, mgr:['DK','blue-green'], retail:3100 },
   { name:'Alder Court',          loc:'Richmond, VA',       units:68,  status:'Takeover',   occ:'54%', addr:'820 E Main St, Richmond, VA 23219', year:2011, mgr:['SC','magenta'] },
 
   // ── New Development: pre-lease or just delivered ──
@@ -3552,6 +3579,11 @@ const GROUPINGS = {
   'Stabilized':       'Stabilized',
   'Separations':      'Separation',
 };
+
+/* The takeover date lives in TAKEOVERS. Reading it through here means the
+   record, the project header and the dashboard can't disagree about when
+   a property closes. Non-takeover properties simply don't have one. */
+const takeoverDate = name => (TAKEOVERS.find(t => t.prop === name) || {}).close || null;
 
 const lockIcon = `<span class="rec-lock" title="Confidential">${IC.lock}</span>`;
 
@@ -3755,7 +3787,8 @@ const TABLE_DEFS = {
   Properties: {
     addLabel: 'Add property',
     tabs: Object.keys(GROUPINGS),
-    cols: [['#',40], ['Property',220], ['Location',150], ['Units',70], ['Status',150], ['Occupancy',100], ['Regional Mgr',120]],
+    cols: [['#',40], ['Property',200], ['Location',140], ['Units',70], ['Retail sq ft',110],
+           ['Status',140], ['Takeover date',115], ['Occupancy',95], ['Regional Mgr',110]],
     rows(tab) {
       const f = GROUPINGS[tab];
       const rs = f ? PROPERTY_RECORDS.filter(r => r.status === f) : PROPERTY_RECORDS;
@@ -3763,8 +3796,10 @@ const TABLE_DEFS = {
         `<span class="pfg__n">${i + 1}</span>`,
         (r.locked ? lockIcon : '') + esc(r.name),
         pfPill(r.loc, LOC_HUE[r.loc] || 'none'),
-        r.units,
+        r.units.toLocaleString(),
+        r.retail ? r.retail.toLocaleString() : '<span class="cf__empty">—</span>',
         pfPill(r.status, STATUS_COLOR[r.status] || 'none'),
+        takeoverDate(r.name) || '<span class="cf__empty">—</span>',
         r.occ,
         face(r.mgr[0], r.mgr[1]),
       ] }));
@@ -4355,6 +4390,11 @@ function dashboardHtml(o) {
    ═══════════════════════════════════════════════════════════════════════ */
 const BRANDING = { 'The Marlow': 'marlow-branding.png' };
 
+/* A field value plus the decision it drives — the three facts that change
+   the req read off the fields that cause them, not a separate callout. */
+const note = (value, hint) => hint
+  ? `${value}<span class="cf__note">${esc(hint)}</span>` : value;
+
 function cfRow(label, icon, value) {
   return `<div class="cf__row">
     <div class="cf__label"><span class="ico ico--14">${icon}</span>${esc(label)}</div>
@@ -4428,14 +4468,33 @@ function paneHtml(r) {
              </span>
            </div>`)}
 
-      ${section('Property details', IC.dashboard, `<div class="cf">
+      ${section('Property details', IC.dashboard, `
+        <div class="sync-strip">${IC.link}<span>Populated from
+          <strong>Northline Link</strong> — synced, not entered by hand</span></div>
+        <div class="cf">
         ${cfRow('Address',           IC.page,   esc(r.addr))}
-        ${cfRow('Units',             IC.table,  r.units)}
+        ${cfRow('Units',             IC.table,  note(r.units.toLocaleString(),
+          r.pmLevel && `sets ${r.pmLevel} and a ${r.ratio} staffing ratio`))}
+        ${cfRow('Ground-floor retail', IC.table, r.retail
+          ? note(r.retail.toLocaleString() + ' sq ft', 'commercial tenants in scope for this PM')
+          : '<span class="cf__empty">None</span>')}
+        ${cfRow('Market',            IC.people, note(esc(r.loc),
+          r.comp && `${r.comp} comp and ${r.loc.endsWith('CA') ? 'California' : 'state'} disclosure language`))}
+        ${cfRow('Takeover date',     IC.calendar, takeoverDate(r.name)
+          ? esc(takeoverDate(r.name)) : '<span class="cf__empty">—</span>')}
         ${cfRow('Year built',        IC.table,  r.year)}
         ${cfRow('Status',            IC.goal,   pfPill(r.status, STATUS_COLOR[r.status] || 'none'))}
         ${cfRow('Occupancy',         IC.goal,   r.occ)}
         ${cfRow('Regional manager',  IC.people, `${face(r.mgr[0], r.mgr[1])}<span style="margin-left:6px">${esc(MGR_NAMES[r.mgr[0]] || r.mgr[0])}</span>`)}
       </div>`)}
+
+      ${r.staffing ? section('Staffing by function', IC.people, `
+        <div class="cf">
+          ${r.staffing.map(([fn, n]) => cfRow(fn, IC.people,
+            `<span class="stf__n">${n}</span>`)).join('')}
+        </div>
+        <div class="stf__total">${r.staffing.reduce((a, x) => a + x[1], 0)} on-site roles
+          · ${r.ratio} units per role</div>`) : ''}
     </div>
 
     <div class="composer">
