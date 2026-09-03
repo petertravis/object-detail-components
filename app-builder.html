@@ -3562,6 +3562,7 @@ const MARLOW_TASKS = [
 const PROJECTS = {
   'pj-marlow': {
     crumb: 'Property Ops / Marlow Takeover',
+    parent: 'pf-ops',            // keeps Property Ops lit while drilled in
     status: ['At risk', 'orange'],
     property: 'The Marlow',      // the reference field, back to the record
     owner: ['JW', 'aqua'],
@@ -4791,12 +4792,23 @@ function bodyFor(o) {
 function renderEndUser() {
   $('#rail').innerHTML = railHtml({ appEntry: true, appActive: true });
 
+  // Resolve the selection first: the sidebar markup below reads S.sel to
+  // mark the active row, so defaulting it afterwards left the app opening
+  // with the right canvas and nothing lit in the nav.
+  const first = CFG.sections[0] && CFG.sections[0].items[0];
+  if (!S.sel) S.sel = first || null;
+
+  // A project drilled into from a portfolio keeps that portfolio lit, so
+  // the nav still says where you are.
+  const parent = (PROJECTS[S.sel] || {}).parent;
+
   const secs = CFG.sections.map(sec => `
     <div class="sb__section">${esc(sec.name)}</div>
     <div class="sb__group">
       ${sec.items.map(id => {
         const o = byId(id);
-        return `<div class="sb__row ${S.sel === id ? 'sb__row--active' : ''}" data-open="${id}">
+        const on = S.sel === id || parent === id;
+        return `<div class="sb__row ${on ? 'sb__row--active' : ''}" data-open="${id}">
           ${typeAvatar(o, 'sm')}
           <span class="sb__row-label">${esc(o.name)}</span>
         </div>`;
@@ -4807,9 +4819,6 @@ function renderEndUser() {
       ${avatarHtml(CFG.glyph, CFG.color, 'sm')}
       <span style="margin-left:8px;color:var(--text);font-size:var(--type-m-size);font-weight:500">${esc(CFG.name)}</span>
     </div>${secs}`;
-
-  const first = CFG.sections[0] && CFG.sections[0].items[0];
-  if (!S.sel) S.sel = first || null;
 
   $('#canvas').innerHTML = S.sel ? objectHtml(byId(S.sel)) : `
     <div class="empty"><span class="empty__art">${IC.build}</span>
