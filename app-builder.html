@@ -1464,19 +1464,17 @@
     .pj-desc li { margin-bottom: 2px; }
 
     /* Comments / All activity, as the product lays it out */
+    /* Same .db-tab component as every other tab row in the prototype —
+       it carries the border/background reset a bare <button> needs, which
+       a hand-rolled tab here did not. .db-tab--active underlines at
+       bottom:-6px, so the row needs padding below it before the divider. */
     .act__tabs {
-      display: flex; align-items: center; gap: var(--spacing-16);
+      display: flex; align-items: center; gap: var(--spacing-4);
+      padding-bottom: var(--spacing-8);
       border-bottom: 1px solid var(--border); margin-bottom: var(--spacing-16);
     }
-    .act__tab {
-      padding: 0 0 var(--spacing-8); border-bottom: 2px solid transparent;
-      color: var(--text-weak); font-size: var(--type-m-size);
-      letter-spacing: var(--type-m-track); cursor: pointer;
-    }
-    .act__tab--on { color: var(--text); font-weight: 500; border-bottom-color: var(--text); }
     .act__sort {
       margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
-      padding-bottom: var(--spacing-8);
       color: var(--text-weak); font-size: var(--type-s-size); letter-spacing: 0;
     }
 
@@ -4258,8 +4256,8 @@ function taskPaneHtml(id) {
       <div class="pn-sec">
         <div class="pn-sec__body">
           <div class="act__tabs">
-            <button class="act__tab act__tab--on">Comments</button>
-            <button class="act__tab">All activity</button>
+            <button class="db-tab db-tab--active">Comments</button>
+            <button class="db-tab">All activity</button>
             <span class="act__sort">${IC.sort}Oldest</span>
           </div>
 
