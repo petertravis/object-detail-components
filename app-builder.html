@@ -106,7 +106,7 @@
     .app__lower--dsh .dsh { display: flex; }
     .dsh__head {
       display: flex; align-items: center; gap: var(--spacing-8);
-      height: 48px; padding: 0 var(--spacing-12);
+      height: 48px; padding: 0 var(--spacing-8) 0 var(--spacing-16);
       flex-shrink: 0; border-bottom: 1px solid var(--border);
     }
     .dsh__chat { font-size: var(--type-m-size); font-weight: 500; letter-spacing: var(--type-m-track); }
@@ -115,12 +115,12 @@
     .dsh__body {
       flex: 1; min-height: 0; overflow-y: auto;
       display: flex; flex-direction: column; justify-content: flex-end;
-      gap: var(--spacing-12); padding: var(--spacing-20);
+      gap: var(--spacing-12); padding: var(--spacing-16);
     }
     .dsh__h {
       font-family: var(--font-display);
-      font-size: var(--type-h2-size); line-height: var(--type-h2-line);
-      letter-spacing: var(--type-h2-track); font-weight: 500; color: var(--text);
+      font-size: var(--type-h3-size); line-height: var(--type-h3-line);
+      letter-spacing: var(--type-h3-track); font-weight: 500; color: var(--text);
     }
     .dsh__p {
       font-size: var(--type-m-size); line-height: var(--type-m-line);
@@ -130,7 +130,7 @@
     .dsh__composer {
       flex-shrink: 0; margin: 0 var(--spacing-16) var(--spacing-8);
       border: 1px solid var(--border-strong); border-radius: var(--spacing-8);
-      background: var(--background);
+      background: var(--background-weak);
     }
     .dsh__input {
       display: block; width: 100%; box-sizing: border-box; resize: none;
@@ -1534,7 +1534,7 @@
     .sync-strip {
       display: flex; align-items: center; gap: 6px;
       margin-bottom: var(--spacing-12); padding: 6px var(--spacing-8);
-      border-radius: 6px; background: var(--background-weak-hover, var(--background-strong));
+      border-radius: 6px; background: var(--background-strong);
       font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
     }
     .sync-strip svg { width: 12px; height: 12px; flex-shrink: 0; color: var(--icon); }
