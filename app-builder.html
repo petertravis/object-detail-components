@@ -191,8 +191,21 @@
       display: flex; align-items: center; gap: var(--spacing-4);
       padding: 0 var(--spacing-8) var(--spacing-8);
     }
-    .dsh__send { margin-left: auto; }
-    .dsh__send svg { width: 14px; height: 14px; }
+    /* A bare <button> keeps the browser's border and grey fill — this is
+       the same reset .icon-btn does. The active state is a class rather
+       than :has(:placeholder-shown), because the prompt is filled in
+       programmatically and that selector doesn't reliably invalidate on a
+       scripted value change. */
+    .dsh__send {
+      margin-left: auto; width: 28px; height: 28px; padding: 0; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; border-radius: 6px; cursor: pointer;
+      background: var(--background-strong); color: var(--icon);
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .dsh__send svg { width: 15px; height: 15px; }
+    .dsh__send--on { background: var(--primary-background-strong); color: #fff; }
+    .dsh__send--on:hover { filter: brightness(0.94); }
     .dsh__note {
       flex-shrink: 0; padding: 0 var(--spacing-16) var(--spacing-12);
       text-align: center; font-size: var(--type-s-size);
@@ -2535,11 +2548,18 @@ function renderDash() {
   body.scrollTop = body.scrollHeight;
 }
 
+/* The send button reflects whether there's anything to send. */
+function syncSendState() {
+  const i = $('#dsh-input'), b = $('#dsh-send');
+  if (i && b) b.classList.toggle('dsh__send--on', !!i.value.trim());
+}
+
 function dashSend() {
   const input = $('#dsh-input');
   const text = (input.value || '').trim();
   if (!text || S.dashBusy) return;
   input.value = '';
+  syncSendState();
   S.dashLog.push({ who: 'me', html: esc(text) });
   S.dashLog.push({ who: 'wait', html: `Routing to ${esc(REQ_AGENT.name)}…` });
   S.dashBusy = true;
@@ -5286,7 +5306,7 @@ document.addEventListener('click', (e) => {
   // One click prefills the ask — this is a scripted demo, not a text box
   if (t.closest('#dsh-input')) {
     const i = $('#dsh-input');
-    if (!i.value && !S.dashLog.length) { i.value = DASH_PROMPT; }
+    if (!i.value && !S.dashLog.length) { i.value = DASH_PROMPT; syncSendState(); }
     return;
   }
 
@@ -5671,6 +5691,7 @@ function hardReset() {
 CFG = freshCfg();
 paintDashMarks();
 renderDash();
+$('#dsh-input').addEventListener('input', syncSendState);
 go('workspace');
 </script>
 </body>
