@@ -1406,6 +1406,16 @@
     /* A chart that needs the full row rather than half of it */
     .dcard--wide { grid-column: 1 / -1; }
 
+    /* An at-risk metric card. --cz-orange-bg (#ec8d71) is far too light
+       for text on white, so the number uses a darkened member of the same
+       hue family — the same approach as the green check and amber lock. */
+    .dcard--alert { background: #fdf3ef; border-color: #f2c4b2; }
+    .dcard--alert .dcard__title { color: #8f3d1f; }
+    .dcard--alert .dnum { color: #b04a26; }
+    .dcard--alert .dnum__sub { color: #a2542f; }
+    .dcard--alert .dcard__foot { border-top-color: #f2c4b2; }
+    .dcard--alert .dcard__filter { color: #a2542f; }
+
     /* Due today — a task list living inside a dashboard card */
     .dtoday__row {
       display: flex; align-items: center; gap: var(--spacing-8);
@@ -3464,17 +3474,17 @@ const TAKEOVERS = [
   { prop:'Cedar & Vine',     progress:54, close:'Oct 5',  risk:'Unit turns' },
   { prop:'Stonegate Manor',  progress:72, close:'Sep 21', risk:null },
   { prop:'Harborview Flats', progress:91, close:'Sep 7',  risk:null },
-  { prop:'Alder Court',      progress:33, close:'Oct 19', risk:null },
+  { prop:'Alder Court',      progress:33, close:'Oct 19', risk:'Vendor setup' },
 ];
 
 /* Open checklist items per workstream, across every takeover. */
 const TK_WORKSTREAMS = [
-  { name:'Hiring',           open:9  },
-  { name:'Unit turns',       open:14 },
-  { name:'Vendor setup',     open:6  },
-  { name:'Systems & access', open:4  },
-  { name:'Compliance',       open:5  },
-  { name:'Resident comms',   open:3  },
+  { name:'Hiring',           open:9,  risk:5 },
+  { name:'Unit turns',       open:14, risk:4 },
+  { name:'Vendor setup',     open:6,  risk:2 },
+  { name:'Systems & access', open:4,  risk:0 },
+  { name:'Compliance',       open:5,  risk:0 },
+  { name:'Resident comms',   open:3,  risk:0 },
 ];
 
 /* Ops work due today and assigned to her. The job req leads because the
@@ -3499,7 +3509,14 @@ const M = {
   // Takeovers — counted off PROPERTY_RECORDS so the card and the
   // Takeovers tab always agree.
   takeovers:    () => PROPERTY_RECORDS.filter(r => r.status === 'Takeover').length,
-  atRiskCount:  () => new Set(TAKEOVERS.filter(t => t.risk).map(t => t.risk)).size,
+  // Counted off TK_WORKSTREAMS so the number and the workstream names
+  // below it can never disagree — and so the chart agrees with both.
+  atRiskStreams: () => TK_WORKSTREAMS.filter(w => w.risk > 0),
+  atRiskTasks:   () => TK_WORKSTREAMS.reduce((n, w) => n + w.risk, 0),
+  atRiskLabel:   () => {
+    const n = M.atRiskStreams().map(w => w.name.toLowerCase());
+    return n.length <= 2 ? n.join(' and ') : `${n[0]}, ${n[1]} +${n.length - 2} more`;
+  },
   avgProgress:  () => Math.round(TAKEOVERS.reduce((n, t) => n + t.progress, 0) / TAKEOVERS.length),
   daysToClose:  () => 12,   // Sep 2 → the Marlow's new Sep 14 close
   dueTodayCount: () => DUE_TODAY.length,
@@ -3667,8 +3684,8 @@ function dcard(title, body, filters, wide) {
 }
 
 /* Big-number card */
-function numCard(title, value, sub, filters) {
-  return `<div class="dcard dcard--num">
+function numCard(title, value, sub, filters, tone) {
+  return `<div class="dcard dcard--num ${tone ? 'dcard--' + tone : ''}">
     <div class="dcard__title">${esc(title)}</div>
     <div class="dnum">${value}</div>
     ${sub ? `<div class="dnum__sub">${sub}</div>` : ''}
@@ -3858,7 +3875,7 @@ const DASHBOARDS = {
     crumb: 'Dashboards / Takeovers',
     cards: () => [
       numCard('Active takeovers', M.takeovers(), 'across the portfolio'),
-      numCard('At-risk workstreams', M.atRiskCount(), 'hiring and unit turns', 1),
+      numCard('At-risk tasks', M.atRiskTasks(), M.atRiskLabel(), 1, 'alert'),
       numCard('Days to Marlow close', M.daysToClose(), 'moved up from Sep 21', 1),
       numCard('Ops tasks due today', M.dueTodayCount(), 'assigned to me', 2),
     ],
