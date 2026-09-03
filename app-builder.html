@@ -1420,7 +1420,6 @@
     .pfg tbody tr.pfg__flat { cursor: default; }
     .pfg tbody tr.pfg__flat:hover td { background: none; }
 
-    .pj-when { font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; }
 
     /* Project task list. .pn-sec is a pane component insetting on
        --pane-inset (24px); out here it has to line up with the header and
@@ -1456,11 +1455,60 @@
     /* The date the Scheduler moved, and what it was before */
     .pj-due-changed { display: inline-flex; align-items: baseline; gap: 6px; color: #b04a26; font-weight: 500; }
     .pj-was { color: var(--text-weak); font-weight: 400; font-size: var(--type-s-size); text-decoration: line-through; }
-    .pj-act { font-size: var(--type-m-size); letter-spacing: var(--type-m-track); color: var(--text-weak); }
-    .pj-act strong { color: var(--text); font-weight: 500; }
-    .pj-comment { display: flex; flex-direction: column; gap: 6px; }
-    .pj-comment strong { font-weight: 500; }
-    .pj-comment p {
+    /* Task description */
+    .pj-desc p, .pj-desc li {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+    .pj-desc ul { margin: var(--spacing-8) 0 0; padding-left: 18px; }
+    .pj-desc li { margin-bottom: 2px; }
+
+    /* Comments / All activity, as the product lays it out */
+    .act__tabs {
+      display: flex; align-items: center; gap: var(--spacing-16);
+      border-bottom: 1px solid var(--border); margin-bottom: var(--spacing-16);
+    }
+    .act__tab {
+      padding: 0 0 var(--spacing-8); border-bottom: 2px solid transparent;
+      color: var(--text-weak); font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track); cursor: pointer;
+    }
+    .act__tab--on { color: var(--text); font-weight: 500; border-bottom-color: var(--text); }
+    .act__sort {
+      margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
+      padding-bottom: var(--spacing-8);
+      color: var(--text-weak); font-size: var(--type-s-size); letter-spacing: 0;
+    }
+
+    .act__row, .act__item { display: flex; align-items: flex-start; gap: var(--spacing-8); }
+    .act__row { align-items: center; margin-bottom: var(--spacing-12); }
+    .act__line {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text-weak);
+    }
+    .act__line strong, .act__head strong { color: var(--text); font-weight: 500; }
+    .act__when { color: var(--text-weak); }
+
+    /* The unread marker — a rule with its label sitting on the right */
+    .act__new {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      margin: 0 0 var(--spacing-12);
+    }
+    .act__new::before {
+      content: ''; flex: 1; height: 1px; background: var(--primary-background-strong);
+    }
+    .act__new-label {
+      color: var(--primary-background-strong); font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track); font-weight: 500;
+    }
+
+    .act__item { margin-bottom: var(--spacing-12); }
+    .act__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .act__head {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track); color: var(--text-weak);
+    }
+    .act__body p {
       font-size: var(--type-m-size); line-height: var(--type-m-line);
       letter-spacing: var(--type-m-track); color: var(--text);
     }
@@ -2017,6 +2065,9 @@ const IC = {
   collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v10M13 8H6.5M9 4.5 6 8l3 3.5"/></svg>',
   send: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7"/></svg>',
   gear: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2"/><path d="M8 1.8v1.4M8 12.8v1.4M3.6 3.6l1 1M11.4 11.4l1 1M1.8 8h1.4M12.8 8h1.4M3.6 12.4l1-1M11.4 4.6l1-1"/></svg>',
+  sort: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M5 2.5v11M2.5 5 5 2.5 7.5 5M11 13.5v-11M8.5 11 11 13.5 13.5 11"/></svg>',
   clock: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.4 1.6"/></svg>',
   caretDown: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="4.6 6.4 8 9.8 11.4 6.4"/></svg>',
   more: '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="3.4" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.6" cy="8" r="1.3"/></svg>',
@@ -3578,6 +3629,17 @@ const MT_TASK_DETAIL = {
     assignee: ['SC', 'magenta'], assigneeName: 'Sarah Chen',
     ws: 'Hiring',
     from: 'Sep 12', to: 'Today',
+    desc: 'Draft the requirements for the Maintenance Tech role at The Marlow so '
+      + 'Recruiting can post the req today.',
+    // {units} is filled from the property record, so the description can't
+    // quote a unit count the Properties table disagrees with.
+    descBullets: [
+      'Scope — {units} units, full turn cycle plus ongoing work orders',
+      'Certifications — HVAC EPA 608, plus basic plumbing and electrical',
+      'Schedule — on site Mon–Fri, weekend on-call rotation',
+      'Start date — must clear screening before turns begin on Sep 14',
+    ],
+    createdBy: ['SC', 'magenta'], createdByName: 'Sarah Chen', createdWhen: '2 days ago',
     activity: 'changed the due date from Sep 12 to Today',
     comment: 'Close date moved from Sep 21 to Sep 14 in the takeover check-in, so '
       + 'every hiring milestone shifts a week earlier. This req has to post today for '
@@ -4141,6 +4203,9 @@ function taskPaneHtml(id) {
   const t = MARLOW_TASKS.find(x => x.id === id);
   const d = MT_TASK_DETAIL[id];
   if (!t || !d) return '';
+  const units = (PROPERTY_RECORDS.find(r => r.name === d.property) || {}).units || '';
+  const sched = `<span class="avatar-24" style="background:${cz('indigo','bg')};color:${cz('indigo','fg')}"
+        title="Scheduler">${IC.agents}</span>`;
   const field = (label, value) => `
     <div class="cf__row">
       <span class="cf__label">${esc(label)}</span>
@@ -4181,28 +4246,45 @@ function taskPaneHtml(id) {
       </div>
 
       <div class="pn-sec">
-        <div class="pn-sec__label">Activity</div>
+        <div class="pn-sec__label">Description</div>
         <div class="pn-sec__body">
-          <div class="mt-secrow pj-act">
-            <span class="avatar-24" style="background:${cz('indigo','bg')};color:${cz('indigo','fg')}"
-                  title="Scheduler">${IC.agents}</span>
-            <span><strong>Scheduler</strong> <span class="mt-ai">AI teammate</span>
-              ${esc(d.activity)} · today</span>
+          <div class="pj-desc">
+            <p>${esc(d.desc)}</p>
+            <ul>${d.descBullets.map(b => `<li>${esc(b.replace('{units}', units))}</li>`).join('')}</ul>
           </div>
         </div>
       </div>
 
       <div class="pn-sec">
-        <div class="pn-sec__label mt-secrow">Comments <span class="count-pill">1</span></div>
         <div class="pn-sec__body">
-          <div class="pj-comment">
-            <div class="mt-secrow">
-              <span class="avatar-24" style="background:${cz('indigo','bg')};color:${cz('indigo','fg')}"
-                    title="Scheduler">${IC.agents}</span>
-              <strong>Scheduler</strong> <span class="mt-ai">AI teammate</span>
-              <span class="pj-when">today</span>
+          <div class="act__tabs">
+            <button class="act__tab act__tab--on">Comments</button>
+            <button class="act__tab">All activity</button>
+            <span class="act__sort">${IC.sort}Oldest</span>
+          </div>
+
+          <div class="act__row">
+            ${face(d.createdBy[0], d.createdBy[1])}
+            <span class="act__line"><strong>${esc(d.createdByName)}</strong> created this task
+              <span class="act__when">· ${esc(d.createdWhen)}</span></span>
+          </div>
+
+          <div class="act__new"><span class="act__new-label">New activity</span></div>
+
+          <div class="act__row">
+            ${sched}
+            <span class="act__line"><strong>Scheduler</strong> <span class="mt-ai">AI teammate</span>
+              ${esc(d.activity)} <span class="act__when">· today</span></span>
+          </div>
+
+          <div class="act__item">
+            ${sched}
+            <div class="act__body">
+              <div class="act__head"><strong>Scheduler</strong>
+                <span class="mt-ai">AI teammate</span>
+                <span class="act__when">· today</span></div>
+              <p>${esc(d.comment)}</p>
             </div>
-            <p>${esc(d.comment)}</p>
           </div>
         </div>
       </div>
