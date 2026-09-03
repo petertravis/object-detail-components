@@ -1420,16 +1420,15 @@
     .pfg tbody tr.pfg__flat { cursor: default; }
     .pfg tbody tr.pfg__flat:hover td { background: none; }
 
-    /* Project header fields — the Property one references the record */
-    .pj-fields {
-      display: flex; align-items: center; gap: var(--spacing-24);
-      padding: var(--spacing-8) 0 var(--spacing-12);
-    }
-    .pj-field { display: inline-flex; align-items: center; gap: var(--spacing-8); }
-    .pj-field__label, .pj-when {
-      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
-    }
-    .pj-field__val { font-size: var(--type-m-size); letter-spacing: var(--type-m-track); }
+    .pj-when { font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; }
+
+    /* Project task list. .pn-sec is a pane component insetting on
+       --pane-inset (24px); out here it has to line up with the header and
+       toolbar, which use --pf-inset (20px). The top padding keeps the
+       first group label off the toolbar's bottom border. */
+    .pj-body { padding-top: var(--spacing-16); }
+    .pj-body .pn-sec { padding: 0 var(--pf-inset); }
+
     .ref-chip {
       display: inline-flex; align-items: center; gap: 6px;
       height: var(--sizing-24); padding: 0 var(--spacing-8);
@@ -4130,15 +4129,6 @@ function projectHtml(o) {
           <button class="icon-btn" aria-label="Customize">${IC.brush}</button>
         </span>
       </div>
-      <div class="pj-fields">
-        <span class="pj-field"><span class="pj-field__label">Property</span>
-          <button class="ref-chip" data-prop="${esc(P.property)}">
-            <span class="ico ico--12">${IC.building}</span>${esc(P.property)}</button></span>
-        <span class="pj-field"><span class="pj-field__label">Close date</span>
-          <span class="pj-field__val">${esc(P.close)}</span></span>
-        <span class="pj-field"><span class="pj-field__label">Owner</span>
-          ${face(P.owner[0], P.owner[1])}</span>
-      </div>
       <div class="pf-head__tabs">${tabs}</div>
     </div>
     <div class="pf-toolbar">
@@ -4147,7 +4137,7 @@ function projectHtml(o) {
         ${['Filter','Sort','Group','Options'].map(x => `<span class="pf-toolbar__item">${x}</span>`).join('')}
       </span>
     </div>
-    <div class="pf-body">${body}</div>`;
+    <div class="pf-body pj-body">${body}</div>`;
 }
 
 /* Why the req moved, in the Scheduler's words. */
