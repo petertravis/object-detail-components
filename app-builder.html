@@ -2086,6 +2086,9 @@ const IC = {
   collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v10M13 8H6.5M9 4.5 6 8l3 3.5"/></svg>',
   send: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7"/></svg>',
   gear: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2"/><path d="M8 1.8v1.4M8 12.8v1.4M3.6 3.6l1 1M11.4 11.4l1 1M1.8 8h1.4M12.8 8h1.4M3.6 12.4l1-1M11.4 4.6l1-1"/></svg>',
+  number: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M6.6 2.9 5.4 13.1M10.9 2.9 9.7 13.1M2.9 6.3h10.2M2.6 9.7h10.2"/></svg>',
   sort: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" '
     + 'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
     + '<path d="M5 2.5v11M2.5 5 5 2.5 7.5 5M11 13.5v-11M8.5 11 11 13.5 13.5 11"/></svg>',
@@ -4473,24 +4476,24 @@ function paneHtml(r) {
           <strong>Northline Link</strong> — synced, not entered by hand</span></div>
         <div class="cf">
         ${cfRow('Address',           IC.page,   esc(r.addr))}
-        ${cfRow('Units',             IC.table,  note(r.units.toLocaleString(),
+        ${cfRow('Units',             IC.number, note(r.units.toLocaleString(),
           r.pmLevel && `sets ${r.pmLevel} and a ${r.ratio} staffing ratio`))}
-        ${cfRow('Ground-floor retail', IC.table, r.retail
+        ${cfRow('Ground-floor retail', IC.number, r.retail
           ? note(r.retail.toLocaleString() + ' sq ft', 'commercial tenants in scope for this PM')
           : '<span class="cf__empty">None</span>')}
-        ${cfRow('Market',            IC.people, note(esc(r.loc),
+        ${cfRow('Market',            IC.building, note(esc(r.loc),
           r.comp && `${r.comp} comp and ${r.loc.endsWith('CA') ? 'California' : 'state'} disclosure language`))}
         ${cfRow('Takeover date',     IC.calendar, takeoverDate(r.name)
           ? esc(takeoverDate(r.name)) : '<span class="cf__empty">—</span>')}
-        ${cfRow('Year built',        IC.table,  r.year)}
+        ${cfRow('Year built',        IC.number, r.year)}
         ${cfRow('Status',            IC.goal,   pfPill(r.status, STATUS_COLOR[r.status] || 'none'))}
-        ${cfRow('Occupancy',         IC.goal,   r.occ)}
+        ${cfRow('Occupancy',         IC.number, r.occ)}
         ${cfRow('Regional manager',  IC.people, `${face(r.mgr[0], r.mgr[1])}<span style="margin-left:6px">${esc(MGR_NAMES[r.mgr[0]] || r.mgr[0])}</span>`)}
       </div>`)}
 
       ${r.staffing ? section('Staffing by function', IC.people, `
         <div class="cf">
-          ${r.staffing.map(([fn, n]) => cfRow(fn, IC.people,
+          ${r.staffing.map(([fn, n]) => cfRow(fn, IC.number,
             `<span class="stf__n">${n}</span>`)).join('')}
         </div>
         <div class="stf__total">${r.staffing.reduce((a, x) => a + x[1], 0)} on-site roles
