@@ -149,12 +149,16 @@
     }
     .dsh-ul { margin: 4px 0 0; padding-left: 18px; }
     .dsh-ul li { line-height: var(--type-m-line); margin-bottom: 2px; }
-    .dsh__link {
-      border: none; background: none; padding: 0; font-family: inherit;
-      font-size: inherit; letter-spacing: inherit;
-      color: var(--primary-background-strong); font-weight: 500;
-      text-decoration: underline; cursor: pointer;
+    /* An inline task mention, as the product renders one */
+    .tk-token {
+      display: inline-flex; align-items: center; gap: 4px;
+      vertical-align: -3px; margin: 0 1px; padding: 1px 6px 1px 4px;
+      border: none; border-radius: 4px; background: var(--background-strong);
+      color: var(--text); font-family: inherit; font-size: inherit;
+      letter-spacing: inherit; text-align: left; cursor: pointer;
     }
+    .tk-token:hover { background: var(--background-active); }
+    .tk-token svg { flex-shrink: 0; color: var(--icon); }
 
     /* A page the agent produced, attached to a task */
     .att {
@@ -2239,6 +2243,9 @@ const IC = {
   collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v10M13 8H6.5M9 4.5 6 8l3 3.5"/></svg>',
   send: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7"/></svg>',
   gear: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2"/><path d="M8 1.8v1.4M8 12.8v1.4M3.6 3.6l1 1M11.4 11.4l1 1M1.8 8h1.4M12.8 8h1.4M3.6 12.4l1-1M11.4 4.6l1-1"/></svg>',
+  checkCircle: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">'
+    + '<circle cx="8" cy="8" r="6.2"/><path d="M5.4 8.2l1.9 1.9 3.4-3.8"/></svg>',
   dash: '<svg width="16" height="16" viewBox="0 0 32 32" fill="none">'
     + '<ellipse cx="16" cy="9.5" rx="2.7" ry="6.2" fill="#ff584a"/>'
     + '<path d="M15 16.6 6.6 21.4M17 16.6l8.4 4.8M14.4 15.6 5.6 13.2M17.6 15.6l8.8-2.4'
@@ -2485,8 +2492,7 @@ function dashReply() {
     [`${esc(takeoverDate(r.name) || '')} takeover`, 'start date and posting timeline'],
   ];
   return [
-    { who: 'dash', html: `Dash doesn't write recs. The hiring team built an agent for this —
-        routing it to <strong>${esc(REQ_AGENT.name)}</strong>.` },
+    { who: 'dash', html: `A specialized AI agent wrote the spec.` },
     { who: 'agent', html: `
         <div class="dsh-msg__who">${av}<strong>${esc(REQ_AGENT.name)}</strong>
           <span class="mt-ai">AI teammate</span></div>
@@ -2497,7 +2503,7 @@ function dashReply() {
           `<li><strong>${a}</strong> → ${b}</li>`).join('')}</ul>
         <p>Draft complete. I created the page <strong>${esc(r.pmLevel || 'PM')} Property Manager —
           ${esc(r.name)}</strong> and attached it to
-          <button class="dsh__link" data-open-req="1">Write job requirements</button>.</p>
+          <button class="tk-token" data-open-req="1">${IC.checkCircle}Write job requirements</button>.</p>
         <p class="dsh-lbl">Left for you to decide</p>
         <ul class="dsh-ul">
           <li>Final comp inside ${esc(r.comp || '')}</li>
