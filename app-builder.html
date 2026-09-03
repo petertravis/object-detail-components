@@ -1455,6 +1455,13 @@
     /* The date the Scheduler moved, and what it was before */
     .pj-due-changed { display: inline-flex; align-items: baseline; gap: 6px; color: #b04a26; font-weight: 500; }
     .pj-was { color: var(--text-weak); font-weight: 400; font-size: var(--type-s-size); text-decoration: line-through; }
+    /* An unset person field — a dashed seat rather than an em-dash, so it
+       reads as "nobody assigned" instead of "not applicable". */
+    .av-empty {
+      display: inline-block; width: var(--sizing-24); height: var(--sizing-24);
+      border-radius: 500px; border: 1px dashed var(--border-strong); flex-shrink: 0;
+    }
+
     /* Synced-source strip — "none of it typed" */
     .sync-strip {
       display: flex; align-items: center; gap: 6px;
@@ -3499,41 +3506,41 @@ const PROPERTY_RECORDS = [
       ['Property manager', 1], ['Assistant manager', 1], ['Leasing', 3],
       ['Maintenance', 4], ['Groundskeeping', 2], ['Commercial / retail', 1],
     ] },
-  { name:'Beacon Hill Apartments', loc:'Sacramento, CA', units:156, status:'Stabilized',      occ:'96%', addr:'4800 Stockton Blvd, Sacramento, CA 95820', year:2019, mgr:['SC','magenta'], locked:true },
-  { name:'Sunset Commons',         loc:'San Jose, CA',   units:42,  status:'Takeover',        occ:'52%', addr:'200 Park Ave, San Jose, CA 95113', year:2023, mgr:['JW','aqua'] },
-  { name:'Riverside Lofts',        loc:'Portland, OR',   units:98,  status:'Stabilized',      occ:'94%', addr:'915 SE Water Ave, Portland, OR 97214', year:2017, mgr:['JW','aqua'] },
-  { name:'The Hollis',             loc:'Denver, CO',     units:120, status:'New Development', occ:'0%',  addr:'1400 Wewatta St, Denver, CO 80202', year:2026, mgr:['MR','indigo'], locked:true },
-  { name:'North Park Residences',  loc:'Austin, TX',     units:68,  status:'New Development', occ:'74%', addr:'600 Congress Ave, Austin, TX 78701', year:2025, mgr:['PP','yellow-orange'] },
-  { name:'Ivy & Vine',             loc:'Seattle, WA',    units:54,  status:'Separation',      occ:'61%', addr:'2201 Westlake Ave, Seattle, WA 98121', year:2015, mgr:['JW','aqua'] },
-  { name:'Riverbend Flats',        loc:'Boston, MA',     units:76,  status:'Separation',      occ:'63%', addr:'88 Seaport Blvd, Boston, MA 02210', year:2016, mgr:['PP','yellow-orange'] },
+  { name:'Beacon Hill Apartments', loc:'Sacramento, CA', units:156, status:'Stabilized',      occ:'96%', addr:'4800 Stockton Blvd, Sacramento, CA 95820', year:2019, mgr:['SC','magenta'], locked:true, pm:['AR','aqua'] },
+  { name:'Sunset Commons',         loc:'San Jose, CA',   units:42,  status:'Takeover',        occ:'52%', addr:'200 Park Ave, San Jose, CA 95113', year:2023, mgr:['JW','aqua'], pm:['TB','magenta'] },
+  { name:'Riverside Lofts',        loc:'Portland, OR',   units:98,  status:'Stabilized',      occ:'94%', addr:'915 SE Water Ave, Portland, OR 97214', year:2017, mgr:['JW','aqua'], pm:['LM','indigo'] },
+  { name:'The Hollis',             loc:'Denver, CO',     units:120, status:'New Development', occ:'0%',  addr:'1400 Wewatta St, Denver, CO 80202', year:2026, mgr:['MR','indigo'], locked:true, pm:['CV','yellow-orange'] },
+  { name:'North Park Residences',  loc:'Austin, TX',     units:68,  status:'New Development', occ:'74%', addr:'600 Congress Ave, Austin, TX 78701', year:2025, mgr:['PP','yellow-orange'], pm:['NK','blue-green'] },
+  { name:'Ivy & Vine',             loc:'Seattle, WA',    units:54,  status:'Separation',      occ:'61%', addr:'2201 Westlake Ave, Seattle, WA 98121', year:2015, mgr:['JW','aqua'], pm:['DO','pink'] },
+  { name:'Riverbend Flats',        loc:'Boston, MA',     units:76,  status:'Separation',      occ:'63%', addr:'88 Seaport Blvd, Boston, MA 02210', year:2016, mgr:['PP','yellow-orange'], pm:['EF','green'] },
 
   // ── Stabilized: the bulk of a mature portfolio ──
-  { name:'Halstead Row',         loc:'Chicago, IL',        units:142, status:'Stabilized', occ:'97%', addr:'1130 W Monroe St, Chicago, IL 60607', year:2018, mgr:['SC','magenta'] },
-  { name:'Camden Yard Lofts',    loc:'Atlanta, GA',        units:118, status:'Stabilized', occ:'93%', addr:'675 Ponce De Leon Ave NE, Atlanta, GA 30308', year:2020, mgr:['HM','pink'] },
-  { name:'Willow Creek',         loc:'Nashville, TN',      units:96,  status:'Stabilized', occ:'95%', addr:'1200 Division St, Nashville, TN 37203', year:2021, mgr:['DK','blue-green'] },
-  { name:'Brickline Apartments', loc:'Charlotte, NC',      units:164, status:'Stabilized', occ:'91%', addr:'300 S Tryon St, Charlotte, NC 28202', year:2019, mgr:['SC','magenta'] },
-  { name:'Lakeshore Terrace',    loc:'Minneapolis, MN',    units:88,  status:'Stabilized', occ:'94%', addr:'700 Washington Ave N, Minneapolis, MN 55401', year:2014, mgr:['MR','indigo'] },
-  { name:'Presidio Commons',     loc:'San Diego, CA',      units:132, status:'Stabilized', occ:'96%', addr:'1250 Kettner Blvd, San Diego, CA 92101', year:2022, mgr:['JW','aqua'] },
-  { name:'Oakmont Flats',        loc:'Raleigh, NC',        units:74,  status:'Stabilized', occ:'92%', addr:'410 Glenwood Ave, Raleigh, NC 27603', year:2018, mgr:['DK','blue-green'] },
-  { name:'Grandview Heights',    loc:'Columbus, OH',       units:110, status:'Stabilized', occ:'90%', addr:'1000 W Broad St, Columbus, OH 43222', year:2013, mgr:['PP','yellow-orange'] },
-  { name:'Verde Springs',        loc:'Phoenix, AZ',        units:126, status:'Stabilized', occ:'93%', addr:'2201 E Camelback Rd, Phoenix, AZ 85016', year:2021, mgr:['HM','pink'] },
+  { name:'Halstead Row',         loc:'Chicago, IL',        units:142, status:'Stabilized', occ:'97%', addr:'1130 W Monroe St, Chicago, IL 60607', year:2018, mgr:['SC','magenta'], pm:['GH','blue'] },
+  { name:'Camden Yard Lofts',    loc:'Atlanta, GA',        units:118, status:'Stabilized', occ:'93%', addr:'675 Ponce De Leon Ave NE, Atlanta, GA 30308', year:2020, mgr:['HM','pink'], pm:['IJ','aqua'] },
+  { name:'Willow Creek',         loc:'Nashville, TN',      units:96,  status:'Stabilized', occ:'95%', addr:'1200 Division St, Nashville, TN 37203', year:2021, mgr:['DK','blue-green'], pm:['KL','magenta'] },
+  { name:'Brickline Apartments', loc:'Charlotte, NC',      units:164, status:'Stabilized', occ:'91%', addr:'300 S Tryon St, Charlotte, NC 28202', year:2019, mgr:['SC','magenta'], pm:['MN','indigo'] },
+  { name:'Lakeshore Terrace',    loc:'Minneapolis, MN',    units:88,  status:'Stabilized', occ:'94%', addr:'700 Washington Ave N, Minneapolis, MN 55401', year:2014, mgr:['MR','indigo'], pm:['OP','yellow-orange'] },
+  { name:'Presidio Commons',     loc:'San Diego, CA',      units:132, status:'Stabilized', occ:'96%', addr:'1250 Kettner Blvd, San Diego, CA 92101', year:2022, mgr:['JW','aqua'], pm:['QR','blue-green'] },
+  { name:'Oakmont Flats',        loc:'Raleigh, NC',        units:74,  status:'Stabilized', occ:'92%', addr:'410 Glenwood Ave, Raleigh, NC 27603', year:2018, mgr:['DK','blue-green'], pm:['ST','pink'] },
+  { name:'Grandview Heights',    loc:'Columbus, OH',       units:110, status:'Stabilized', occ:'90%', addr:'1000 W Broad St, Columbus, OH 43222', year:2013, mgr:['PP','yellow-orange'], pm:['UV','green'] },
+  { name:'Verde Springs',        loc:'Phoenix, AZ',        units:126, status:'Stabilized', occ:'93%', addr:'2201 E Camelback Rd, Phoenix, AZ 85016', year:2021, mgr:['HM','pink'], pm:['WC','blue'] },
 
   // ── Takeover: newly acquired, still climbing ──
-  { name:'Fairmount Place',      loc:'Dallas, TX',         units:158, status:'Takeover',   occ:'61%', addr:'2440 Victory Park Ln, Dallas, TX 75219', year:2016, mgr:['PP','yellow-orange'], locked:true, retail:6800 },
-  { name:'Cedar & Vine',         loc:'Tampa, FL',          units:92,  status:'Takeover',   occ:'58%', addr:'1001 Water St, Tampa, FL 33602', year:2020, mgr:['JW','aqua'], retail:1800 },
-  { name:'Stonegate Manor',      loc:'Kansas City, MO',    units:104, status:'Takeover',   occ:'66%', addr:'4750 Broadway Blvd, Kansas City, MO 64112', year:2012, mgr:['MR','indigo'] },
-  { name:'Harborview Flats',     loc:'Seattle, WA',        units:136, status:'Takeover',   occ:'71%', addr:'590 1st Ave S, Seattle, WA 98104', year:2019, mgr:['DK','blue-green'], retail:3100 },
-  { name:'Alder Court',          loc:'Richmond, VA',       units:68,  status:'Takeover',   occ:'54%', addr:'820 E Main St, Richmond, VA 23219', year:2011, mgr:['SC','magenta'] },
+  { name:'Fairmount Place',      loc:'Dallas, TX',         units:158, status:'Takeover',   occ:'61%', addr:'2440 Victory Park Ln, Dallas, TX 75219', year:2016, mgr:['PP','yellow-orange'], locked:true, retail:6800, pm:['YZ','aqua'] },
+  { name:'Cedar & Vine',         loc:'Tampa, FL',          units:92,  status:'Takeover',   occ:'58%', addr:'1001 Water St, Tampa, FL 33602', year:2020, mgr:['JW','aqua'], retail:1800, pm:['BD','magenta'] },
+  { name:'Stonegate Manor',      loc:'Kansas City, MO',    units:104, status:'Takeover',   occ:'66%', addr:'4750 Broadway Blvd, Kansas City, MO 64112', year:2012, mgr:['MR','indigo'], pm:['CE','indigo'] },
+  { name:'Harborview Flats',     loc:'Seattle, WA',        units:136, status:'Takeover',   occ:'71%', addr:'590 1st Ave S, Seattle, WA 98104', year:2019, mgr:['DK','blue-green'], retail:3100, pm:['FG','yellow-orange'] },
+  { name:'Alder Court',          loc:'Richmond, VA',       units:68,  status:'Takeover',   occ:'54%', addr:'820 E Main St, Richmond, VA 23219', year:2011, mgr:['SC','magenta'], pm:['HI','blue-green'] },
 
   // ── New Development: pre-lease or just delivered ──
-  { name:'Meridian Yards',       loc:'Salt Lake City, UT', units:148, status:'New Development', occ:'0%',  addr:'111 S Main St, Salt Lake City, UT 84111', year:2026, mgr:['MR','indigo'] },
-  { name:'The Ashford',          loc:'Austin, TX',         units:112, status:'New Development', occ:'12%', addr:'1400 E 6th St, Austin, TX 78702', year:2026, mgr:['PP','yellow-orange'], locked:true },
-  { name:'Larkspur Landing',     loc:'Denver, CO',         units:96,  status:'New Development', occ:'0%',  addr:'3000 Brighton Blvd, Denver, CO 80216', year:2027, mgr:['HM','pink'] },
+  { name:'Meridian Yards',       loc:'Salt Lake City, UT', units:148, status:'New Development', occ:'0%',  addr:'111 S Main St, Salt Lake City, UT 84111', year:2026, mgr:['MR','indigo'], pm:['JK','pink'] },
+  { name:'The Ashford',          loc:'Austin, TX',         units:112, status:'New Development', occ:'12%', addr:'1400 E 6th St, Austin, TX 78702', year:2026, mgr:['PP','yellow-orange'], locked:true, pm:['MO','green'] },
+  { name:'Larkspur Landing',     loc:'Denver, CO',         units:96,  status:'New Development', occ:'0%',  addr:'3000 Brighton Blvd, Denver, CO 80216', year:2027, mgr:['HM','pink'], pm:['NP','blue'] },
 
   // ── Separation: exiting management ──
-  { name:'Pinehurst Court',      loc:'Atlanta, GA',        units:82,  status:'Separation', occ:'47%', addr:'1050 Memorial Dr SE, Atlanta, GA 30316', year:2009, mgr:['SC','magenta'] },
-  { name:'Bayside Crossing',     loc:'Tampa, FL',          units:90,  status:'Separation', occ:'52%', addr:'4200 Bayshore Blvd, Tampa, FL 33611', year:2010, mgr:['JW','aqua'] },
-  { name:'Elm Street Commons',   loc:'Columbus, OH',       units:64,  status:'Separation', occ:'44%', addr:'250 S High St, Columbus, OH 43215', year:2008, mgr:['DK','blue-green'] },
+  { name:'Pinehurst Court',      loc:'Atlanta, GA',        units:82,  status:'Separation', occ:'47%', addr:'1050 Memorial Dr SE, Atlanta, GA 30316', year:2009, mgr:['SC','magenta'], pm:['RS','aqua'] },
+  { name:'Bayside Crossing',     loc:'Tampa, FL',          units:90,  status:'Separation', occ:'52%', addr:'4200 Bayshore Blvd, Tampa, FL 33611', year:2010, mgr:['JW','aqua'], pm:['TV','magenta'] },
+  { name:'Elm Street Commons',   loc:'Columbus, OH',       units:64,  status:'Separation', occ:'44%', addr:'250 S High St, Columbus, OH 43215', year:2008, mgr:['DK','blue-green'], pm:['WY','indigo'] },
 ];
 
 /* Work orders, vendors and leases live outside TABLE_DEFS because the
@@ -3792,8 +3799,9 @@ const TABLE_DEFS = {
   Properties: {
     addLabel: 'Add property',
     tabs: Object.keys(GROUPINGS),
-    cols: [['#',40], ['Property',200], ['Location',140], ['Units',70], ['Retail sq ft',110],
-           ['Status',140], ['Takeover date',115], ['Occupancy',95], ['Regional Mgr',110]],
+    cols: [['#',40], ['Property',190], ['Location',135], ['Units',70], ['Retail sq ft',105],
+           ['Status',125], ['Takeover date',110], ['Occupancy',90],
+           ['Property Mgr',110], ['Regional Mgr',105]],
     rows(tab) {
       const f = GROUPINGS[tab];
       const rs = f ? PROPERTY_RECORDS.filter(r => r.status === f) : PROPERTY_RECORDS;
@@ -3806,6 +3814,7 @@ const TABLE_DEFS = {
         pfPill(r.status, STATUS_COLOR[r.status] || 'none'),
         takeoverDate(r.name) || '<span class="cf__empty">—</span>',
         r.occ,
+        r.pm ? face(r.pm[0], r.pm[1]) : `<span class="av-empty" title="Vacant"></span>`,
         face(r.mgr[0], r.mgr[1]),
       ] }));
     },
@@ -4494,6 +4503,9 @@ function paneHtml(r) {
         ${cfRow('Year built',        IC.number, r.year)}
         ${cfRow('Status',            IC.goal,   pfPill(r.status, STATUS_COLOR[r.status] || 'none'))}
         ${cfRow('Occupancy',         IC.number, r.occ)}
+        ${cfRow('Property manager',  IC.people, r.pm
+          ? `${face(r.pm[0], r.pm[1])}<span style="margin-left:6px">${esc(MGR_NAMES[r.pm[0]] || r.pm[0])}</span>`
+          : `<span class="av-empty"></span>`)}
         ${cfRow('Regional manager',  IC.people, `${face(r.mgr[0], r.mgr[1])}<span style="margin-left:6px">${esc(MGR_NAMES[r.mgr[0]] || r.mgr[0])}</span>`)}
       </div>`)}
 
@@ -4516,7 +4528,8 @@ function paneHtml(r) {
     </div>`;
 }
 
-const MGR_NAMES = { JW:'James Wu', SC:'Sarah Chen', MR:'Marcus Reid', PP:'Priya Patel', HM:'Hana Mori', DK:'Dana Kim' };
+const MGR_NAMES = { JW:'James Wu', SC:'Sarah Chen', MR:'Marcus Reid', PP:'Priya Patel', HM:'Hana Mori', DK:'Dana Kim',
+  AR:'Ana Reyes', TB:'Tom Bright', LM:'Lena Mora', CV:'Chris Vega', NK:'Nina Kaur', DO:'Diego Ortiz', EF:'Elena Fox', GH:'Grace Han', IJ:'Ivan Jung', KL:'Kara Lyle', MN:'Mai Nguyen', OP:'Omar Pratt', QR:'Quinn Rossi', ST:'Sam Tran', UV:'Uma Varma', WC:'Wes Cole', YZ:'Yara Zane', BD:'Beth Diaz', CE:'Cole Ellis', FG:'Fay Grant', HI:'Hugo Ibarra', JK:'Jae Kim', MO:'Mira Osei', NP:'Noah Park', RS:'Rosa Silva', TV:'Tess Vaughn', WY:'Will Yates' };
 
 /* Open / close, scoped to whichever canvas is showing */
 function openPane(name, root) {
