@@ -4108,8 +4108,12 @@ function projectHtml(o) {
       <div class="pn-sec__body">${g.rows.map(taskRow).join('')}</div>
     </div>`).join('');
 
+  const tabs = PJ_TABS.map((t, i) =>
+    `<button class="db-tab ${i === 0 ? 'db-tab--active' : ''}">${t}</button>`).join('') +
+    `<button class="db-tab" aria-label="Add view">${IC.plus}</button>`;
+
   return `
-    <div class="pf-head pf-head--flush">
+    <div class="pf-head">
       <div class="pf-head__crumb">${esc(P.crumb)}</div>
       <div class="pf-head__top">
         <span class="pf-head__icon" style="background:${TYPES.project.bg};color:${TYPES.project.fg}">
@@ -4117,9 +4121,12 @@ function projectHtml(o) {
         <span class="pf-head__name">${esc(o.name)}</span>
         ${pfPill(P.status[0], P.status[1])}
         <button class="icon-btn icon-btn--sm" aria-label="Project menu">${IC.caret}</button>
+        <button class="icon-btn icon-btn--sm" aria-label="Star">${IC.star}</button>
         <span class="pf-head__actions">
           <span class="facepile">${PF_FACES.map(([i, h]) => face(i, h)).join('')}</span>
           <button class="btn btn--secondary btn--sm">Share</button>
+          <span class="pf-head__sep"></span>
+          <button class="icon-btn" aria-label="Customize">${IC.brush}</button>
         </span>
       </div>
       <div class="pj-fields">
@@ -4131,6 +4138,13 @@ function projectHtml(o) {
         <span class="pj-field"><span class="pj-field__label">Owner</span>
           ${face(P.owner[0], P.owner[1])}</span>
       </div>
+      <div class="pf-head__tabs">${tabs}</div>
+    </div>
+    <div class="pf-toolbar">
+      <button class="btn btn--secondary btn--sm">${IC.plus}Add task</button>
+      <span class="pf-toolbar__right">
+        ${['Filter','Sort','Group','Options'].map(x => `<span class="pf-toolbar__item">${x}</span>`).join('')}
+      </span>
     </div>
     <div class="pf-body">${body}</div>`;
 }
@@ -4587,6 +4601,8 @@ const STATUS_COLOR = {
    Rows differ per portfolio so four portfolios don't show one dataset.
    ═══════════════════════════════════════════════════════════════════════ */
 const PF_TABS  = ['List', 'Timeline', 'Dashboard', 'Progress', 'Workload', 'Messages'];
+/* Same tab component as a portfolio, with a project's own views. */
+const PJ_TABS  = ['List', 'Board', 'Timeline', 'Dashboard', 'Messages'];
 const PF_FACES = [['HM','pink'], ['JW','aqua'], ['DK','indigo'], ['SC','magenta']];
 
 /* One hue per location, shared across every portfolio — a select field's
