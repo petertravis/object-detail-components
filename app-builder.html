@@ -81,6 +81,74 @@
       grid-template-columns: var(--rail-width) var(--sidebar-width) 1fr;
       min-height: 0;
     }
+    /* Dash is a fourth column rather than an overlay, so opening it narrows
+       the canvas the way the product does instead of covering it. */
+    .app__lower--dsh { grid-template-columns: var(--rail-width) var(--sidebar-width) 1fr 360px; }
+
+    .dsh-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 32px; padding: 0 12px;
+      border: 1px solid var(--border-strong); border-radius: 500px;
+      background: var(--background-weak); color: var(--text);
+      font-family: inherit; font-size: var(--type-m-size);
+      letter-spacing: var(--type-m-track); cursor: pointer; white-space: nowrap;
+    }
+    .dsh-btn:hover { background: var(--background-hover); }
+    .dsh-btn__mark, .dsh__mark { display: inline-flex; flex-shrink: 0; }
+    .dsh-btn__mark svg { width: 16px; height: 16px; }
+    .dsh__mark svg { width: 34px; height: 34px; }
+
+    .dsh {
+      display: none; flex-direction: column; min-height: 0;
+      background: var(--background-weak);
+      border-left: 1px solid var(--border);
+    }
+    .app__lower--dsh .dsh { display: flex; }
+    .dsh__head {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 48px; padding: 0 var(--spacing-12);
+      flex-shrink: 0; border-bottom: 1px solid var(--border);
+    }
+    .dsh__chat { font-size: var(--type-m-size); font-weight: 500; letter-spacing: var(--type-m-track); }
+    .dsh__head-r { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; }
+
+    .dsh__body {
+      flex: 1; min-height: 0; overflow-y: auto;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      gap: var(--spacing-12); padding: var(--spacing-20);
+    }
+    .dsh__h {
+      font-family: var(--font-display);
+      font-size: var(--type-h2-size); line-height: var(--type-h2-line);
+      letter-spacing: var(--type-h2-track); font-weight: 500; color: var(--text);
+    }
+    .dsh__p {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text-weak);
+    }
+
+    .dsh__composer {
+      flex-shrink: 0; margin: 0 var(--spacing-16) var(--spacing-8);
+      border: 1px solid var(--border-strong); border-radius: var(--spacing-8);
+      background: var(--background);
+    }
+    .dsh__input {
+      display: block; width: 100%; box-sizing: border-box; resize: none;
+      border: none; outline: none; background: none; font-family: inherit;
+      padding: var(--spacing-12); color: var(--text-disabled);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+    }
+    .dsh__composer-foot {
+      display: flex; align-items: center; gap: var(--spacing-4);
+      padding: 0 var(--spacing-8) var(--spacing-8);
+    }
+    .dsh__send { margin-left: auto; }
+    .dsh__send svg { width: 14px; height: 14px; }
+    .dsh__note {
+      flex-shrink: 0; padding: 0 var(--spacing-16) var(--spacing-12);
+      text-align: center; font-size: var(--type-s-size);
+      color: var(--text-weak); letter-spacing: 0;
+    }
 
     /* ── Topbar ──────────────────────────────────────────────────────── */
     .topbar {
@@ -1830,16 +1898,55 @@
         <span>Search</span>
       </div>
       <div class="topbar__right">
-        <button class="icon-btn" aria-label="Help">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.2"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.7 1.7c-.5.3-.9.7-.9 1.3" stroke-linecap="round"/><circle cx="8" cy="11.4" r=".75" fill="currentColor" stroke="none"/></svg>
+        <button class="dsh-btn" id="dash-open">
+          <span class="dsh-btn__mark"></span>Work with Dash
         </button>
       </div>
     </div>
 
-    <div class="app__lower">
+    <div class="app__lower" id="app-lower">
       <nav class="rail" id="rail" aria-label="Modes"></nav>
       <aside class="sidebar" id="sidebar"></aside>
       <main class="canvas" id="canvas"></main>
+
+      <!-- Asana AI. No behaviour yet by design — the flow comes next. -->
+      <aside class="dsh" id="dash" aria-label="Dash">
+        <div class="dsh__head">
+          <span class="dsh__chat">New chat</span>
+          <span class="dsh__head-r">
+            <button class="icon-btn" aria-label="Expand">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2.5H13.5V6.5M6.5 13.5H2.5V9.5M13.5 2.5 9 7M2.5 13.5 7 9"/></svg>
+            </button>
+            <button class="icon-btn" id="dash-close" aria-label="Close Dash">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg>
+            </button>
+          </span>
+        </div>
+
+        <div class="dsh__body">
+          <span class="dsh__mark"></span>
+          <div class="dsh__h">Hi, I'm Dash</div>
+          <p class="dsh__p">I'll help you stay on top of your work in Asana —
+            flagging what matters, surfacing what's next, and jumping in when
+            you need a hand.</p>
+        </div>
+
+        <div class="dsh__composer">
+          <textarea class="dsh__input" rows="2" placeholder="Ask Dash anything"></textarea>
+          <div class="dsh__composer-foot">
+            <button class="icon-btn icon-btn--sm" aria-label="Add">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
+            </button>
+            <button class="icon-btn icon-btn--sm" aria-label="Mention">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.9"/><path d="M10.9 8v1.5a2 2 0 0 0 3 0V8a6 6 0 1 0-3 5.2" stroke-linecap="round"/></svg>
+            </button>
+            <button class="dsh__send" aria-label="Send">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.8V3.6"/><polyline points="4.2 7.4 8 3.4 11.8 7.4"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="dsh__note">Dash is AI and can make mistakes. Double-check responses.</div>
+      </aside>
     </div>
   </div>
 </div>
@@ -2093,6 +2200,10 @@ const IC = {
   collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v10M13 8H6.5M9 4.5 6 8l3 3.5"/></svg>',
   send: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7"/></svg>',
   gear: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2"/><path d="M8 1.8v1.4M8 12.8v1.4M3.6 3.6l1 1M11.4 11.4l1 1M1.8 8h1.4M12.8 8h1.4M3.6 12.4l1-1M11.4 4.6l1-1"/></svg>',
+  dash: '<svg width="16" height="16" viewBox="0 0 32 32" fill="none">'
+    + '<ellipse cx="16" cy="9.5" rx="2.7" ry="6.2" fill="#ff584a"/>'
+    + '<path d="M15 16.6 6.6 21.4M17 16.6l8.4 4.8M14.4 15.6 5.6 13.2M17.6 15.6l8.8-2.4'
+    + 'M16 18.2v8.4" stroke="#ff584a" stroke-width="1.7" stroke-linecap="round"/></svg>',
   number: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" '
     + 'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">'
     + '<path d="M6.6 2.9 5.4 13.1M10.9 2.9 9.7 13.1M2.9 6.3h10.2M2.6 9.7h10.2"/></svg>',
@@ -2255,6 +2366,7 @@ let S = {
   meetingOpen: false,
   sel: null,          // selected object id in the end-user app / preview
   bldTab: 'build',
+  dash: false,        // Dash panel open?
   // Which prototype tab is lit. Derived from S.screen originally, which
   // broke once End user started landing on 'workspace' (Knowledge) rather
   // than 'app' — every end-user screen would light App builder. Set it at
@@ -2312,6 +2424,18 @@ function toast(msg) {
   $('#toast').classList.add('toast--on');
   clearTimeout(toastT);
   toastT = setTimeout(() => $('#toast').classList.remove('toast--on'), 2600);
+}
+
+/* Dash: an entry point only. Toggling the fourth grid track is the whole
+   behaviour for now — the flow it opens into comes next. */
+function paintDashMarks() {
+  $$('.dsh-btn__mark, .dsh__mark').forEach(el => { el.innerHTML = IC.dash; });
+}
+function toggleDash(on) {
+  const lower = $('#app-lower');
+  const open = on === undefined ? !lower.classList.contains('app__lower--dsh') : on;
+  lower.classList.toggle('app__lower--dsh', open);
+  S.dash = open;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -5013,6 +5137,9 @@ document.addEventListener('click', (e) => {
   if (rej) { const d = MT_DRAFTS.find(x => x.id === rej.dataset.draftReject);
              if (d) d.state = 'dismissed'; renderWorkspace(); return; }
 
+  if (t.closest('#dash-open'))  { toggleDash(); return; }
+  if (t.closest('#dash-close')) { toggleDash(false); return; }
+
   // prototype mode switch
   const mode = t.closest('[data-mode]');
   if (mode) {
@@ -5367,7 +5494,8 @@ document.addEventListener('drop', (e) => {
    RESET
    ═══════════════════════════════════════════════════════════════════════ */
 function hardReset() {
-  S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, knowledge:null, meetingOpen:false, sel:null, bldTab:'build', mode:'builder' };
+  S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, knowledge:null, meetingOpen:false, sel:null, bldTab:'build', mode:'builder', dash:false };
+  toggleDash(false);
   CFG = freshCfg();
   restoreCatalog();
   clearBaiLog();
@@ -5381,6 +5509,7 @@ function hardReset() {
 
 /* boot */
 CFG = freshCfg();
+paintDashMarks();
 go('workspace');
 </script>
 </body>
