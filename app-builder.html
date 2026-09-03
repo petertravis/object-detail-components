@@ -2175,6 +2175,11 @@ let S = {
   meetingOpen: false,
   sel: null,          // selected object id in the end-user app / preview
   bldTab: 'build',
+  // Which prototype tab is lit. Derived from S.screen originally, which
+  // broke once End user started landing on 'workspace' (Knowledge) rather
+  // than 'app' — every end-user screen would light App builder. Set it at
+  // the entry points instead, so no screen has to be enumerated here.
+  mode: 'builder',
 };
 let CFG = null;       // APP_CONFIG under construction
 
@@ -2235,7 +2240,7 @@ function toast(msg) {
 /* Two modes, not a stepper: the exec demo only needs builder vs end user. */
 const PROTO_TABS = [{ key:'builder', label:'App builder' }, { key:'enduser', label:'End user' }];
 function renderSteps() {
-  const active = S.screen === 'app' ? 'enduser' : 'builder';
+  const active = S.mode;
   $('#steps').innerHTML = PROTO_TABS.map(t =>
     `<button class="proto-step ${t.key === active ? 'proto-step--active' : ''}"
        data-mode="${t.key}">${esc(t.label)}</button>`).join('');
@@ -2678,6 +2683,7 @@ const MEETING = {
 
 /* End user always lands in the prebuilt Northline app, whatever was open. */
 function enterEndUser() {
+  S.mode = 'enduser';
   const app = EXISTING_APPS.find(a => a.preset);
   if (app) loadPreset(app);       // so the Northline app is there to move into
   closeAI();
@@ -4839,6 +4845,7 @@ document.addEventListener('click', (e) => {
   const mode = t.closest('[data-mode]');
   if (mode) {
     if (mode.dataset.mode === 'enduser') { enterEndUser(); return; }
+    S.mode = 'builder';
     closeAI();
     $('#builder').classList.remove('builder--on');
     S.railMode = 'work';
@@ -4850,7 +4857,7 @@ document.addEventListener('click', (e) => {
   const rail = t.closest('[data-rail]');
   if (rail) {
     const k = rail.dataset.rail;
-    if (k === 'build') { go('apps'); return; }
+    if (k === 'build') { S.mode = 'builder'; go('apps'); return; }
     if (k === 'app')   { if (S.created) { S.sel = null; go('app'); } return; }
     S.railMode = k;
     if (S.screen !== 'workspace') go('workspace'); else renderWorkspace();
@@ -5177,7 +5184,7 @@ document.addEventListener('drop', (e) => {
    RESET
    ═══════════════════════════════════════════════════════════════════════ */
 function hardReset() {
-  S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, knowledge:null, meetingOpen:false, sel:null, bldTab:'build' };
+  S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, knowledge:null, meetingOpen:false, sel:null, bldTab:'build', mode:'builder' };
   CFG = freshCfg();
   restoreCatalog();
   clearBaiLog();
