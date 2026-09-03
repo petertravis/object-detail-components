@@ -160,6 +160,66 @@
     .tk-token:hover { background: var(--background-active); }
     .tk-token svg { flex-shrink: 0; color: var(--icon); }
 
+    /* Page view — Asana Pages chrome plus a document column */
+    .pgv-head {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 56px; padding: 0 var(--pf-inset);
+      flex-shrink: 0; border-bottom: 1px solid var(--border);
+    }
+    .pgv-head__icon { display: inline-flex; color: var(--icon); }
+    .pgv-head__icon svg { width: 16px; height: 16px; }
+    .pgv-head__name {
+      font-family: var(--font-display);
+      font-size: var(--type-h3-size); line-height: var(--type-h3-line);
+      letter-spacing: var(--type-h3-track); font-weight: 500; color: var(--text);
+    }
+    .pgv-head__r { margin-left: auto; display: inline-flex; align-items: center; gap: var(--spacing-8); }
+
+    .pgv-toolbar {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: 44px; padding: 0 var(--pf-inset);
+      flex-shrink: 0; border-bottom: 1px solid var(--border);
+    }
+    .pgv-sep { width: 1px; height: 18px; background: var(--border); }
+    .pgv-tool {
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      color: var(--text-weak); cursor: default;
+    }
+    .pgv-tool--b { font-weight: 600; }
+    .pgv-tool--i { font-style: italic; }
+    .pgv-tool--u { text-decoration: underline; }
+    .pgv-saved { font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; }
+
+    .pgv-doc { max-width: 720px; padding: var(--spacing-24) var(--pf-inset) 64px; }
+    .pgv-title {
+      font-family: var(--font-display);
+      font-size: var(--type-xl-size); line-height: var(--type-xl-line);
+      letter-spacing: var(--type-xl-track); font-weight: 500; color: var(--text);
+      margin-bottom: var(--spacing-16);
+    }
+    .pgv-h2 {
+      font-family: var(--font-display);
+      font-size: var(--type-h3-size); line-height: var(--type-h3-line);
+      letter-spacing: var(--type-h3-track); font-weight: 500; color: var(--text);
+      margin: var(--spacing-24) 0 var(--spacing-8);
+    }
+    .pgv-p, .pgv-ul li, .pgv-meta li {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+    .pgv-ul, .pgv-meta { padding-left: 20px; }
+    .pgv-ul li, .pgv-meta li { margin-bottom: 4px; }
+    .pgv-meta li { list-style: disc; }
+    .pgv-rule { height: 1px; background: var(--border); margin: var(--spacing-16) 0; }
+    .pgv-inline { display: inline-flex; align-items: center; gap: 6px; vertical-align: -6px; }
+    .pgv-inline .avatar-24 svg { width: 12px; height: 12px; }
+    .pgv-tok {
+      display: inline-flex; align-items: center; gap: 4px;
+      vertical-align: -3px; margin-right: 6px; padding: 1px 6px 1px 4px;
+      border-radius: 4px; background: var(--background-strong); color: var(--text);
+    }
+    .pgv-tok svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--icon); }
+
     /* A page the agent produced, attached to a task */
     .att {
       display: flex; align-items: center; gap: var(--spacing-8);
@@ -174,6 +234,8 @@
       font-weight: 500; color: var(--text);
     }
     .att__meta { font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; }
+    .att--open { cursor: pointer; }
+    .att--open:hover { background: var(--background-hover); border-color: var(--border-strong); }
 
     .dsh__composer {
       flex-shrink: 0; margin: 0 var(--spacing-16) var(--spacing-8);
@@ -2340,6 +2402,7 @@ const CATALOG = [
   { id:'db-leasing', type:'dashboard', name:'Leasing & Occupancy',   meta:'Leasing · 4 cards, 3 charts' },
   { id:'db-ops',     type:'dashboard', name:'Maintenance & Vendors', meta:'Operations · 4 cards, 4 charts' },
 
+  { id:'pg-req',   type:'page', name:'PM III Property Manager — The Marlow', meta:'job requirements' },
   { id:'pg-play',  type:'page', name:'Ops Playbook',      meta:'updated 2d ago' },
   { id:'pg-onb',   type:'page', name:'Onboarding Guide',  meta:'updated 1w ago' },
   { id:'pg-sop',   type:'page', name:'Turnover SOP',      meta:'updated 3w ago' },
@@ -2486,6 +2549,112 @@ function toast(msg) {
   $('#toast').classList.add('toast--on');
   clearTimeout(toastT);
   toastT = setTimeout(() => $('#toast').classList.remove('toast--on'), 2600);
+}
+
+/* The req the agent drafted. Only pages listed in PAGES open as a
+   document; the rest of the catalog's pages stay decorative. */
+const PAGES = { 'pg-req': true };
+
+function reqPageBody() {
+  const r = PROPERTY_RECORDS.find(p => p.name === 'The Marlow') || {};
+  const units  = (r.units  || 0).toLocaleString();
+  const retail = (r.retail || 0).toLocaleString();
+  const heads  = (r.staffing || []).reduce((a, x) => a + x[1], 0);
+  const close  = takeoverDate(r.name) || '';
+  const region = MGR_NAMES[(r.mgr || [])[0]] || 'the regional manager';
+  const city   = (r.loc || '').split(',')[0];
+
+  const sec = (h, body) => `<h2 class="pgv-h2">${esc(h)}</h2>${body}`;
+  const ul  = items => `<ul class="pgv-ul">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
+
+  return `
+    <ul class="pgv-meta">
+      <li><button class="tk-token" data-open-req="1">${IC.checkCircle}Write job requirements</button></li>
+      <li><span class="pgv-tok">${IC.building}${esc(r.name)}</span>
+          <span class="pgv-tok">${IC.project}Marlow Takeover</span></li>
+      <li>Author: <span class="pgv-inline">
+          <span class="avatar-24" style="background:${cz(REQ_AGENT.hue,'bg')};color:${cz(REQ_AGENT.hue,'fg')}">${IC.agents}</span>
+          ${esc(REQ_AGENT.name)}</span> <span class="mt-ai">AI teammate</span></li>
+      <li>Level: ${esc(r.pmLevel || '')} · Comp: ${esc(r.comp || '')} · Market: ${esc(r.loc || '')}</li>
+      <li>Last update: today</li>
+    </ul>
+    <div class="pgv-rule"></div>
+
+    ${sec('Role summary', `<p class="pgv-p">Northline is assuming management of
+      <strong>${esc(r.name)}</strong>, a ${units}-unit mixed-use property in ${esc(r.loc || '')},
+      with takeover closing <strong>${esc(close)}</strong>. The Property Manager owns day-to-day
+      operations for the residential portfolio and the ${retail} sq ft of ground-floor retail,
+      and leads the on-site team of ${heads} through stabilization.</p>`)}
+
+    ${sec('Scope', ul([
+      `<strong>${units} residential units</strong>, ${esc(r.occ || '')} occupied at takeover`,
+      `<strong>${retail} sq ft ground-floor retail</strong> with commercial tenants in place`,
+      `On-site team of ${heads} across leasing, maintenance, groundskeeping and retail`,
+      `Reports to the ${esc(city)} regional manager`,
+    ]))}
+
+    ${sec('Responsibilities', ul([
+      'Own the takeover checklist from close through stabilization',
+      'Drive lease-up toward the 90% portfolio occupancy target',
+      'Manage commercial tenant relationships, CAM reconciliation and retail lease compliance',
+      'Hire and onboard the on-site team ahead of unit turns',
+      'Own the operating budget and monthly variance reporting',
+    ]))}
+
+    ${sec('Requirements', ul([
+      'CPM or CAM credential',
+      '200+ unit portfolio experience, mixed-use preferred',
+      'Direct experience managing commercial tenants',
+      'California fair-housing and disclosure familiarity',
+      `On site before the ${esc(close)} close`,
+    ]))}
+
+    ${sec('Compensation and posting', ul([
+      `Level <strong>${esc(r.pmLevel || '')}</strong>, set by unit count and mixed-use scope`,
+      `<strong>${esc(r.comp || '')}</strong> range for the ${esc(city)} market`,
+      'Posting carries the required California pay-transparency and disclosure language',
+      `Target posting date: today · start before ${esc(close)}`,
+    ]))}
+
+    ${sec('Open decisions', `<p class="pgv-p">Two items the agent did not decide:</p>` + ul([
+      `Final comp inside ${esc(r.comp || '')} — needs sign-off`,
+      `Reporting line, if ${esc(region)}'s portfolio is being redrawn`,
+    ]))}`;
+}
+
+/* Asana Pages chrome around it. */
+function pageHtml(o) {
+  return `
+    <div class="pgv-head">
+      <span class="pgv-head__icon">${IC.page}</span>
+      <span class="pgv-head__name">${esc(o.name)}</span>
+      <button class="icon-btn icon-btn--sm" aria-label="Star">${IC.star}</button>
+      <span class="pgv-head__r">
+        <span class="facepile">${PF_FACES.map(([i, h]) => face(i, h)).join('')}</span>
+        <button class="btn btn--primary btn--sm">${IC.lock}Share</button>
+        <button class="icon-btn" aria-label="More">${IC.more}</button>
+      </span>
+    </div>
+    <div class="pgv-toolbar">
+      <button class="icon-btn icon-btn--sm" aria-label="Insert">${IC.plus}</button>
+      <span class="pgv-sep"></span>
+      <span class="pgv-tool">Normal</span>
+      <span class="pgv-sep"></span>
+      <span class="pgv-tool pgv-tool--b">B</span>
+      <span class="pgv-tool pgv-tool--i">I</span>
+      <span class="pgv-tool pgv-tool--u">U</span>
+      <button class="icon-btn icon-btn--sm" aria-label="Link">${IC.link}</button>
+      <span class="pgv-head__r">
+        <span class="pgv-tool">Comments</span>
+        <span class="pgv-saved">Saved · just now</span>
+      </span>
+    </div>
+    <div class="pf-body">
+      <div class="pgv-doc">
+        <h1 class="pgv-title">${esc(o.name)}</h1>
+        ${reqPageBody()}
+      </div>
+    </div>`;
 }
 
 /* The agent the hiring team built. Dash routes to it; it doesn't write. */
@@ -4573,7 +4742,7 @@ function taskPaneHtml(id) {
       <div class="pn-sec">
         <div class="pn-sec__label mt-secrow">Attachments <span class="count-pill">1</span></div>
         <div class="pn-sec__body">
-          <div class="att">
+          <div class="att att--open" data-open-page="pg-req">
             <span class="att__icon">${IC.page}</span>
             <span class="att__body">
               <span class="att__name">${esc(REQ_PAGE.title)}</span>
@@ -5159,6 +5328,7 @@ function objectHtml(o, isPreview) {
   if (o.type === 'table')     return tableHtml(o);
   if (o.type === 'dashboard') return dashboardHtml(o);
   if (o.type === 'project' && PROJECTS[o.id]) return projectHtml(o);
+  if (o.type === 'page'    && PAGES[o.id])    return pageHtml(o);
 
   const head = `
     <div class="cv__head">
@@ -5309,6 +5479,10 @@ document.addEventListener('click', (e) => {
     if (!i.value && !S.dashLog.length) { i.value = DASH_PROMPT; syncSendState(); }
     return;
   }
+
+  // open the attached page
+  const pg = t.closest('[data-open-page]');
+  if (pg) { S.sel = pg.dataset.openPage; renderEndUser(); return; }
 
   // Dash's link into the task the agent attached its page to
   if (t.closest('[data-open-req]')) {
