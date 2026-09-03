@@ -233,6 +233,13 @@
     }
     .pgv-tok svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--icon); }
 
+    /* A comment waiting on a task row */
+    .ptask__cmt {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+    .ptask__cmt svg { flex-shrink: 0; }
+
     /* A page the agent produced, attached to a task */
     .att {
       display: flex; align-items: center; gap: var(--spacing-8);
@@ -247,6 +254,9 @@
       font-weight: 500; color: var(--text);
     }
     .att__meta { font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; }
+    /* The same card, sized to sit inside a comment */
+    .att--sm { margin-top: 6px; padding: 6px var(--spacing-8); }
+    .att--sm .att__name { font-size: var(--type-s-size); letter-spacing: 0; }
     .att--open { cursor: pointer; }
     .att--open:hover { background: var(--background-hover); border-color: var(--border-strong); }
 
@@ -2331,6 +2341,10 @@ const IC = {
   collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v10M13 8H6.5M9 4.5 6 8l3 3.5"/></svg>',
   send: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7"/></svg>',
   gear: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2"/><path d="M8 1.8v1.4M8 12.8v1.4M3.6 3.6l1 1M11.4 11.4l1 1M1.8 8h1.4M12.8 8h1.4M3.6 12.4l1-1M11.4 4.6l1-1"/></svg>',
+  comment: '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M13.5 7.6c0 2.7-2.5 4.9-5.5 4.9-.7 0-1.4-.1-2-.3l-3 1 1-2.4A4.7 4.7 0 0 1 2.5 7.6'
+    + 'c0-2.7 2.5-4.9 5.5-4.9s5.5 2.2 5.5 4.9Z"/></svg>',
   checkCircle: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" '
     + 'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">'
     + '<circle cx="8" cy="8" r="6.2"/><path d="M5.4 8.2l1.9 1.9 3.4-3.8"/></svg>',
@@ -2504,6 +2518,7 @@ let S = {
   dashLog: [],        // scripted Dash exchange
   dashBusy: false,
   reqDone: false,     // has the agent produced the job req page?
+  comments: {},       // task id -> comments posted during the demo
   // Which prototype tab is lit. Derived from S.screen originally, which
   // broke once End user started landing on 'workspace' (Knowledge) rather
   // than 'app' — every end-user screen would light App builder. Set it at
@@ -2706,6 +2721,14 @@ function dashReply() {
         </ul>` },
   ];
 }
+
+/* What the agent says once the spec is signed off. */
+const REQ_SIGNOFF = {
+  who: REQ_AGENT,
+  text: 'Requirements are complete, so this is good to go. The approved spec is '
+    + 'attached — ready to post once comp is set inside Band 3.',
+  page: 'pg-req',
+};
 
 /* The page the agent produced, attached to the task once it has run. */
 const REQ_PAGE = { title: 'PM III Property Manager — The Marlow', meta: 'Job requirements · 1 page' };
@@ -4093,7 +4116,8 @@ const TK_WORKSTREAMS = [
 const MARLOW_TASKS = [
   { id:'mt-jobreq', name:'Write job requirements', ws:'Hiring', who:['SC','magenta'],
     due:'Today', risk:true },
-  { name:'Post Property Manager role',  ws:'Hiring',         who:['SC','magenta'],       due:'Sep 5',  risk:true },
+  { id:'mt-post', name:'Post Property Manager role', ws:'Hiring', who:['SC','magenta'],
+    due:'Sep 5', risk:true },
   { name:'Screen turn vendor bids',     ws:'Unit turns',     who:['MR','indigo'],        due:'Sep 5',  risk:true },
   { name:'Confirm turn crew staffing',  ws:'Hiring',         who:['SC','magenta'],       due:'Sep 8',  risk:true },
   { name:'Schedule unit walkthroughs',  ws:'Unit turns',     who:['MR','indigo'],        due:'Sep 9',  risk:true },
@@ -4139,6 +4163,25 @@ const MT_TASK_DETAIL = {
     comment: 'Close date moved from Sep 21 to Sep 14 in the takeover check-in, so '
       + 'every hiring milestone shifts a week earlier. This req has to post today for '
       + 'a property manager to clear screening and be in seat before the close.',
+    attach: 'pg-req',           // the page the agent files against this task
+  },
+
+  /* Follow-on task. Its feed is empty until the requirements are signed
+     off — the comment arrives when that happens. */
+  'mt-post': {
+    project: 'Marlow Takeover',
+    property: 'The Marlow',
+    assignee: ['SC', 'magenta'], assigneeName: 'Sarah Chen',
+    ws: 'Hiring',
+    from: '', to: 'Sep 5',
+    desc: 'Post the approved Property Manager req to the job boards and the '
+      + 'Northline careers site.',
+    descBullets: [
+      'Boards — Northline careers, LinkedIn, and the two regional PM boards',
+      'Include the {market} pay range and the required disclosure language',
+      'Route applicants to the {pmLevel} screening rubric',
+    ],
+    createdBy: ['SC', 'magenta'], createdByName: 'Sarah Chen', createdWhen: '2 days ago',
   },
 };
 
@@ -4655,6 +4698,8 @@ function projectHtml(o) {
       ${CHECK_CIRCLE}
       <span class="task__name">${esc(t.name)}</span>
       <span class="ptask__ws">${esc(t.ws)}</span>
+      ${t.id && (S.comments[t.id] || []).length
+        ? `<span class="ptask__cmt" title="1 new comment">${IC.comment}1</span>` : ''}
       ${face(t.who[0], t.who[1])}
       <span class="ptask__due${t.due === 'Today' ? ' ptask__due--now' : ''}">${esc(t.due)}</span>
     </div>`;
@@ -4703,6 +4748,7 @@ function taskPaneHtml(id) {
   const t = MARLOW_TASKS.find(x => x.id === id);
   const d = MT_TASK_DETAIL[id];
   if (!t || !d) return '';
+  const live = (S.comments && S.comments[id]) || [];
   const prop = PROPERTY_RECORDS.find(r => r.name === d.property) || {};
   const fill = str => str
     .replace('{units}',   (prop.units  || 0).toLocaleString())
@@ -4751,11 +4797,11 @@ function taskPaneHtml(id) {
         </div>
       </div>
 
-      ${S.reqDone ? `
+      ${S.reqDone && d.attach ? `
       <div class="pn-sec">
         <div class="pn-sec__label mt-secrow">Attachments <span class="count-pill">1</span></div>
         <div class="pn-sec__body">
-          <div class="att att--open" data-open-page="pg-req">
+          <div class="att att--open" data-open-page="${esc(d.attach)}">
             <span class="att__icon">${IC.page}</span>
             <span class="att__body">
               <span class="att__name">${esc(REQ_PAGE.title)}</span>
@@ -4778,7 +4824,9 @@ function taskPaneHtml(id) {
       <div class="pn-sec">
         <div class="pn-sec__body">
           <div class="act__tabs">
-            <button class="db-tab db-tab--active">Comments</button>
+            <button class="db-tab db-tab--active">Comments${
+              (d.comment ? 1 : 0) + live.length
+                ? ` <span class="count-pill">${(d.comment ? 1 : 0) + live.length}</span>` : ''}</button>
             <button class="db-tab">All activity</button>
             <span class="act__sort">${IC.sort}Oldest</span>
           </div>
@@ -4789,15 +4837,16 @@ function taskPaneHtml(id) {
               <span class="act__when">· ${esc(d.createdWhen)}</span></span>
           </div>
 
-          <div class="act__new"><span class="act__new-label">New activity</span></div>
+          ${(d.activity || live.length) ? `<div class="act__new">
+            <span class="act__new-label">New activity</span></div>` : ''}
 
-          <div class="act__row">
+          ${d.activity ? `<div class="act__row">
             ${sched}
             <span class="act__line"><strong>Scheduler</strong> <span class="mt-ai">AI teammate</span>
               ${esc(d.activity)} <span class="act__when">· today</span></span>
-          </div>
+          </div>` : ''}
 
-          <div class="act__item">
+          ${d.comment ? `<div class="act__item">
             ${sched}
             <div class="act__body">
               <div class="act__head"><strong>Scheduler</strong>
@@ -4805,7 +4854,25 @@ function taskPaneHtml(id) {
                 <span class="act__when">· today</span></div>
               <p>${esc(d.comment)}</p>
             </div>
-          </div>
+          </div>` : ''}
+
+          ${live.map(c => `<div class="act__item">
+            <span class="avatar-24" style="background:${cz(c.hue,'bg')};color:${cz(c.hue,'fg')}"
+                  title="${esc(c.name)}">${IC.agents}</span>
+            <div class="act__body">
+              <div class="act__head"><strong>${esc(c.name)}</strong>
+                <span class="mt-ai">AI teammate</span>
+                <span class="act__when">· just now</span></div>
+              <p>${esc(c.text)}</p>
+              ${c.page ? `<div class="att att--open att--sm" data-open-page="${esc(c.page)}">
+                <span class="att__icon">${IC.page}</span>
+                <span class="att__body">
+                  <span class="att__name">${esc(REQ_PAGE.title)}</span>
+                  <span class="att__meta">${esc(REQ_PAGE.meta)}</span>
+                </span>
+              </div>` : ''}
+            </div>
+          </div>`).join('')}
         </div>
       </div>
     </div>
@@ -5498,9 +5565,22 @@ document.addEventListener('click', (e) => {
     const id = md.dataset.taskDone;
     const task = MARLOW_TASKS.find(x => x.id === id);
     if (task) task.done = !task.done;
+
+    // Signing off the requirements is what unblocks the posting task, so
+    // the agent says so there rather than leaving her to infer it.
+    let posted = false;
+    if (id === 'mt-jobreq') {
+      S.comments['mt-post'] = task && task.done
+        ? [{ name: REQ_SIGNOFF.who.name, hue: REQ_SIGNOFF.who.hue,
+             text: REQ_SIGNOFF.text, page: REQ_SIGNOFF.page }]
+        : [];
+      posted = !!(task && task.done);
+    }
+
     renderEndUser();
     openTaskPane(id, $('#canvas'));          // keep her place
-    if (task) toast(task.done ? `${task.name} completed` : `${task.name} marked incomplete`);
+    if (posted) toast(`${REQ_AGENT.name} commented on Post Property Manager role`);
+    else if (task) toast(task.done ? `${task.name} completed` : `${task.name} marked incomplete`);
     return;
   }
 
@@ -5871,7 +5951,7 @@ document.addEventListener('drop', (e) => {
    ═══════════════════════════════════════════════════════════════════════ */
 function hardReset() {
   S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, knowledge:null, meetingOpen:false, sel:null, bldTab:'build', mode:'builder',
-        dash:false, dashLog:[], dashBusy:false, reqDone:false };
+        dash:false, dashLog:[], dashBusy:false, reqDone:false, comments:{} };
   toggleDash(false);
   renderDash();
   CFG = freshCfg();
