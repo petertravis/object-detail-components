@@ -1416,6 +1416,57 @@
     .dcard--alert .dcard__foot { border-top-color: #f2c4b2; }
     .dcard--alert .dcard__filter { color: #a2542f; }
 
+    /* A portfolio row with no project behind it isn't a link */
+    .pfg tbody tr.pfg__flat { cursor: default; }
+    .pfg tbody tr.pfg__flat:hover td { background: none; }
+
+    /* Project header fields — the Property one references the record */
+    .pj-fields {
+      display: flex; align-items: center; gap: var(--spacing-24);
+      padding: var(--spacing-8) 0 var(--spacing-12);
+    }
+    .pj-field { display: inline-flex; align-items: center; gap: var(--spacing-8); }
+    .pj-field__label, .pj-when {
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+    .pj-field__val { font-size: var(--type-m-size); letter-spacing: var(--type-m-track); }
+    .ref-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: var(--sizing-24); padding: 0 var(--spacing-8);
+      border: 1px solid var(--border); border-radius: 4px;
+      background: var(--background-weak); color: var(--text);
+      font-size: var(--type-s-size); letter-spacing: 0; cursor: pointer;
+    }
+    .ref-chip:hover { background: var(--background-hover); border-color: var(--border-strong); }
+    .ref-chip .ico { color: var(--icon); }
+
+    /* Project task rows */
+    .ptask--open { cursor: pointer; }
+    .ptask--open:hover { background: var(--background-hover); }
+    .ptask.is-open { background: var(--background-active); }
+    .ptask__by { display: inline-flex; align-items: center; gap: 6px; }
+    .ptask__ws {
+      width: 116px; text-align: right;
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+    .ptask__due {
+      width: 60px; text-align: right;
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+    .ptask__due--now { color: #b04a26; font-weight: 500; }
+
+    /* The date the Scheduler moved, and what it was before */
+    .pj-due-changed { display: inline-flex; align-items: baseline; gap: 6px; color: #b04a26; font-weight: 500; }
+    .pj-was { color: var(--text-weak); font-weight: 400; font-size: var(--type-s-size); text-decoration: line-through; }
+    .pj-act { font-size: var(--type-m-size); letter-spacing: var(--type-m-track); color: var(--text-weak); }
+    .pj-act strong { color: var(--text); font-weight: 500; }
+    .pj-comment { display: flex; flex-direction: column; gap: 6px; }
+    .pj-comment strong { font-weight: 500; }
+    .pj-comment p {
+      font-size: var(--type-m-size); line-height: var(--type-m-line);
+      letter-spacing: var(--type-m-track); color: var(--text);
+    }
+
     /* Due today — a task list living inside a dashboard card */
     .dtoday__row {
       display: flex; align-items: center; gap: var(--spacing-8);
@@ -2013,7 +2064,7 @@ const CATALOG = [
   { id:'pf-legal', type:'portfolio', hue:'indigo',        name:'Legal',        meta:'4 projects · Corporate' },
   { id:'pf-fac',   type:'portfolio', hue:'blue-green',    name:'Facilities',   meta:'4 projects · Operations' },
 
-  { id:'pj-marlow', type:'project', name:'Marlow Renovation',        meta:'42 tasks · due Nov 14' },
+  { id:'pj-marlow', type:'project', name:'Marlow Takeover',        meta:'42 tasks · due Nov 14' },
   { id:'pj-beacon', type:'project', name:'Beacon Hill Takeover',     meta:'67 tasks · due Sep 30' },
   { id:'pj-sunset', type:'project', name:'Sunset Commons Lease-Up',  meta:'23 tasks · due Dec 1' },
   { id:'pj-vendor', type:'project', name:'Vendor Onboarding',        meta:'18 tasks · ongoing' },
@@ -2616,12 +2667,12 @@ const MEETING = {
   owner: 'Transitions manager',
   attendees: [['JW','aqua'], ['SC','magenta'], ['MR','indigo'], ['PP','yellow-orange'], ['DK','blue-green']],
   depts: '5 departments',
-  change: { field:'Close date', from:'Sep 21', to:'Sep 14', project:'Marlow Renovation' },
+  change: { field:'Close date', from:'Sep 21', to:'Sep 14', project:'Marlow Takeover' },
   action: {
     title:'Reschedule dates',
     assignee:'Scheduler',
     note:'Found <strong>6 hiring and turn items</strong> already on the takeover checklist. Rescheduling those rather than creating new tasks.',
-    project:'Marlow Renovation',
+    project:'Marlow Takeover',
   },
 };
 
@@ -3487,6 +3538,47 @@ const TK_WORKSTREAMS = [
   { name:'Resident comms',   open:3,  risk:0 },
 ];
 
+/* The Marlow takeover project. `risk` marks what the compressed schedule
+   put in jeopardy; `moved` is the one the Scheduler actually rescheduled.
+   Only projects listed in PROJECTS are drillable from a portfolio. */
+const MARLOW_TASKS = [
+  { id:'mt-jobreq', name:'Write job requirements', ws:'Hiring', who:['SC','magenta'],
+    due:'Today', risk:true, moved:true },
+  { name:'Post Maintenance Tech role',  ws:'Hiring',         who:['SC','magenta'],       due:'Sep 5',  risk:true },
+  { name:'Screen turn vendor bids',     ws:'Unit turns',     who:['MR','indigo'],        due:'Sep 5',  risk:true },
+  { name:'Confirm turn crew staffing',  ws:'Hiring',         who:['SC','magenta'],       due:'Sep 8',  risk:true },
+  { name:'Schedule unit walkthroughs',  ws:'Unit turns',     who:['MR','indigo'],        due:'Sep 9',  risk:true },
+  { name:'Order keys and access fobs',  ws:'Systems & access', who:['PP','yellow-orange'], due:'Sep 10' },
+  { name:'Transfer utility accounts',   ws:'Compliance',     who:['DK','blue-green'],    due:'Sep 11' },
+  { name:'Resident transition mailer',  ws:'Resident comms', who:['HM','pink'],          due:'Sep 12' },
+];
+
+const PROJECTS = {
+  'pj-marlow': {
+    crumb: 'Property Ops / Marlow Takeover',
+    status: ['At risk', 'orange'],
+    property: 'The Marlow',      // the reference field, back to the record
+    owner: ['JW', 'aqua'],
+    close: 'Sep 14',
+    tasks: MARLOW_TASKS,
+  },
+};
+
+/* The Scheduler's own account of why the req moved. */
+const MT_TASK_DETAIL = {
+  'mt-jobreq': {
+    project: 'Marlow Takeover',
+    property: 'The Marlow',
+    assignee: ['SC', 'magenta'], assigneeName: 'Sarah Chen',
+    ws: 'Hiring',
+    from: 'Sep 12', to: 'Today',
+    activity: 'changed the due date from Sep 12 to Today',
+    comment: 'Close date moved from Sep 21 to Sep 14 in the takeover check-in, so '
+      + 'every hiring milestone shifts a week earlier. This req has to post today for '
+      + 'a Maintenance Tech to clear screening before unit turns begin.',
+  },
+};
+
 /* Ops work due today and assigned to her. The job req leads because the
    Marlow close date moved in the kickoff call — this is the same thread,
    surfaced where she starts her day. */
@@ -3977,6 +4069,150 @@ function dashHead(o, crumb) {
     </div>`;
 }
 
+/* A project drilled into from a portfolio. Same page chrome as
+   portfolios and dashboards; tasks grouped so the at-risk set is what
+   she lands on, which is the whole reason she opened it. */
+function projectHtml(o) {
+  const P = PROJECTS[o.id];
+  if (!P) return `<div class="empty"><span class="empty__title">Nothing to show</span></div>`;
+
+  const groups = [
+    { label: 'At risk',  hue: 'orange', rows: P.tasks.filter(t => t.risk) },
+    { label: 'On track', hue: 'green',  rows: P.tasks.filter(t => !t.risk) },
+  ];
+
+  const taskRow = t => `
+    <div class="task ptask${t.id && MT_TASK_DETAIL[t.id] ? ' ptask--open' : ''}"${
+        t.id && MT_TASK_DETAIL[t.id] ? ` data-task="${esc(t.id)}"` : ''}>
+      ${CHECK_CIRCLE}
+      <span class="task__name">${esc(t.name)}</span>
+      ${t.moved ? `<span class="ptask__by">
+        <span class="avatar-24" style="background:${cz('indigo','bg')};color:${cz('indigo','fg')}"
+              title="Scheduler">${IC.agents}</span>
+        <span class="mt-ai">Scheduler</span></span>` : ''}
+      <span class="ptask__ws">${esc(t.ws)}</span>
+      ${face(t.who[0], t.who[1])}
+      <span class="ptask__due${t.due === 'Today' ? ' ptask__due--now' : ''}">${esc(t.due)}</span>
+    </div>`;
+
+  const body = groups.filter(g => g.rows.length).map(g => `
+    <div class="pn-sec">
+      <div class="pn-sec__label mt-secrow">${pfPill(g.label, g.hue)}
+        <span class="count-pill">${g.rows.length}</span></div>
+      <div class="pn-sec__body">${g.rows.map(taskRow).join('')}</div>
+    </div>`).join('');
+
+  return `
+    <div class="pf-head pf-head--flush">
+      <div class="pf-head__crumb">${esc(P.crumb)}</div>
+      <div class="pf-head__top">
+        <span class="pf-head__icon" style="background:${TYPES.project.bg};color:${TYPES.project.fg}">
+          <span class="ico ico--16" style="color:inherit">${IC.project}</span></span>
+        <span class="pf-head__name">${esc(o.name)}</span>
+        ${pfPill(P.status[0], P.status[1])}
+        <button class="icon-btn icon-btn--sm" aria-label="Project menu">${IC.caret}</button>
+        <span class="pf-head__actions">
+          <span class="facepile">${PF_FACES.map(([i, h]) => face(i, h)).join('')}</span>
+          <button class="btn btn--secondary btn--sm">Share</button>
+        </span>
+      </div>
+      <div class="pj-fields">
+        <span class="pj-field"><span class="pj-field__label">Property</span>
+          <button class="ref-chip" data-prop="${esc(P.property)}">
+            <span class="ico ico--12">${IC.building}</span>${esc(P.property)}</button></span>
+        <span class="pj-field"><span class="pj-field__label">Close date</span>
+          <span class="pj-field__val">${esc(P.close)}</span></span>
+        <span class="pj-field"><span class="pj-field__label">Owner</span>
+          ${face(P.owner[0], P.owner[1])}</span>
+      </div>
+    </div>
+    <div class="pf-body">${body}</div>`;
+}
+
+/* Why the req moved, in the Scheduler's words. */
+function taskPaneHtml(id) {
+  const t = MARLOW_TASKS.find(x => x.id === id);
+  const d = MT_TASK_DETAIL[id];
+  if (!t || !d) return '';
+  const field = (label, value) => `
+    <div class="cf__row">
+      <span class="cf__label">${esc(label)}</span>
+      <span class="cf__divider"></span>
+      <span class="cf__value">${value}</span>
+    </div>`;
+
+  return `
+    <div class="pane__topbar">
+      <span class="pane__crumb">${IC.project}${esc(d.project)}</span>
+      <span class="pane__actions">
+        <button class="btn btn--secondary btn--sm">${IC.lock}Share</button>
+        <span class="pane__sep"></span>
+        <button class="icon-btn" aria-label="More">${IC.more}</button>
+        <button class="icon-btn" id="pane-close" aria-label="Close">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3.5v9M9.5 8h-6M6 5.5 3.5 8 6 10.5"/></svg>
+        </button>
+      </span>
+    </div>
+
+    <div class="pane__body">
+      <div class="pane__title-wrap"><div class="pane__title">${esc(t.name)}</div></div>
+
+      <div class="pn-sec">
+        <div class="pn-sec__label mt-secrow">Details <span class="count-pill">5</span></div>
+        <div class="pn-sec__body">
+          <div class="cf">
+            ${field('Assignee', `<span class="mt-secrow">${face(d.assignee[0], d.assignee[1])}
+              <span>${esc(d.assigneeName)}</span></span>`)}
+            ${field('Due date', `<span class="pj-due-changed">${esc(d.to)}
+              <span class="pj-was">was ${esc(d.from)}</span></span>`)}
+            ${field('Workstream', esc(d.ws))}
+            ${field('Property', `<button class="ref-chip" data-prop="${esc(d.property)}">
+              <span class="ico ico--12">${IC.building}</span>${esc(d.property)}</button>`)}
+            ${field('Project', esc(d.project))}
+          </div>
+        </div>
+      </div>
+
+      <div class="pn-sec">
+        <div class="pn-sec__label">Activity</div>
+        <div class="pn-sec__body">
+          <div class="mt-secrow pj-act">
+            <span class="avatar-24" style="background:${cz('indigo','bg')};color:${cz('indigo','fg')}"
+                  title="Scheduler">${IC.agents}</span>
+            <span><strong>Scheduler</strong> <span class="mt-ai">AI teammate</span>
+              ${esc(d.activity)} · today</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pn-sec">
+        <div class="pn-sec__label mt-secrow">Comments <span class="count-pill">1</span></div>
+        <div class="pn-sec__body">
+          <div class="pj-comment">
+            <div class="mt-secrow">
+              <span class="avatar-24" style="background:${cz('indigo','bg')};color:${cz('indigo','fg')}"
+                    title="Scheduler">${IC.agents}</span>
+              <strong>Scheduler</strong> <span class="mt-ai">AI teammate</span>
+              <span class="pj-when">today</span>
+            </div>
+            <p>${esc(d.comment)}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <textarea class="composer__input" rows="1" placeholder="Add a comment or @mention a teammate"></textarea>
+      <div class="composer__tools">
+        <button class="icon-btn icon-btn--sm" aria-label="Add">${IC.plus}</button>
+        <button class="icon-btn icon-btn--sm" aria-label="Mention">${IC.people}</button>
+        <button class="icon-btn icon-btn--sm composer__send" aria-label="Send">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.8V3.6"/><polyline points="4.2 7.4 8 3.4 11.8 7.4"/></svg>
+        </button>
+      </div>
+    </div>`;
+}
+
 /* Same page chrome as portfolios and tables */
 function dashboardHtml(o) {
   if (o.empty) return dashboardEmptyHtml(o);
@@ -4141,9 +4377,21 @@ function openPane(name, root) {
   const row = root.querySelector(`[data-prop="${CSS.escape(name)}"]`);
   if (row) row.classList.add('is-open');
 }
+/* Same mechanics as openPane, but for a task rather than a record. */
+function openTaskPane(id, root) {
+  closePane(root);
+  const el = document.createElement('aside');
+  el.className = 'pane';
+  el.innerHTML = taskPaneHtml(id);
+  root.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('pane--on'));
+  const row = root.querySelector(`[data-task="${CSS.escape(id)}"]`);
+  if (row) row.classList.add('is-open');
+}
+
 function closePane(root) {
   root.querySelectorAll('.pane').forEach(n => n.remove());
-  root.querySelectorAll('tr.is-open').forEach(n => n.classList.remove('is-open'));
+  root.querySelectorAll('.is-open').forEach(n => n.classList.remove('is-open'));
 }
 
 /* ── Baseline for Start over ───────────────────────────────────────────
@@ -4356,7 +4604,7 @@ const LOC_HUE = {
 
 const PF_VIEWS = {
   'pf-ops': { crumb:'Portfolios / Real Estate', rows:[
-    { name:'Marlow Renovation',       open:42, loc:'Oakland, CA',    budget:'$420,000.00', launch:'8 weeks',  who:['JW','aqua'] },
+    { name:'Marlow Takeover',       open:42, loc:'Oakland, CA',    budget:'$420,000.00', launch:'8 weeks',  who:['JW','aqua'], status:['At risk','orange'] },
     { name:'Beacon Hill Unit Turns',  open:18, loc:'Sacramento, CA', budget:'$310,000.00', launch:'4 weeks',  who:['SC','magenta'] },
     { name:'Sunset Commons Lease-Up', open:23, loc:'San Jose, CA',   budget:'$180,000.00', launch:'12 weeks', who:['JW','aqua'], status:['At risk','orange'] },
     { name:'Vendor Onboarding',       open:11, loc:'Portland, OR',   budget:'$95,000.00',  launch:'ongoing',  who:['PP','yellow-orange'] },
@@ -4395,7 +4643,11 @@ function portfolioHtml(o) {
 
   const rows = v.rows.map(r => {
     const st = r.status || ['On track', 'green'];
-    return `<tr>
+    // Only a project with task data behind it can be drilled into, so the
+    // cursor never promises a screen that doesn't exist. Three pf-ops rows
+    // match a project object by name; only one is built out.
+    const pj = CATALOG.find(c => c.type === 'project' && c.name === r.name && PROJECTS[c.id]);
+    return `<tr${pj ? ` data-proj="${esc(pj.id)}"` : ' class="pfg__flat"'}>
       <td>${esc(r.name)}</td>
       <td>${pfPill(r.loc, LOC_HUE[r.loc] || 'none')}</td>
       <td>${r.budget}</td>
@@ -4450,6 +4702,7 @@ function objectHtml(o, isPreview) {
   if (o.newTable)             return newTableHtml(o);
   if (o.type === 'table')     return tableHtml(o);
   if (o.type === 'dashboard') return dashboardHtml(o);
+  if (o.type === 'project' && PROJECTS[o.id]) return projectHtml(o);
 
   const head = `
     <div class="cv__head">
@@ -4685,8 +4938,21 @@ document.addEventListener('click', (e) => {
     paintBuilder();
     return;
   }
+  // drill from a portfolio row into the project
+  const projRow = t.closest('[data-proj]');
+  if (projRow) { S.sel = projRow.dataset.proj; renderEndUser(); return; }
+
   // record pane — open on a property row, close on the X or a re-click
   if (t.closest('#pane-close')) { closePane(t.closest('.canvas')); return; }
+
+  // task pane — only tasks with a detail behind them carry data-task
+  const taskRow = t.closest('[data-task]');
+  if (taskRow) {
+    const root = taskRow.closest('.canvas');
+    if (taskRow.classList.contains('is-open')) closePane(root);
+    else openTaskPane(taskRow.dataset.task, root);
+    return;
+  }
   const propRow = t.closest('[data-prop]');
   if (propRow) {
     const root = propRow.closest('.canvas');
