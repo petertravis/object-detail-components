@@ -127,6 +127,50 @@
       letter-spacing: var(--type-m-track); color: var(--text-weak);
     }
 
+    /* Conversation. The empty state is bottom-aligned like a chat; once
+       there's a log it reads top-down. */
+    .dsh__body--log { justify-content: flex-start; }
+    .dsh-msg { font-size: var(--type-m-size); letter-spacing: var(--type-m-track); color: var(--text); }
+    .dsh-msg p { line-height: var(--type-m-line); }
+    .dsh-msg p + p, .dsh-msg ul + p { margin-top: var(--spacing-8); }
+    .dsh-msg strong { font-weight: 500; }
+    .dsh-msg--me {
+      align-self: flex-end; max-width: 88%;
+      padding: 8px var(--spacing-12); border-radius: 12px 12px 2px 12px;
+      background: var(--background-strong); line-height: var(--type-m-line);
+    }
+    .dsh-msg--wait { color: var(--text-weak); }
+    .dsh-msg--dash { line-height: var(--type-m-line); }
+    .dsh-msg__who { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .dsh-msg__who .avatar-24 svg { width: 12px; height: 12px; }
+    .dsh-lbl {
+      margin-top: var(--spacing-8); font-size: var(--type-s-size);
+      color: var(--text-weak); letter-spacing: 0;
+    }
+    .dsh-ul { margin: 4px 0 0; padding-left: 18px; }
+    .dsh-ul li { line-height: var(--type-m-line); margin-bottom: 2px; }
+    .dsh__link {
+      border: none; background: none; padding: 0; font-family: inherit;
+      font-size: inherit; letter-spacing: inherit;
+      color: var(--primary-background-strong); font-weight: 500;
+      text-decoration: underline; cursor: pointer;
+    }
+
+    /* A page the agent produced, attached to a task */
+    .att {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding: var(--spacing-8); border: 1px solid var(--border); border-radius: 6px;
+      background: var(--background-weak);
+    }
+    .att__icon { display: inline-flex; flex-shrink: 0; color: var(--icon); }
+    .att__icon svg { width: 16px; height: 16px; }
+    .att__body { display: flex; flex-direction: column; min-width: 0; }
+    .att__name {
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+      font-weight: 500; color: var(--text);
+    }
+    .att__meta { font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; }
+
     .dsh__composer {
       flex-shrink: 0; margin: 0 var(--spacing-16) var(--spacing-8);
       border: 1px solid var(--border-strong); border-radius: var(--spacing-8);
@@ -135,9 +179,10 @@
     .dsh__input {
       display: block; width: 100%; box-sizing: border-box; resize: none;
       border: none; outline: none; background: none; font-family: inherit;
-      padding: var(--spacing-12); color: var(--text-disabled);
+      padding: var(--spacing-12); color: var(--text);
       font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
     }
+    .dsh__input::placeholder { color: var(--text-disabled); }
     .dsh__composer-foot {
       display: flex; align-items: center; gap: var(--spacing-4);
       padding: 0 var(--spacing-8) var(--spacing-8);
@@ -1923,16 +1968,10 @@
           </span>
         </div>
 
-        <div class="dsh__body">
-          <span class="dsh__mark"></span>
-          <div class="dsh__h">Hi, I'm Dash</div>
-          <p class="dsh__p">I'll help you stay on top of your work in Asana —
-            flagging what matters, surfacing what's next, and jumping in when
-            you need a hand.</p>
-        </div>
+        <div class="dsh__body" id="dsh-body"></div>
 
         <div class="dsh__composer">
-          <textarea class="dsh__input" rows="2" placeholder="Ask Dash anything"></textarea>
+          <textarea class="dsh__input" id="dsh-input" rows="2" placeholder="Ask Dash anything"></textarea>
           <div class="dsh__composer-foot">
             <button class="icon-btn icon-btn--sm" aria-label="Add">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9"/></svg>
@@ -1940,7 +1979,7 @@
             <button class="icon-btn icon-btn--sm" aria-label="Mention">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.9"/><path d="M10.9 8v1.5a2 2 0 0 0 3 0V8a6 6 0 1 0-3 5.2" stroke-linecap="round"/></svg>
             </button>
-            <button class="dsh__send" aria-label="Send">
+            <button class="dsh__send" id="dsh-send" aria-label="Send">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.8V3.6"/><polyline points="4.2 7.4 8 3.4 11.8 7.4"/></svg>
             </button>
           </div>
@@ -2367,6 +2406,9 @@ let S = {
   sel: null,          // selected object id in the end-user app / preview
   bldTab: 'build',
   dash: false,        // Dash panel open?
+  dashLog: [],        // scripted Dash exchange
+  dashBusy: false,
+  reqDone: false,     // has the agent produced the job req page?
   // Which prototype tab is lit. Derived from S.screen originally, which
   // broke once End user started landing on 'workspace' (Knowledge) rather
   // than 'app' — every end-user screen would light App builder. Set it at
@@ -2426,6 +2468,85 @@ function toast(msg) {
   toastT = setTimeout(() => $('#toast').classList.remove('toast--on'), 2600);
 }
 
+/* The agent the hiring team built. Dash routes to it; it doesn't write. */
+const REQ_AGENT = { name: 'Req Writer', hue: 'indigo' };
+const DASH_PROMPT = 'Draft the property manager job rec for The Marlow.';
+
+/* Everything quoted below is read off the property record, so the agent
+   can never cite a figure the Properties table disagrees with. */
+function dashReply() {
+  const r = PROPERTY_RECORDS.find(p => p.name === 'The Marlow') || {};
+  const av = `<span class="avatar-24" style="background:${cz(REQ_AGENT.hue,'bg')};color:${cz(REQ_AGENT.hue,'fg')}"
+        title="${esc(REQ_AGENT.name)}">${IC.agents}</span>`;
+  const pulls = [
+    [`${(r.units || 0).toLocaleString()} units`, `${esc(r.pmLevel || '')} level and scope`],
+    [esc(r.loc || ''), `${esc(r.comp || '')} comp and CA disclosure language`],
+    [`${(r.retail || 0).toLocaleString()} sq ft retail`, 'commercial tenant responsibilities'],
+    [`${esc(takeoverDate(r.name) || '')} takeover`, 'start date and posting timeline'],
+  ];
+  return [
+    { who: 'dash', html: `Dash doesn't write recs. The hiring team built an agent for this —
+        routing it to <strong>${esc(REQ_AGENT.name)}</strong>.` },
+    { who: 'agent', html: `
+        <div class="dsh-msg__who">${av}<strong>${esc(REQ_AGENT.name)}</strong>
+          <span class="mt-ai">AI teammate</span></div>
+        <p>Working from Northline's job architecture — PM levels, comp bands by market,
+          and the required posting language.</p>
+        <p class="dsh-lbl">Pulled from the record</p>
+        <ul class="dsh-ul">${pulls.map(([a, b]) =>
+          `<li><strong>${a}</strong> → ${b}</li>`).join('')}</ul>
+        <p>Draft complete. I created the page <strong>${esc(r.pmLevel || 'PM')} Property Manager —
+          ${esc(r.name)}</strong> and attached it to
+          <button class="dsh__link" data-open-req="1">Write job requirements</button>.</p>
+        <p class="dsh-lbl">Left for you to decide</p>
+        <ul class="dsh-ul">
+          <li>Final comp inside ${esc(r.comp || '')}</li>
+          <li>The reporting line, if ${esc(MGR_NAMES[(r.mgr || [])[0]] || 'the regional')}'s
+            portfolio is being redrawn</li>
+        </ul>` },
+  ];
+}
+
+/* The page the agent produced, attached to the task once it has run. */
+const REQ_PAGE = { title: 'PM III Property Manager — The Marlow', meta: 'Job requirements · 1 page' };
+
+function renderDash() {
+  const body = $('#dsh-body');
+  if (!body) return;
+  if (!S.dashLog.length) {
+    body.classList.remove('dsh__body--log');
+    body.innerHTML = `
+      <span class="dsh__mark">${IC.dash}</span>
+      <div class="dsh__h">Hi, I'm Dash</div>
+      <p class="dsh__p">I'll help you stay on top of your work in Asana —
+        flagging what matters, surfacing what's next, and jumping in when
+        you need a hand.</p>`;
+    return;
+  }
+  body.classList.add('dsh__body--log');
+  body.innerHTML = S.dashLog.map(m =>
+    `<div class="dsh-msg dsh-msg--${m.who}">${m.html}</div>`).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+function dashSend() {
+  const input = $('#dsh-input');
+  const text = (input.value || '').trim();
+  if (!text || S.dashBusy) return;
+  input.value = '';
+  S.dashLog.push({ who: 'me', html: esc(text) });
+  S.dashLog.push({ who: 'wait', html: `Routing to ${esc(REQ_AGENT.name)}…` });
+  S.dashBusy = true;
+  renderDash();
+  setTimeout(() => {
+    S.dashLog.pop();                       // drop the routing placeholder
+    dashReply().forEach(m => S.dashLog.push(m));
+    S.reqDone = true;                      // the page now exists on the task
+    S.dashBusy = false;
+    renderDash();
+  }, 900);
+}
+
 /* Dash: an entry point only. Toggling the fourth grid track is the whole
    behaviour for now — the flow it opens into comes next. */
 function paintDashMarks() {
@@ -2436,6 +2557,7 @@ function toggleDash(on) {
   const open = on === undefined ? !lower.classList.contains('app__lower--dsh') : on;
   lower.classList.toggle('app__lower--dsh', open);
   S.dash = open;
+  if (open) renderDash();
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -4421,6 +4543,20 @@ function taskPaneHtml(id) {
         </div>
       </div>
 
+      ${S.reqDone ? `
+      <div class="pn-sec">
+        <div class="pn-sec__label mt-secrow">Attachments <span class="count-pill">1</span></div>
+        <div class="pn-sec__body">
+          <div class="att">
+            <span class="att__icon">${IC.page}</span>
+            <span class="att__body">
+              <span class="att__name">${esc(REQ_PAGE.title)}</span>
+              <span class="att__meta">${esc(REQ_PAGE.meta)} · created by ${esc(REQ_AGENT.name)}</span>
+            </span>
+          </div>
+        </div>
+      </div>` : ''}
+
       <div class="pn-sec">
         <div class="pn-sec__label">Description</div>
         <div class="pn-sec__body">
@@ -5137,8 +5273,24 @@ document.addEventListener('click', (e) => {
   if (rej) { const d = MT_DRAFTS.find(x => x.id === rej.dataset.draftReject);
              if (d) d.state = 'dismissed'; renderWorkspace(); return; }
 
-  if (t.closest('#dash-open'))  { toggleDash(); return; }
+  if (t.closest('#dash-open'))  { toggleDash(true); return; }
   if (t.closest('#dash-close')) { toggleDash(false); return; }
+  if (t.closest('#dsh-send'))   { dashSend(); return; }
+
+  // One click prefills the ask — this is a scripted demo, not a text box
+  if (t.closest('#dsh-input')) {
+    const i = $('#dsh-input');
+    if (!i.value && !S.dashLog.length) { i.value = DASH_PROMPT; }
+    return;
+  }
+
+  // Dash's link into the task the agent attached its page to
+  if (t.closest('[data-open-req]')) {
+    S.sel = 'pj-marlow';
+    renderEndUser();
+    openTaskPane('mt-jobreq', $('#canvas'));
+    return;
+  }
 
   // prototype mode switch
   const mode = t.closest('[data-mode]');
@@ -5494,8 +5646,10 @@ document.addEventListener('drop', (e) => {
    RESET
    ═══════════════════════════════════════════════════════════════════════ */
 function hardReset() {
-  S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, knowledge:null, meetingOpen:false, sel:null, bldTab:'build', mode:'builder', dash:false };
+  S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, knowledge:null, meetingOpen:false, sel:null, bldTab:'build', mode:'builder',
+        dash:false, dashLog:[], dashBusy:false, reqDone:false };
   toggleDash(false);
+  renderDash();
   CFG = freshCfg();
   restoreCatalog();
   clearBaiLog();
@@ -5510,6 +5664,7 @@ function hardReset() {
 /* boot */
 CFG = freshCfg();
 paintDashMarks();
+renderDash();
 go('workspace');
 </script>
 </body>
