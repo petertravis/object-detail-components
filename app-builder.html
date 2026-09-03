@@ -1405,6 +1405,23 @@
     }
     /* A chart that needs the full row rather than half of it */
     .dcard--wide { grid-column: 1 / -1; }
+
+    /* Due today — a task list living inside a dashboard card */
+    .dtoday__row {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      height: var(--row-height); border-bottom: 1px solid var(--border);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track);
+    }
+    .dtoday__row:last-child { border-bottom: none; }
+    .dtoday__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dtoday__row--risk .dtoday__name { font-weight: 500; }
+    .dtoday__ws, .dtoday__prop {
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0; white-space: nowrap;
+    }
+    .dtoday__prop { width: 132px; text-align: right; }
+    .dtoday__more { padding-top: var(--spacing-8); font-size: var(--type-s-size); color: var(--text-weak); }
+    .dtoday__row[data-due-task] { cursor: pointer; margin: 0 -6px; padding: 0 6px; border-radius: 4px; }
+    .dtoday__row[data-due-task]:hover { background: var(--background-hover); }
     .dcard__title {
       padding: var(--spacing-16) var(--spacing-16) var(--spacing-8);
       font-size: var(--type-m-size); font-weight: 500; color: var(--text);
@@ -2007,6 +2024,7 @@ const CATALOG = [
   { id:'tb-res',    type:'table', table:'Residents',   name:'Residents',   meta:'1,880 records' },
 
   // One dashboard per audience. Metas state the real card/chart counts.
+  { id:'db-take',    type:'dashboard', name:'Takeover Progress',     meta:'Takeovers · 4 cards, 3 charts' },
   { id:'db-health',  type:'dashboard', name:'Portfolio Health',      meta:'Leadership · 4 cards, 3 charts' },
   { id:'db-leasing', type:'dashboard', name:'Leasing & Occupancy',   meta:'Leasing · 4 cards, 3 charts' },
   { id:'db-ops',     type:'dashboard', name:'Maintenance & Vendors', meta:'Operations · 4 cards, 4 charts' },
@@ -2067,7 +2085,7 @@ const byId = id => CATALOG.find(o => o.id === id);
 const NORTHLINE_APP = {
   name: 'Northline', glyph: 'building', color: 'indigo',
   sections: [
-    { name: 'Overview',    items: ['db-health','db-leasing','db-ops'] },
+    { name: 'Overview',    items: ['db-take','db-health','db-leasing','db-ops'] },
     { name: 'Departments', items: ['pf-ops','pf-mkt','pf-legal','pf-fac','md-pf-prod','md-pf-post'] },
     { name: 'Properties',  items: ['tb-prop-all','tb-prop-take','tb-prop-new','tb-prop-stab','tb-prop-sep'] },
   ],
@@ -3434,8 +3452,60 @@ const pct   = n => n.toFixed(1).replace(/\.0$/, '') + '%';
    exception is the 12-month occupancy history, which has no source data —
    it is illustrative and ends on the derived current value.
    ═══════════════════════════════════════════════════════════════════════ */
+/* ── Takeover progress ────────────────────────────────────────────────
+   One row per property in Takeover status, so the count here can never
+   disagree with the Takeovers tab of the Properties table. `risk` names
+   the workstream that is slipping, not a severity — the dashboard counts
+   distinct at-risk workstreams from it. */
+const TAKEOVERS = [
+  { prop:'The Marlow',       progress:68, close:'Sep 14', risk:'Hiring' },
+  { prop:'Sunset Commons',   progress:41, close:'Sep 28', risk:null },
+  { prop:'Fairmount Place',  progress:86, close:'Sep 9',  risk:null },
+  { prop:'Cedar & Vine',     progress:54, close:'Oct 5',  risk:'Unit turns' },
+  { prop:'Stonegate Manor',  progress:72, close:'Sep 21', risk:null },
+  { prop:'Harborview Flats', progress:91, close:'Sep 7',  risk:null },
+  { prop:'Alder Court',      progress:33, close:'Oct 19', risk:null },
+];
+
+/* Open checklist items per workstream, across every takeover. */
+const TK_WORKSTREAMS = [
+  { name:'Hiring',           open:9  },
+  { name:'Unit turns',       open:14 },
+  { name:'Vendor setup',     open:6  },
+  { name:'Systems & access', open:4  },
+  { name:'Compliance',       open:5  },
+  { name:'Resident comms',   open:3  },
+];
+
+/* Ops work due today and assigned to her. The job req leads because the
+   Marlow close date moved in the kickoff call — this is the same thread,
+   surfaced where she starts her day. */
+const DUE_TODAY = [
+  { id:'dt-jobreq', title:'Write job req — Maintenance Tech', prop:'The Marlow', ws:'Hiring', risk:true },
+  { title:'Confirm turn vendor walkthrough',  prop:'The Marlow',       ws:'Unit turns' },
+  { title:'Approve keys & access order',      prop:'The Marlow',       ws:'Systems & access' },
+  { title:'Post leasing agent role',          prop:'Sunset Commons',   ws:'Hiring' },
+  { title:'Verify utility transfer dates',    prop:'Fairmount Place',  ws:'Compliance' },
+  { title:'Sign off punch list — floors 1-3', prop:'Cedar & Vine',     ws:'Unit turns' },
+  { title:'Schedule locksmith rekey',         prop:'Stonegate Manor',  ws:'Vendor setup' },
+  { title:'Send resident transition notice',  prop:'Harborview Flats', ws:'Resident comms' },
+  { title:'Confirm payroll codes for site',   prop:'Alder Court',      ws:'Hiring' },
+  { title:'Upload insurance certificates',    prop:'The Marlow',       ws:'Compliance' },
+];
+
 const M = {
   properties:  () => PROPERTY_RECORDS.length,
+
+  // Takeovers — counted off PROPERTY_RECORDS so the card and the
+  // Takeovers tab always agree.
+  takeovers:    () => PROPERTY_RECORDS.filter(r => r.status === 'Takeover').length,
+  atRiskCount:  () => new Set(TAKEOVERS.filter(t => t.risk).map(t => t.risk)).size,
+  avgProgress:  () => Math.round(TAKEOVERS.reduce((n, t) => n + t.progress, 0) / TAKEOVERS.length),
+  daysToClose:  () => 12,   // Sep 2 → the Marlow's new Sep 14 close
+  dueTodayCount: () => DUE_TODAY.length,
+  tkProgress:   () => TAKEOVERS.map(t => ({ label: t.prop, value: t.progress }))
+    .sort((a, b) => a.value - b.value),
+  tkByWorkstream: () => TK_WORKSTREAMS.map(w => ({ label: w.name, value: w.open })),
   units:       () => PROPERTY_RECORDS.reduce((n, r) => n + r.units, 0),
   occupied:    () => Math.round(PROPERTY_RECORDS.reduce((n, r) => n + r.units * parseFloat(r.occ) / 100, 0)),
   vacant:      () => M.units() - M.occupied(),
@@ -3763,7 +3833,43 @@ const labelChars = n => Math.max(7, Math.min(16, Math.floor(90 / n) + 3));
    THE THREE DASHBOARDS
    One per audience: leadership, leasing, operations.
    ═══════════════════════════════════════════════════════════════════════ */
+/* Her start-of-day queue. Only the job req is clickable — it's the one
+   the demo opens — and it carries the At risk pill because the close
+   date moved. The rest are there to make the count honest. */
+const CHECK_CIRCLE = '<span class="check"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 8.4l3 3 5.8-6"/></svg></span>';
+
+function dueTodayList() {
+  const SHOWN = 5;
+  const rows = DUE_TODAY.slice(0, SHOWN).map(t => `
+    <div class="dtoday__row ${t.risk ? 'dtoday__row--risk' : ''}"${t.id ? ` data-due-task="${t.id}"` : ''}>
+      ${CHECK_CIRCLE}
+      <span class="dtoday__name">${esc(t.title)}</span>
+      ${t.risk ? pfPill('At risk', 'orange') : ''}
+      <span class="dtoday__ws">${esc(t.ws)}</span>
+      <span class="dtoday__prop">${esc(t.prop)}</span>
+    </div>`).join('');
+  const more = DUE_TODAY.length - SHOWN;
+  return `<div class="dtoday">${rows}</div>` +
+    (more > 0 ? `<div class="dtoday__more">+${more} more due today</div>` : '');
+}
+
 const DASHBOARDS = {
+  'db-take': {
+    crumb: 'Dashboards / Takeovers',
+    cards: () => [
+      numCard('Active takeovers', M.takeovers(), 'across the portfolio'),
+      numCard('At-risk workstreams', M.atRiskCount(), 'hiring and unit turns', 1),
+      numCard('Days to Marlow close', M.daysToClose(), 'moved up from Sep 21', 1),
+      numCard('Ops tasks due today', M.dueTodayCount(), 'assigned to me', 2),
+    ],
+    charts: () => [
+      dcard(`Due today · assigned to me`, dueTodayList(), 2, true),
+      dcard('Takeover progress by property',
+            barChart(M.tkProgress(), { hue:'blue-green', fmt: v => v + '%' }), 1),
+      dcard('Open checklist items by workstream', lollipop(M.tkByWorkstream()), 1),
+    ],
+  },
+
   'db-health': {
     crumb: 'Dashboards / Leadership',
     cards: () => [
