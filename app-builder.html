@@ -4236,7 +4236,7 @@ function taskPaneHtml(id) {
             ${field('Due date', `<span class="pj-due-changed">${esc(d.to)}
               <span class="pj-was">was ${esc(d.from)}</span></span>`)}
             ${field('Workstream', esc(d.ws))}
-            ${field('Property', `<button class="ref-chip" data-prop="${esc(d.property)}">
+            ${field('Property', `<button class="ref-chip" data-goto-prop="${esc(d.property)}">
               <span class="ico ico--12">${IC.building}</span>${esc(d.property)}</button>`)}
             ${field('Project', esc(d.project))}
           </div>
@@ -5039,6 +5039,17 @@ document.addEventListener('click', (e) => {
   // drill from a portfolio row into the project
   const projRow = t.closest('[data-proj]');
   if (projRow) { S.sel = projRow.dataset.proj; renderEndUser(); return; }
+
+  // A reference field jumps to the record where it lives — the Takeovers
+  // grouping of the Properties table — and opens its pane there, rather
+  // than stacking a record pane over whatever screen you were on.
+  const goto = t.closest('[data-goto-prop]');
+  if (goto) {
+    S.sel = 'tb-prop-take';
+    renderEndUser();
+    openPane(goto.dataset.gotoProp, $('#canvas'));
+    return;
+  }
 
   // record pane — open on a property row, close on the X or a re-click
   if (t.closest('#pane-close')) { closePane(t.closest('.canvas')); return; }
