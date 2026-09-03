@@ -1443,7 +1443,6 @@
     .ptask--open { cursor: pointer; }
     .ptask--open:hover { background: var(--background-hover); }
     .ptask.is-open { background: var(--background-active); }
-    .ptask__by { display: inline-flex; align-items: center; gap: 6px; }
     .ptask__ws {
       width: 116px; text-align: right;
       font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
@@ -3544,11 +3543,12 @@ const TK_WORKSTREAMS = [
 ];
 
 /* The Marlow takeover project. `risk` marks what the compressed schedule
-   put in jeopardy; `moved` is the one the Scheduler actually rescheduled.
+   put in jeopardy. The one the Scheduler rescheduled shows its own history
+   in the task pane (MT_TASK_DETAIL), not as a badge in the list.
    Only projects listed in PROJECTS are drillable from a portfolio. */
 const MARLOW_TASKS = [
   { id:'mt-jobreq', name:'Write job requirements', ws:'Hiring', who:['SC','magenta'],
-    due:'Today', risk:true, moved:true },
+    due:'Today', risk:true },
   { name:'Post Maintenance Tech role',  ws:'Hiring',         who:['SC','magenta'],       due:'Sep 5',  risk:true },
   { name:'Screen turn vendor bids',     ws:'Unit turns',     who:['MR','indigo'],        due:'Sep 5',  risk:true },
   { name:'Confirm turn crew staffing',  ws:'Hiring',         who:['SC','magenta'],       due:'Sep 8',  risk:true },
@@ -4092,10 +4092,6 @@ function projectHtml(o) {
         t.id && MT_TASK_DETAIL[t.id] ? ` data-task="${esc(t.id)}"` : ''}>
       ${CHECK_CIRCLE}
       <span class="task__name">${esc(t.name)}</span>
-      ${t.moved ? `<span class="ptask__by">
-        <span class="avatar-24" style="background:${cz('indigo','bg')};color:${cz('indigo','fg')}"
-              title="Scheduler">${IC.agents}</span>
-        <span class="mt-ai">Scheduler</span></span>` : ''}
       <span class="ptask__ws">${esc(t.ws)}</span>
       ${face(t.who[0], t.who[1])}
       <span class="ptask__due${t.due === 'Today' ? ' ptask__due--now' : ''}">${esc(t.due)}</span>
