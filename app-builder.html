@@ -233,6 +233,33 @@
     }
     .pgv-tok svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--icon); }
 
+    /* Related roles, inside the property record */
+    .rl-mini { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .rl-mini th {
+      text-align: left; padding: 0 var(--spacing-8) 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: var(--type-s-size); font-weight: 400;
+      color: var(--text-weak); letter-spacing: 0; white-space: nowrap;
+    }
+    .rl-mini td {
+      padding: 6px var(--spacing-8) 6px 0; border-bottom: 1px solid var(--border);
+      font-size: var(--type-m-size); letter-spacing: var(--type-m-track); color: var(--text);
+      vertical-align: middle;
+    }
+    .rl-mini tr:last-child td { border-bottom: none; }
+    .rl-mini tr.is-vacant td { background: #fdf3ef; }
+    .rl-mini__foot {
+      display: flex; align-items: center; gap: var(--spacing-8);
+      padding-top: var(--spacing-8);
+      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
+    }
+    .rl-mini__all {
+      margin-left: auto; border: none; background: none; padding: 0;
+      font-family: inherit; font-size: var(--type-s-size); letter-spacing: 0;
+      color: var(--primary-background-strong); cursor: pointer;
+    }
+    .rl-mini__all:hover { text-decoration: underline; }
+
     /* Person cell — a name, or the dashed seat when nobody holds it */
     .rl-who { display: inline-flex; align-items: center; gap: 6px; }
 
@@ -1697,11 +1724,6 @@
     .cf__empty { color: var(--text-disabled); }
 
     /* Staffing by function */
-    .stf__n { font-variant-numeric: tabular-nums; }
-    .stf__total {
-      padding-top: var(--spacing-8);
-      font-size: var(--type-s-size); color: var(--text-weak); letter-spacing: 0;
-    }
 
     /* Task description */
     .pj-desc p, .pj-desc li {
@@ -2592,7 +2614,7 @@ function reqPageBody() {
   const r = PROPERTY_RECORDS.find(p => p.name === 'The Marlow') || {};
   const units  = (r.units  || 0).toLocaleString();
   const retail = (r.retail || 0).toLocaleString();
-  const heads  = (r.staffing || []).reduce((a, x) => a + x[1], 0);
+  const heads  = propertyRoles().filter(x => x.prop === r.name).length;
   const close  = takeoverDate(r.name) || '';
   const region = MGR_NAMES[(r.mgr || [])[0]] || 'the regional manager';
   const city   = (r.loc || '').split(',')[0];
@@ -3984,10 +4006,7 @@ function pick(id) {
    the unfiltered view. Locked rows are confidential, as in Northline. */
 const PROPERTY_RECORDS = [
   { name:'The Marlow',             loc:'Oakland, CA',    units:288, status:'Takeover',        occ:'68%', addr:'1725 Broadway, Oakland, CA 94612', year:2024, mgr:['JW','aqua'],
-    retail:4200, pmLevel:'PM III', ratio:'1:24', comp:'Band 3', staffing:[
-      ['Property manager', 1], ['Assistant manager', 1], ['Leasing', 3],
-      ['Maintenance', 4], ['Groundskeeping', 2], ['Commercial / retail', 1],
-    ] },
+    retail:4200, pmLevel:'PM III', comp:'Band 3' },
   { name:'Beacon Hill Apartments', loc:'Sacramento, CA', units:156, status:'Stabilized',      occ:'96%', addr:'4800 Stockton Blvd, Sacramento, CA 95820', year:2019, mgr:['SC','magenta'], locked:true, pm:['AR','aqua'] },
   { name:'Sunset Commons',         loc:'San Jose, CA',   units:42,  status:'Takeover',        occ:'52%', addr:'200 Park Ave, San Jose, CA 95113', year:2023, mgr:['JW','aqua'], pm:['TB','magenta'] },
   { name:'Riverside Lofts',        loc:'Portland, OR',   units:98,  status:'Stabilized',      occ:'94%', addr:'915 SE Water Ave, Portland, OR 97214', year:2017, mgr:['JW','aqua'], pm:['LM','indigo'] },
@@ -4304,8 +4323,8 @@ function tally(arr, keyFn) {
    Property-manager seats are derived from PROPERTY_RECORDS.pm, so this
    table and the Properties table can never disagree about who holds one,
    and the Marlow's is vacant here because that field is empty there. */
-const ROLE_LEVEL = { 'Assistant manager':'PM II',
-  'Leasing lead':'L II', 'Maintenance lead':'M II', 'Commercial manager':'C II' };
+const ROLE_LEVEL = { 'Assistant manager':'PM II', 'Leasing agent':'L I',
+  'Maintenance tech':'M I', 'Groundskeeper':'G I', 'Commercial manager':'C II' };
 
 /* PM level follows unit count — the same rule the job req cites, so a
    42-unit property can't show the same level as a 288-unit one. */
@@ -4315,8 +4334,15 @@ const pmLevelFor = units => units >= 200 ? 'PM III' : units >= 100 ? 'PM II' : '
    point of the vacant one. */
 const MARLOW_SEATS = [
   ['Assistant manager',  ['AV','blue-green']],
-  ['Leasing lead',       ['BR','pink']],
-  ['Maintenance lead',   ['CN','indigo']],
+  ['Leasing agent',      ['BR','pink']],
+  ['Leasing agent',      ['PL','magenta']],
+  ['Leasing agent',      ['RM','yellow-orange']],
+  ['Maintenance tech',   ['CN','indigo']],
+  ['Maintenance tech',   ['SD','aqua']],
+  ['Maintenance tech',   ['TN','green']],
+  ['Maintenance tech',   ['VK','blue']],
+  ['Groundskeeper',      ['WM','blue-green']],
+  ['Groundskeeper',      ['ZB','pink']],
   ['Commercial manager', ['DL','aqua']],
 ];
 
@@ -5122,13 +5148,32 @@ function paneHtml(r) {
         ${cfRow('Regional manager',  IC.people, `${face(r.mgr[0], r.mgr[1])}<span style="margin-left:6px">${esc(MGR_NAMES[r.mgr[0]] || r.mgr[0])}</span>`)}
       </div>`)}
 
-      ${r.staffing ? section('Staffing by function', IC.people, `
-        <div class="cf">
-          ${r.staffing.map(([fn, n]) => cfRow(fn, IC.number,
-            `<span class="stf__n">${n}</span>`)).join('')}
-        </div>
-        <div class="stf__total">${r.staffing.reduce((a, x) => a + x[1], 0)} on-site roles
-          · ${r.ratio} units per role</div>`) : ''}
+      ${(() => {
+        // Related records, not a static block: these rows ARE the Property
+        // roles table filtered to this property, so the two can't diverge.
+        const roles = propertyRoles().filter(x => x.prop === r.name);
+        if (!roles.length) return '';
+        const vacant = roles.filter(x => !x.person).length;
+        return section('Property roles', IC.people, `
+          <table class="rl-mini">
+            <thead><tr><th>Role</th><th>Level</th><th>Person</th><th>Status</th></tr></thead>
+            <tbody>${roles.map(x => `<tr${x.person ? '' : ' class="is-vacant"'}>
+              <td>${esc(x.role)}</td>
+              <td>${esc(x.level)}</td>
+              <td>${x.person
+                ? `<span class="rl-who">${face(x.person[0], x.person[1])}
+                    <span>${esc(MGR_NAMES[x.person[0]] || x.person[0])}</span></span>`
+                : `<span class="rl-who"><span class="av-empty"></span>
+                    <span class="cf__empty">Vacant</span></span>`}</td>
+              <td>${x.person ? pfPill('Filled', 'green') : pfPill('Recruiting', 'orange')}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+          <div class="rl-mini__foot">
+            <span>${roles.length} seat${roles.length === 1 ? '' : 's'}${
+              vacant ? ` · ${vacant} vacant` : ''}</span>
+            <button class="rl-mini__all" data-open="tb-roles">Open Property roles</button>
+          </div>`);
+      })()}
     </div>
 
     <div class="composer">
@@ -5143,7 +5188,9 @@ function paneHtml(r) {
 
 const MGR_NAMES = { JW:'James Wu', SC:'Sarah Chen', MR:'Marcus Reid', PP:'Priya Patel', HM:'Hana Mori', DK:'Dana Kim',
   AR:'Ana Reyes', TB:'Tom Bright', LM:'Lena Mora', CV:'Chris Vega', NK:'Nina Kaur', DO:'Diego Ortiz', EF:'Elena Fox', GH:'Grace Han', IJ:'Ivan Jung', KL:'Kara Lyle', MN:'Mai Nguyen', OP:'Omar Pratt', QR:'Quinn Rossi', ST:'Sam Tran', UV:'Uma Varma', WC:'Wes Cole', YZ:'Yara Zane', BD:'Beth Diaz', CE:'Cole Ellis', FG:'Fay Grant', HI:'Hugo Ibarra', JK:'Jae Kim', MO:'Mira Osei', NP:'Noah Park', RS:'Rosa Silva', TV:'Tess Vaughn', WY:'Will Yates',
-  AV:'Alia Vance', BR:'Ben Ruiz', CN:'Cora Nash', DL:'Dev Lam' };
+  AV:'Alia Vance', BR:'Ben Ruiz', CN:'Cora Nash', DL:'Dev Lam',
+  PL:'Pia Lund', RM:'Raj Mehta', SD:'Sofia Duarte', TN:'Theo Nakamura',
+  VK:'Vera Koch', WM:'Wade Mercer', ZB:'Zara Bell' };
 
 /* Open / close, scoped to whichever canvas is showing */
 function openPane(name, root) {
