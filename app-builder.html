@@ -158,6 +158,10 @@
       letter-spacing: inherit; text-align: left; cursor: pointer;
     }
     .tk-token:hover { background: var(--background-active); }
+    .tk-token--done { color: var(--text-weak); text-decoration: line-through; }
+    /* Several pills in one field value. Scoped to its own wrapper — a
+       gap on .cf__value would shift every other field in every pane. */
+    .cf-pills { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
     .tk-token svg { flex-shrink: 0; color: var(--icon); }
 
     /* Mark complete, as the product renders it: neutral until done, then
@@ -5244,6 +5248,15 @@ function rolePaneHtml(x) {
     : `<span class="rl-who"><span class="av-empty"></span><span class="cf__empty">Vacant</span></span>`;
   const attached = S.reqDone && x.id === MARLOW_PM_ID;
 
+  // Work that references this seat, as pills in the field schema rather
+  // than a section of its own.
+  const work = (ROLE_TASKS[x.id] || []).map(tid => {
+    const tk = MARLOW_TASKS.find(m => m.id === tid);
+    if (!tk) return '';
+    return `<button class="tk-token${tk.done ? ' tk-token--done' : ''}"
+              data-goto-task="${esc(tid)}">${IC.checkCircle}${esc(tk.name)}</button>`;
+  }).join('');
+
   const section = (label, icon, body) => `
     <div class="pn-sec">
       <div class="pn-sec__title"><span class="ico ico--12">${icon}</span><span class="pn-sec__label">${esc(label)}</span></div>
@@ -5280,25 +5293,9 @@ function rolePaneHtml(x) {
         ${cfRow('Comp band',  IC.number,   esc(prop.comp || '—'))}
         ${cfRow('Market',     IC.building, esc(prop.loc || '—'))}
         ${cfRow('Takeover date', IC.calendar, esc(takeoverDate(x.prop) || '—'))}
+        ${cfRow('Connected work', IC.checkCircle,
+          work ? `<span class="cf-pills">${work}</span>` : '<span class="cf__empty">—</span>')}
       </div>`)}
-
-      ${(() => {
-        const ids = ROLE_TASKS[x.id] || [];
-        if (!ids.length) return '';
-        const rows = ids.map(tid => {
-          const tk = MARLOW_TASKS.find(m => m.id === tid);
-          if (!tk) return '';
-          return `<div class="task ptask ptask--open${tk.done ? ' task--done' : ''}"
-                       data-goto-task="${esc(tid)}">
-            ${CHECK_CIRCLE}
-            <span class="task__name">${esc(tk.name)}</span>
-            <span class="ptask__ws">${esc(tk.ws)}</span>
-            ${face(tk.who[0], tk.who[1])}
-            <span class="ptask__due${tk.due === 'Today' ? ' ptask__due--now' : ''}">${esc(tk.due)}</span>
-          </div>`;
-        }).join('');
-        return section(`Tasks`, IC.checkCircle, rows);
-      })()}
 
       ${attached ? section('Attachments', IC.page, `
         <div class="att att--open" data-open-page="pg-req">
