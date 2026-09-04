@@ -233,6 +233,9 @@
     }
     .pgv-tok svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--icon); }
 
+    /* Person cell — a name, or the dashed seat when nobody holds it */
+    .rl-who { display: inline-flex; align-items: center; gap: 6px; }
+
     /* A comment waiting on a task row */
     .ptask__cmt {
       display: inline-flex; align-items: center; gap: 3px;
@@ -2410,6 +2413,8 @@ const CATALOG = [
   /* The five Properties groupings are NOT five tables — they are five tabs of
      ONE table. A sidebar item deep-links to its tab, so `table` names the
      object that opens and `tab` says which view lands active. */
+  { id:'tb-roles',   type:'table', table:'Property roles', tab:'All roles',
+    name:'Property roles', meta:'Property roles table' },
   { id:'tb-prop-all',  type:'table', table:'Properties', tab:'All properties',   name:'All properties',   meta:'Properties table · 8 records' },
   { id:'tb-prop-take', type:'table', table:'Properties', tab:'Takeovers',        name:'Takeovers',        meta:'Properties table · 2 records' },
   { id:'tb-prop-new',  type:'table', table:'Properties', tab:'New Developments', name:'New Developments', meta:'Properties table · 2 records' },
@@ -2487,7 +2492,7 @@ const NORTHLINE_APP = {
   sections: [
     { name: 'Overview',    items: ['db-take','db-health','db-leasing','db-ops'] },
     { name: 'Departments', items: ['pf-ops','pf-mkt','pf-legal','pf-fac','md-pf-prod','md-pf-post'] },
-    { name: 'Properties',  items: ['tb-prop-all','tb-prop-take','tb-prop-new','tb-prop-stab','tb-prop-sep'] },
+    { name: 'Properties',  items: ['tb-prop-all','tb-prop-take','tb-prop-new','tb-prop-stab','tb-prop-sep','tb-roles'] },
   ],
 };
 
@@ -2519,6 +2524,7 @@ let S = {
   dashBusy: false,
   reqDone: false,     // has the agent produced the job req page?
   comments: {},       // task id -> comments posted during the demo
+  tabs: {},           // object id -> which view is open
   // Which prototype tab is lit. Derived from S.screen originally, which
   // broke once End user started landing on 'workspace' (Knowledge) rather
   // than 'app' — every end-user screen would light App builder. Set it at
@@ -4288,6 +4294,47 @@ function tally(arr, keyFn) {
    as a portfolio; only Properties has more than one view. */
 /* Display name for a table. Renaming goes here rather than re-keying
    TABLE_DEFS or rewriting every catalog entry's `table` field. */
+/* ── Property roles ───────────────────────────────────────────────────
+   One row per seat, not per person: a seat exists whether or not anyone
+   is in it, which is what lets the Marlow's vacant PM carry a level, a
+   comp band and the req page. The Property column is a reference back to
+   the record, so the same role name can repeat across properties and the
+   rows stay distinct — the way unit numbers repeat in the Units table.
+
+   Property-manager seats are derived from PROPERTY_RECORDS.pm, so this
+   table and the Properties table can never disagree about who holds one,
+   and the Marlow's is vacant here because that field is empty there. */
+const ROLE_LEVEL = { 'Assistant manager':'PM II',
+  'Leasing lead':'L II', 'Maintenance lead':'M II', 'Commercial manager':'C II' };
+
+/* PM level follows unit count — the same rule the job req cites, so a
+   42-unit property can't show the same level as a 288-unit one. */
+const pmLevelFor = units => units >= 200 ? 'PM III' : units >= 100 ? 'PM II' : 'PM I';
+
+/* The Marlow's other leadership seats, all filled — the contrast is the
+   point of the vacant one. */
+const MARLOW_SEATS = [
+  ['Assistant manager',  ['AV','blue-green']],
+  ['Leasing lead',       ['BR','pink']],
+  ['Maintenance lead',   ['CN','indigo']],
+  ['Commercial manager', ['DL','aqua']],
+];
+
+function propertyRoles() {
+  const rows = PROPERTY_RECORDS.map(r => ({
+    role: 'Property manager', prop: r.name,
+    level: pmLevelFor(r.units),
+    person: r.pm || null,
+  }));
+  MARLOW_SEATS.forEach(([role, who]) => rows.push({
+    role, prop: 'The Marlow', level: ROLE_LEVEL[role] || '—', person: who,
+  }));
+  // the vacancy first, so what needs attention leads the table
+  return rows.sort((a, b) => (a.person ? 1 : 0) - (b.person ? 1 : 0));
+}
+
+const ROLE_GROUPINGS = { 'All roles': null, 'Vacant': false, 'Filled': true };
+
 const TABLE_LABEL = {};
 const tableLabel = key => TABLE_LABEL[key] || key;
 
@@ -4315,6 +4362,32 @@ const TABLE_DEFS = {
       ] }));
     },
   },
+  'Property roles': {
+    addLabel: 'Add role',
+    tabs: Object.keys(ROLE_GROUPINGS),
+    cols: [['#',40], ['Role',180], ['Property',200], ['Level',80],
+           ['Person',170], ['Status',120]],
+    rows(tab) {
+      const want = ROLE_GROUPINGS[tab];
+      const all = propertyRoles();
+      const rs = want === null ? all : all.filter(r => !!r.person === want);
+      return rs.map((r, i) => [
+        `<span class="pfg__n">${i + 1}</span>`,
+        esc(r.role),
+        // a reference back to the property record, not a text field
+        `<button class="ref-chip" data-prop="${esc(r.prop)}">
+          <span class="ico ico--12">${IC.building}</span>${esc(r.prop)}</button>`,
+        esc(r.level),
+        r.person
+          ? `<span class="rl-who">${face(r.person[0], r.person[1])}
+              <span>${esc(MGR_NAMES[r.person[0]] || r.person[0])}</span></span>`
+          : `<span class="rl-who"><span class="av-empty"></span>
+              <span class="cf__empty">Vacant</span></span>`,
+        r.person ? pfPill('Filled', 'green') : pfPill('Recruiting', 'orange'),
+      ]);
+    },
+  },
+
   /* Meridian's core object. Seven columns, six views, and deliberately no
      rows — a brand-new table is empty, and the empty state IS the point. */
   Content: {
@@ -4932,6 +5005,11 @@ function dashboardHtml(o) {
     o.meta = `Properties table \u00b7 ${n} record${n === 1 ? '' : 's'}`;
   });
   // One record per unit, so the Units table counts units across properties
+  const rl = CATALOG.find(o => o.id === 'tb-roles');
+  if (rl) {
+    const n = propertyRoles().length, v = propertyRoles().filter(r => !r.person).length;
+    rl.meta = `Property roles \u00b7 ${n} records \u00b7 ${v} vacant`;
+  }
   const u = CATALOG.find(o => o.id === 'tb-units');
   if (u) u.meta = `${PROPERTY_RECORDS.reduce((n, r) => n + r.units, 0).toLocaleString()} records`;
 })();
@@ -5064,7 +5142,8 @@ function paneHtml(r) {
 }
 
 const MGR_NAMES = { JW:'James Wu', SC:'Sarah Chen', MR:'Marcus Reid', PP:'Priya Patel', HM:'Hana Mori', DK:'Dana Kim',
-  AR:'Ana Reyes', TB:'Tom Bright', LM:'Lena Mora', CV:'Chris Vega', NK:'Nina Kaur', DO:'Diego Ortiz', EF:'Elena Fox', GH:'Grace Han', IJ:'Ivan Jung', KL:'Kara Lyle', MN:'Mai Nguyen', OP:'Omar Pratt', QR:'Quinn Rossi', ST:'Sam Tran', UV:'Uma Varma', WC:'Wes Cole', YZ:'Yara Zane', BD:'Beth Diaz', CE:'Cole Ellis', FG:'Fay Grant', HI:'Hugo Ibarra', JK:'Jae Kim', MO:'Mira Osei', NP:'Noah Park', RS:'Rosa Silva', TV:'Tess Vaughn', WY:'Will Yates' };
+  AR:'Ana Reyes', TB:'Tom Bright', LM:'Lena Mora', CV:'Chris Vega', NK:'Nina Kaur', DO:'Diego Ortiz', EF:'Elena Fox', GH:'Grace Han', IJ:'Ivan Jung', KL:'Kara Lyle', MN:'Mai Nguyen', OP:'Omar Pratt', QR:'Quinn Rossi', ST:'Sam Tran', UV:'Uma Varma', WC:'Wes Cole', YZ:'Yara Zane', BD:'Beth Diaz', CE:'Cole Ellis', FG:'Fay Grant', HI:'Hugo Ibarra', JK:'Jae Kim', MO:'Mira Osei', NP:'Noah Park', RS:'Rosa Silva', TV:'Tess Vaughn', WY:'Will Yates',
+  AV:'Alia Vance', BR:'Ben Ruiz', CN:'Cora Nash', DL:'Dev Lam' };
 
 /* Open / close, scoped to whichever canvas is showing */
 function openPane(name, root) {
@@ -5222,7 +5301,8 @@ function createTableFromMenu() {
    own behaviour off the Add button. */
 function tableHead(o, def, tab, addAttr) {
   const tabs = def.tabs.map(t =>
-    `<button class="db-tab ${t === tab ? 'db-tab--active' : ''}">${esc(t)}</button>`).join('') +
+    `<button class="db-tab ${t === tab ? 'db-tab--active' : ''}"
+       data-tab="${esc(t)}" data-tab-obj="${esc(o.id)}">${esc(t)}</button>`).join('') +
     `<button class="db-tab" aria-label="Add view">${IC.plus}</button>`;
   return `
     <div class="pf-head">
@@ -5252,7 +5332,7 @@ function tableHead(o, def, tab, addAttr) {
 
 function tableHtml(o) {
   const def = TABLE_DEFS[o.table] || TABLE_DEFS.Properties;
-  const tab = o.tab || def.tabs[0];
+  const tab = (S.tabs && S.tabs[o.id]) || o.tab || def.tabs[0];
 
   // rows() may return plain cell arrays, or { key, cells } when a row is
   // clickable — the key is what opens the record pane.
@@ -5700,6 +5780,14 @@ document.addEventListener('click', (e) => {
     paintBuilder();
     return;
   }
+  // switch a table's view in place
+  const tb = t.closest('[data-tab]');
+  if (tb) {
+    S.tabs[tb.dataset.tabObj] = tb.dataset.tab;
+    if (S.screen === 'app') renderEndUser(); else renderPreview();
+    return;
+  }
+
   // drill from a portfolio row into the project
   const projRow = t.closest('[data-proj]');
   if (projRow) { S.sel = projRow.dataset.proj; renderEndUser(); return; }
@@ -5951,7 +6039,7 @@ document.addEventListener('drop', (e) => {
    ═══════════════════════════════════════════════════════════════════════ */
 function hardReset() {
   S = { aiPanel:false, screen:'workspace', railMode:'work', created:false, knowledge:null, meetingOpen:false, sel:null, bldTab:'build', mode:'builder',
-        dash:false, dashLog:[], dashBusy:false, reqDone:false, comments:{} };
+        dash:false, dashLog:[], dashBusy:false, reqDone:false, comments:{}, tabs:{} };
   toggleDash(false);
   renderDash();
   CFG = freshCfg();
