@@ -232,6 +232,13 @@
       border-radius: 4px; background: var(--background-strong); color: var(--text);
     }
     .pgv-tok svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--icon); }
+    .pgv-tok--on {
+      border: none; font-family: inherit; font-size: inherit;
+      letter-spacing: inherit; text-align: left; cursor: pointer;
+    }
+    .pgv-tok--on:hover { background: var(--background-active); }
+
+    .pfg tbody tr[data-role] { cursor: pointer; }
 
     /* Related roles, inside the property record */
     .rl-mini { width: 100%; border-collapse: separate; border-spacing: 0; }
@@ -248,6 +255,10 @@
     }
     .rl-mini tr:last-child td { border-bottom: none; }
     .rl-mini tr.is-vacant td { background: #fdf3ef; }
+    .rl-mini__row { cursor: pointer; }
+    .rl-mini__row:hover td { background: var(--background-hover); }
+    .rl-mini__row.is-vacant:hover td { background: #f9e7de; }
+    .rl-mini__row.is-open td { background: var(--background-active); }
     .rl-mini__foot {
       display: flex; align-items: center; gap: var(--spacing-8);
       padding-top: var(--spacing-8);
@@ -2366,6 +2377,10 @@ const IC = {
   collapse: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v10M13 8H6.5M9 4.5 6 8l3 3.5"/></svg>',
   send: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M4.5 7 8 3.5 11.5 7"/></svg>',
   gear: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2"/><path d="M8 1.8v1.4M8 12.8v1.4M3.6 3.6l1 1M11.4 11.4l1 1M1.8 8h1.4M12.8 8h1.4M3.6 12.4l1-1M11.4 4.6l1-1"/></svg>',
+  stack: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" '
+    + 'stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M8 1.9 14.2 5 8 8.1 1.8 5z"/><path d="M1.8 8.2 8 11.3l6.2-3.1"/>'
+    + '<path d="M1.8 11.1 8 14.2l6.2-3.1"/></svg>',
   comment: '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" '
     + 'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">'
     + '<path d="M13.5 7.6c0 2.7-2.5 4.9-5.5 4.9-.7 0-1.4-.1-2-.3l-3 1 1-2.4A4.7 4.7 0 0 1 2.5 7.6'
@@ -2625,7 +2640,9 @@ function reqPageBody() {
   return `
     <ul class="pgv-meta">
       <li><button class="tk-token" data-open-req="1">${IC.checkCircle}Write job requirements</button></li>
-      <li><span class="pgv-tok">${IC.building}${esc(r.name)}</span>
+      <li><button class="pgv-tok pgv-tok--on" data-goto-role="${MARLOW_PM_ID}">${IC.stack}Property
+            manager — ${esc(r.name)}</button>
+          <span class="pgv-tok">${IC.building}${esc(r.name)}</span>
           <span class="pgv-tok">${IC.project}Marlow Takeover</span></li>
       <li>Author: <span class="pgv-inline">
           <span class="avatar-24" style="background:${cz(REQ_AGENT.hue,'bg')};color:${cz(REQ_AGENT.hue,'fg')}">${IC.agents}</span>
@@ -2740,7 +2757,10 @@ function dashReply() {
           `<li><strong>${a}</strong> → ${b}</li>`).join('')}</ul>
         <p>Draft complete. I created the page <strong>${esc(r.pmLevel || 'PM')} Property Manager —
           ${esc(r.name)}</strong> and attached it to
-          <button class="tk-token" data-open-req="1">${IC.checkCircle}Write job requirements</button>.</p>
+          <button class="tk-token" data-open-req="1">${IC.checkCircle}Write job requirements</button>
+          and to the role record
+          <button class="tk-token" data-goto-role="${MARLOW_PM_ID}">${IC.stack}Property manager —
+          ${esc(r.name)}</button>.</p>
         <p class="dsh-lbl">Left for you to decide</p>
         <ul class="dsh-ul">
           <li>Final comp inside ${esc(r.comp || '')}</li>
@@ -4346,13 +4366,17 @@ const MARLOW_SEATS = [
   ['Commercial manager', ['DL','aqua']],
 ];
 
+const rslug = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
 function propertyRoles() {
   const rows = PROPERTY_RECORDS.map(r => ({
+    id: `rl-pm-${rslug(r.name)}`,
     role: 'Property manager', prop: r.name,
     level: pmLevelFor(r.units),
     person: r.pm || null,
   }));
-  MARLOW_SEATS.forEach(([role, who]) => rows.push({
+  MARLOW_SEATS.forEach(([role, who], i) => rows.push({
+    id: `rl-marlow-${rslug(role)}-${i}`,
     role, prop: 'The Marlow', level: ROLE_LEVEL[role] || '—', person: who,
   }));
   // the vacancy first, so what needs attention leads the table
@@ -4360,6 +4384,10 @@ function propertyRoles() {
 }
 
 const ROLE_GROUPINGS = { 'All roles': null, 'Vacant': false, 'Filled': true };
+
+/* The seat the whole hiring beat is about. */
+const MARLOW_PM_ID = 'rl-pm-the-marlow';
+const roleById = id => propertyRoles().find(r => r.id === id);
 
 const TABLE_LABEL = {};
 const tableLabel = key => TABLE_LABEL[key] || key;
@@ -4397,7 +4425,7 @@ const TABLE_DEFS = {
       const want = ROLE_GROUPINGS[tab];
       const all = propertyRoles();
       const rs = want === null ? all : all.filter(r => !!r.person === want);
-      return rs.map((r, i) => [
+      return rs.map((r, i) => ({ key: r.id, role: true, cells: [
         `<span class="pfg__n">${i + 1}</span>`,
         esc(r.role),
         // a reference back to the property record, not a text field
@@ -4410,7 +4438,7 @@ const TABLE_DEFS = {
           : `<span class="rl-who"><span class="av-empty"></span>
               <span class="cf__empty">Vacant</span></span>`,
         r.person ? pfPill('Filled', 'green') : pfPill('Recruiting', 'orange'),
-      ]);
+      ] }));
     },
   },
 
@@ -5153,7 +5181,8 @@ function paneHtml(r) {
         return section('Property roles', IC.people, `
           <table class="rl-mini">
             <thead><tr><th>Role</th><th>Level</th><th>Person</th><th>Status</th></tr></thead>
-            <tbody>${roles.map(x => `<tr${x.person ? '' : ' class="is-vacant"'}>
+            <tbody>${roles.map(x => `<tr class="rl-mini__row${x.person ? '' : ' is-vacant'}"
+              data-role="${esc(x.id)}">
               <td>${esc(x.role)}</td>
               <td>${esc(x.level)}</td>
               <td>${x.person
@@ -5202,6 +5231,86 @@ function openPane(name, root) {
   const row = root.querySelector(`[data-prop="${CSS.escape(name)}"]`);
   if (row) row.classList.add('is-open');
 }
+/* A role record. The req page files here as well as on the task, because
+   the seat outlives the task that filled it. */
+function rolePaneHtml(x) {
+  const prop = PROPERTY_RECORDS.find(r => r.name === x.prop) || {};
+  const who = x.person
+    ? `${face(x.person[0], x.person[1])}<span style="margin-left:6px">${esc(MGR_NAMES[x.person[0]] || x.person[0])}</span>`
+    : `<span class="rl-who"><span class="av-empty"></span><span class="cf__empty">Vacant</span></span>`;
+  const attached = S.reqDone && x.id === MARLOW_PM_ID;
+
+  const section = (label, icon, body) => `
+    <div class="pn-sec">
+      <div class="pn-sec__title"><span class="ico ico--12">${icon}</span><span class="pn-sec__label">${esc(label)}</span></div>
+      <div class="pn-sec__body">${body}</div>
+    </div>`;
+
+  return `
+    <div class="pane__topbar">
+      <span class="pane__crumb"><span class="ico ico--16">${IC.stack}</span>Property roles</span>
+      <span class="pane__actions">
+        <button class="btn btn--secondary btn--sm">${IC.lock}Share</button>
+        <span class="pane__sep"></span>
+        <button class="icon-btn" aria-label="More">${IC.more}</button>
+        <button class="icon-btn" id="pane-close" aria-label="Close">${IC.collapse}</button>
+      </span>
+    </div>
+
+    <div class="pane__body">
+      <div class="pane__title-wrap"><div class="pane__title">${esc(x.role)}</div></div>
+      <div class="pane__meta">
+        <span class="meta-field"><span class="meta-field__label">Property</span>
+          <button class="ref-chip" data-goto-prop="${esc(x.prop)}">
+            <span class="ico ico--12">${IC.building}</span>${esc(x.prop)}</button></span>
+        <span class="meta-field"><span class="meta-field__label">Status</span>
+          ${x.person ? pfPill('Filled', 'green') : pfPill('Recruiting', 'orange')}</span>
+      </div>
+
+      ${section('Role details', IC.dashboard, `<div class="cf">
+        ${cfRow('Role',       IC.stack,    esc(x.role))}
+        ${cfRow('Property',   IC.building, `<button class="ref-chip" data-goto-prop="${esc(x.prop)}">
+          <span class="ico ico--12">${IC.building}</span>${esc(x.prop)}</button>`)}
+        ${cfRow('Level',      IC.number,   esc(x.level))}
+        ${cfRow('Person',     IC.people,   who)}
+        ${cfRow('Comp band',  IC.number,   esc(prop.comp || '—'))}
+        ${cfRow('Market',     IC.building, esc(prop.loc || '—'))}
+        ${cfRow('Takeover date', IC.calendar, esc(takeoverDate(x.prop) || '—'))}
+      </div>`)}
+
+      ${attached ? section('Attachments', IC.page, `
+        <div class="att att--open" data-open-page="pg-req">
+          <span class="att__icon">${IC.page}</span>
+          <span class="att__body">
+            <span class="att__name">${esc(REQ_PAGE.title)}</span>
+            <span class="att__meta">${esc(REQ_PAGE.meta)} · created by ${esc(REQ_AGENT.name)}</span>
+          </span>
+        </div>`) : ''}
+    </div>
+
+    <div class="composer">
+      <div class="composer__input">Ask a question or leave a comment</div>
+      <div class="composer__tools">
+        <button class="icon-btn icon-btn--sm" aria-label="Attach">${IC.plus}</button>
+        <button class="icon-btn icon-btn--sm" aria-label="Mention">${IC.people}</button>
+        <button class="icon-btn icon-btn--sm composer__send" aria-label="Send">${IC.send}</button>
+      </div>
+    </div>`;
+}
+
+function openRolePane(id, root) {
+  const x = roleById(id);
+  if (!x || !root) return;
+  closePane(root);
+  const el = document.createElement('aside');
+  el.className = 'pane';
+  el.innerHTML = rolePaneHtml(x);
+  root.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('pane--on'));
+  const row = root.querySelector(`[data-role="${CSS.escape(id)}"]`);
+  if (row) row.classList.add('is-open');
+}
+
 /* Same mechanics as openPane, but for a task rather than a record. */
 function openTaskPane(id, root) {
   closePane(root);
@@ -5381,7 +5490,8 @@ function tableHtml(o) {
   // clickable — the key is what opens the record pane.
   const rows = def.rows(tab).map(r => {
     const cells = Array.isArray(r) ? r : r.cells;
-    const attr  = Array.isArray(r) || !r.key ? '' : ` data-prop="${esc(r.key)}"`;
+    const attr  = Array.isArray(r) || !r.key ? ''
+      : r.role ? ` data-role="${esc(r.key)}"` : ` data-prop="${esc(r.key)}"`;
     return `<tr${attr}>${cells.map(c => `<td>${c}</td>`).join('')}<td></td></tr>`;
   }).join('');
 
@@ -5843,6 +5953,25 @@ document.addEventListener('click', (e) => {
     S.sel = 'tb-prop-take';
     renderEndUser();
     openPane(goto.dataset.gotoProp, $('#canvas'));
+    return;
+  }
+
+  // role record pane
+  const roleRow = t.closest('[data-role]');
+  if (roleRow) {
+    const root = roleRow.closest('.canvas');
+    if (roleRow.classList.contains('is-open')) closePane(root);
+    else openRolePane(roleRow.dataset.role, root);
+    return;
+  }
+
+  // Dash's link to the role record: land on the roles table with it open
+  const gr = t.closest('[data-goto-role]');
+  if (gr) {
+    S.sel = 'tb-roles';
+    S.tabs['tb-roles'] = 'All roles';
+    renderEndUser();
+    openRolePane(gr.dataset.gotoRole, $('#canvas'));
     return;
   }
 
