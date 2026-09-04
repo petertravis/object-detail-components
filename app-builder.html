@@ -5142,10 +5142,6 @@ function paneHtml(r) {
         ${cfRow('Year built',        IC.number, r.year)}
         ${cfRow('Status',            IC.goal,   pfPill(r.status, STATUS_COLOR[r.status] || 'none'))}
         ${cfRow('Occupancy',         IC.number, r.occ)}
-        ${cfRow('Property manager',  IC.people, r.pm
-          ? `${face(r.pm[0], r.pm[1])}<span style="margin-left:6px">${esc(MGR_NAMES[r.pm[0]] || r.pm[0])}</span>`
-          : `<span class="av-empty"></span>`)}
-        ${cfRow('Regional manager',  IC.people, `${face(r.mgr[0], r.mgr[1])}<span style="margin-left:6px">${esc(MGR_NAMES[r.mgr[0]] || r.mgr[0])}</span>`)}
       </div>`)}
 
       ${(() => {
