@@ -2639,7 +2639,7 @@ function reqPageBody() {
 
   return `
     <ul class="pgv-meta">
-      <li><button class="tk-token" data-open-req="1">${IC.checkCircle}Write job requirements</button></li>
+      <li><button class="tk-token" data-goto-task="mt-jobreq">${IC.checkCircle}Write job requirements</button></li>
       <li><button class="pgv-tok pgv-tok--on" data-goto-role="${MARLOW_PM_ID}">${IC.stack}Property
             manager — ${esc(r.name)}</button>
           <span class="pgv-tok">${IC.building}${esc(r.name)}</span>
@@ -2757,7 +2757,7 @@ function dashReply() {
           `<li><strong>${a}</strong> → ${b}</li>`).join('')}</ul>
         <p>Draft complete. I created the page <strong>${esc(r.pmLevel || 'PM')} Property Manager —
           ${esc(r.name)}</strong> and attached it to
-          <button class="tk-token" data-open-req="1">${IC.checkCircle}Write job requirements</button>
+          <button class="tk-token" data-goto-task="mt-jobreq">${IC.checkCircle}Write job requirements</button>
           and to the role record
           <button class="tk-token" data-goto-role="${MARLOW_PM_ID}">${IC.stack}Property manager —
           ${esc(r.name)}</button>.</p>
@@ -4387,6 +4387,10 @@ const ROLE_GROUPINGS = { 'All roles': null, 'Vacant': false, 'Filled': true };
 
 /* The seat the whole hiring beat is about. */
 const MARLOW_PM_ID = 'rl-pm-the-marlow';
+
+/* Work connected to a seat. Only the vacancy has any — the filled seats
+   aren't being recruited for. */
+const ROLE_TASKS = { [MARLOW_PM_ID]: ['mt-jobreq', 'mt-post'] };
 const roleById = id => propertyRoles().find(r => r.id === id);
 
 const TABLE_LABEL = {};
@@ -4420,7 +4424,7 @@ const TABLE_DEFS = {
     addLabel: 'Add role',
     tabs: Object.keys(ROLE_GROUPINGS),
     cols: [['#',40], ['Role',180], ['Property',200], ['Level',80],
-           ['Person',170], ['Status',120]],
+           ['Employee',170], ['Status',120]],
     rows(tab) {
       const want = ROLE_GROUPINGS[tab];
       const all = propertyRoles();
@@ -5180,7 +5184,7 @@ function paneHtml(r) {
         const vacant = roles.filter(x => !x.person).length;
         return section('Property roles', IC.people, `
           <table class="rl-mini">
-            <thead><tr><th>Role</th><th>Level</th><th>Person</th><th>Status</th></tr></thead>
+            <thead><tr><th>Role</th><th>Level</th><th>Employee</th><th>Status</th></tr></thead>
             <tbody>${roles.map(x => `<tr class="rl-mini__row${x.person ? '' : ' is-vacant'}"
               data-role="${esc(x.id)}">
               <td>${esc(x.role)}</td>
@@ -5272,11 +5276,29 @@ function rolePaneHtml(x) {
         ${cfRow('Property',   IC.building, `<button class="ref-chip" data-goto-prop="${esc(x.prop)}">
           <span class="ico ico--12">${IC.building}</span>${esc(x.prop)}</button>`)}
         ${cfRow('Level',      IC.number,   esc(x.level))}
-        ${cfRow('Person',     IC.people,   who)}
+        ${cfRow('Employee',   IC.people,   who)}
         ${cfRow('Comp band',  IC.number,   esc(prop.comp || '—'))}
         ${cfRow('Market',     IC.building, esc(prop.loc || '—'))}
         ${cfRow('Takeover date', IC.calendar, esc(takeoverDate(x.prop) || '—'))}
       </div>`)}
+
+      ${(() => {
+        const ids = ROLE_TASKS[x.id] || [];
+        if (!ids.length) return '';
+        const rows = ids.map(tid => {
+          const tk = MARLOW_TASKS.find(m => m.id === tid);
+          if (!tk) return '';
+          return `<div class="task ptask ptask--open${tk.done ? ' task--done' : ''}"
+                       data-goto-task="${esc(tid)}">
+            ${CHECK_CIRCLE}
+            <span class="task__name">${esc(tk.name)}</span>
+            <span class="ptask__ws">${esc(tk.ws)}</span>
+            ${face(tk.who[0], tk.who[1])}
+            <span class="ptask__due${tk.due === 'Today' ? ' ptask__due--now' : ''}">${esc(tk.due)}</span>
+          </div>`;
+        }).join('');
+        return section(`Tasks`, IC.checkCircle, rows);
+      })()}
 
       ${attached ? section('Attachments', IC.page, `
         <div class="att att--open" data-open-page="pg-req">
@@ -5821,11 +5843,12 @@ document.addEventListener('click', (e) => {
   const pg = t.closest('[data-open-page]');
   if (pg) { S.sel = pg.dataset.openPage; renderEndUser(); return; }
 
-  // Dash's link into the task the agent attached its page to
-  if (t.closest('[data-open-req]')) {
+  // Dash, the page and the role record all link to tasks this way
+  const gt = t.closest('[data-goto-task]');
+  if (gt) {
     S.sel = 'pj-marlow';
     renderEndUser();
-    openTaskPane('mt-jobreq', $('#canvas'));
+    openTaskPane(gt.dataset.gotoTask, $('#canvas'));
     return;
   }
 
